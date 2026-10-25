@@ -17,7 +17,7 @@ workflows:
         script: |
           cd app
           flutter create --platforms=android --org com.lapercha --project-name la_percha .
-          sed -i 's/android:label="[^"]*"/android:label="La Percha"/' android/app/src/main/AndroidManifest.xml
+          perl -pi -e 's/android:label="[^"]*"/android:label="La Percha"/' android/app/src/main/AndroidManifest.xml
       - name: Instalar dependencias
         script: cd app && flutter pub get
       - name: Compilar APK
