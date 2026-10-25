@@ -10,3 +10,4 @@ Etapa 1: tema, logo, bienvenida, registro (con SMS simulado) y navegación.
 
 La parte de Android (`android/`) no se guarda en el repositorio: GitHub la genera
 al compilar (ver `.github/workflows/android.yml`).
+
