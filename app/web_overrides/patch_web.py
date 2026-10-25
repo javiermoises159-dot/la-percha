@@ -10,6 +10,8 @@ p = f"{web}/index.html"
 s = open(p, encoding="utf-8").read()
 
 head_extra = """
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@700&display=swap">
   <meta name="theme-color" content="#C92A58">
   <meta name="apple-mobile-web-app-title" content="La Percha">
   <meta name="description" content="La Percha: compra y vende ropa usada en toda Venezuela.">
@@ -18,10 +20,10 @@ head_extra = """
     html,body{margin:0;height:100%;background:#F2F4F0}
     #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
       justify-content:center;background:#F2F4F0;z-index:9999;transition:opacity .35s;
-      font-family:Georgia,'Times New Roman',serif;color:#14201B}
+      font-family:'Outfit',system-ui,sans-serif;color:#14201B}
     #splash.hide{opacity:0;pointer-events:none}
     #splash svg{width:88px;height:88px;animation:pop .6s ease-out both}
-    #splash h1{margin:16px 0 4px;font-size:30px;letter-spacing:-.5px}
+    #splash h1{margin:16px 0 4px;font-size:30px;font-weight:700;letter-spacing:-.4px}
     #splash p{margin:0;font:16px system-ui,sans-serif;color:#56655E}
     @keyframes pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
   </style>

@@ -3,12 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Estilo de títulos de La Percha.
 TextStyle display(double size, {Color? color, double height = 1.1}) {
-  return GoogleFonts.bricolageGrotesque(
+  return GoogleFonts.outfit(
     fontSize: size,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     height: height,
     color: color,
-    letterSpacing: -size * 0.02,
+    letterSpacing: -size * 0.015,
   );
 }
 
