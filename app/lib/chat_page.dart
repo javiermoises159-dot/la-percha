@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
 import 'theme.dart';
@@ -123,6 +124,7 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title, style: const TextStyle(fontSize: 16))),
       body: Column(children: [
+        OfferBar(threadId: widget.threadId, onChanged: _load),
         Expanded(
           child: _msgs.isEmpty
               ? Center(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'explore_page.dart';
 import 'listing.dart';
 import 'theme.dart';
@@ -77,14 +78,20 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                       Text(widget.username, style: display(22, color: ink)),
                       if (p != null) Text('${p['city']}', style: TextStyle(color: context.muted)),
                       const SizedBox(height: 4),
-                      Row(children: [
+                      InkWell(
+                        onTap: count == 0
+                            ? null
+                            : () => Navigator.of(context).push(MaterialPageRoute<void>(
+                                builder: (_) => ReviewsPage(
+                                    userId: widget.sellerId, username: widget.username))),
+                        child: Row(children: [
                         const Icon(Icons.star_rounded,
                             size: 18, color: Color(0xFFE8A317)),
                         const SizedBox(width: 4),
                         Text(count == 0
                             ? 'Aún sin valoraciones'
-                            : '${avg.toStringAsFixed(1)} · $count valoraciones'),
-                      ]),
+                            : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
+                      ])),
                       if (since != null)
                         Text('En La Percha desde ${_meses[since.month - 1]} de ${since.year}',
                             style: TextStyle(color: context.muted, fontSize: 13)),

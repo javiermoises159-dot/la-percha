@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'auth_sheet.dart';
 import 'config.dart';
 import 'listing.dart';
@@ -54,6 +55,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _address = TextEditingController();
   bool _busy = false;
   String? _error;
+  double? _price; // precio acordado (oferta aceptada) o el del anuncio
+
+  @override
+  void initState() {
+    super.initState();
+    myPriceFor(widget.item).then((p) {
+      if (mounted) setState(() => _price = p);
+    });
+  }
 
   @override
   void dispose() {
@@ -100,7 +110,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final fee = buyerFee(item.price);
+    final price = _price ?? item.price;
+    final fee = buyerFee(price);
     return Scaffold(
       appBar: AppBar(title: const Text('Confirmar compra')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
@@ -108,9 +119,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         _Box(children: [
-          _Line('Prenda', _money(item.price)),
+          if (price < item.price)
+            _Line('Precio original', _money(item.price)),
+          _Line(price < item.price ? 'Precio acordado' : 'Artículo', _money(price)),
           _Line('Protección al comprador', _money(fee)),
-          _Line('Total (sin envío)', _money(item.price + fee), bold: true),
+          _Line('Total (sin envío)', _money(price + fee), bold: true),
         ]),
         const SizedBox(height: 20),
         Text('¿Dónde te la enviamos?',
@@ -385,6 +398,8 @@ class _OrderPageState extends State<OrderPage> {
         ],
         const SizedBox(height: 18),
         ...actions,
+        if (status == 'liberado' && other.isNotEmpty)
+          ReviewButton(orderId: widget.orderId, otherName: other),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: const TextStyle(color: Color(0xFFB3261E))),

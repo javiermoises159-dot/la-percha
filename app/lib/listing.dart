@@ -56,7 +56,41 @@ const _tints = [
   Color(0xFFB5C9A8), Color(0xFFF2D49B), Color(0xFFC9A98A),
 ];
 
-const categories = ['Todo', 'Mujer', 'Hombre', 'Niños', 'Zapatos', 'Accesorios'];
+const categories = [
+  'Todo', 'Mujer', 'Hombre', 'Niños', 'Bebés', 'Zapatos', 'Accesorios',
+  'Hogar', 'Electrónica', 'Libros y juegos', 'Deportes', 'Mascotas',
+];
+
+const _clothing = {'Mujer', 'Hombre', 'Niños', 'Bebés'};
+const _clothingSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Única'];
+const _babySizes = ['0-3 m', '3-6 m', '6-12 m', '12-18 m', '18-24 m', '2 años', '3 años', '4 años'];
+const _shoeSizes = ['22-27', '28-33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
+
+/// Tallas según la categoría; lo que no es ropa no lleva talla.
+List<String> sizesFor(String category) {
+  if (category == 'Zapatos') return _shoeSizes;
+  if (category == 'Bebés') return _babySizes;
+  if (_clothing.contains(category)) return _clothingSizes;
+  return const ['No aplica'];
+}
+
+/// ¿La categoría usa la palabra "prenda" o "artículo"?
+bool isClothing(String category) =>
+    _clothing.contains(category) || category == 'Zapatos' || category == 'Accesorios';
+
+const categoryIcons = {
+  'Mujer': Icons.woman,
+  'Hombre': Icons.man,
+  'Niños': Icons.child_care,
+  'Bebés': Icons.baby_changing_station,
+  'Zapatos': Icons.hiking,
+  'Accesorios': Icons.watch_outlined,
+  'Hogar': Icons.chair_outlined,
+  'Electrónica': Icons.devices_other,
+  'Libros y juegos': Icons.menu_book_outlined,
+  'Deportes': Icons.sports_soccer,
+  'Mascotas': Icons.pets,
+};
 
 /// Anuncios que vienen del servidor.
 class ListingsStore extends ChangeNotifier {
@@ -141,7 +175,8 @@ class ListingPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final placeholder = Container(
         color: item.color,
-        child: Icon(Icons.checkroom, size: iconSize, color: Colors.white70));
+        child: Icon(categoryIcons[item.category] ?? Icons.checkroom,
+            size: iconSize, color: Colors.white70));
     if (item.photos.isEmpty) return placeholder;
     return Image.network(
       item.photos.first,

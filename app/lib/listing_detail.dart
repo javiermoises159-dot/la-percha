@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'chat_page.dart';
 import 'explore_page.dart';
 import 'listing.dart';
@@ -111,6 +112,12 @@ class ListingDetail extends StatelessWidget {
                     FilledButton(
                       onPressed: () => startCheckout(context, item),
                       child: const Text('Comprar'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => makeOfferFor(context, item),
+                      icon: const Icon(Icons.local_offer_outlined),
+                      label: const Text('Hacer una oferta'),
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton(

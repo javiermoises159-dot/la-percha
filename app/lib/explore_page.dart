@@ -204,13 +204,7 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
-const _categoryIcons = {
-  'Mujer': Icons.woman,
-  'Hombre': Icons.man,
-  'Niños': Icons.child_care,
-  'Zapatos': Icons.hiking,
-  'Accesorios': Icons.watch_outlined,
-};
+
 
 /// Explorar: búsqueda y categorías en cuadrícula.
 class CategoriesPage extends StatefulWidget {
@@ -284,7 +278,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     const Spacer(),
                     Align(
                       alignment: Alignment.bottomRight,
-                      child: Icon(_categoryIcons[c] ?? Icons.checkroom,
+                      child: Icon(categoryIcons[c] ?? Icons.checkroom,
                           size: 44, color: context.leaf),
                     ),
                   ],

@@ -7,7 +7,6 @@ import 'app_state.dart';
 import 'listing.dart';
 import 'theme.dart';
 
-const _sizes = ['XS', 'S', 'M', 'L', 'XL', 'Único', '36', '38', '40', '42'];
 const _conditions = ['Como nuevo', 'Muy buen estado', 'Buen estado', 'Con detalles'];
 const _cities = [
   'Caracas', 'Valencia', 'Maracaibo', 'Barquisimeto', 'Maracay',
@@ -123,7 +122,7 @@ class _SellPageState extends State<SellPage> {
       _error = null;
     });
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('¡Prenda publicada!')));
+        .showSnackBar(const SnackBar(content: Text('¡Publicado! Ya está a la venta.')));
     widget.onPublished();
   }
 
@@ -134,7 +133,7 @@ class _SellPageState extends State<SellPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Vender una prenda', style: display(24, color: ink)),
+        Text('Vende lo que ya no usas', style: display(24, color: ink)),
         const SizedBox(height: 4),
         Text('Sin comisión: cobras el precio completo.',
             style: TextStyle(color: context.muted)),
@@ -193,16 +192,22 @@ class _SellPageState extends State<SellPage> {
             label: 'Categoría',
             value: _category,
             items: categories.where((c) => c != 'Todo').toList(),
-            onChanged: (v) => setState(() => _category = v)),
+            onChanged: (v) => setState(() {
+                  _category = v;
+                  final s = sizesFor(v);
+                  if (!s.contains(_size)) _size = s.first;
+                })),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(
-              child: _Drop(
-                  label: 'Talla',
-                  value: _size,
-                  items: _sizes,
-                  onChanged: (v) => setState(() => _size = v))),
-          const SizedBox(width: 12),
+          if (sizesFor(_category).length > 1) ...[
+            Expanded(
+                child: _Drop(
+                    label: 'Talla',
+                    value: _size,
+                    items: sizesFor(_category),
+                    onChanged: (v) => setState(() => _size = v))),
+            const SizedBox(width: 12),
+          ],
           Expanded(
               child: _Drop(
                   label: 'Estado',

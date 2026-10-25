@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'theme.dart';
 
 /// Página de texto simple (ayuda, legales, funciones próximas).
 class InfoPage extends StatelessWidget {

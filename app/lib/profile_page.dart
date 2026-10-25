@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'auth_sheet.dart';
 import 'explore_page.dart';
 import 'info_pages.dart';
@@ -101,10 +102,7 @@ class ProfilePage extends StatelessWidget {
                   body:
                       'Pronto podrás ofrecer un descuento a quien compre varias de tus prendas a la vez.')),
           _item(context, Icons.beach_access_outlined, 'Modo vacaciones',
-              page: const InfoPage(
-                  title: 'Modo vacaciones',
-                  body:
-                      'Pronto podrás pausar todos tus anuncios mientras estás fuera, y reactivarlos con un toque.')),
+              page: const VacationPage()),
           const Divider(height: 1),
           _item(context, Icons.help_outline, 'Guía de La Percha',
               page: const InfoPage(title: 'Guía de La Percha', body: guideText)),
