@@ -39,7 +39,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
       title: 'La Percha',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.light,
       home: ListenableBuilder(
         listenable: _state,
         builder: (context, _) {

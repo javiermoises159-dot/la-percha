@@ -9,16 +9,7 @@
   --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0F1512; --surface:#18211D; --ink:#EEF3EF; --muted:#9FB0A7; --line:#2B3730; --chip:#222D27;
-    --accent:#FF7C9F; --accent-ink:#2B0713; --leaf:#5ED0A0; --leaf-soft:#173A2B; --scrim:rgba(0,0,0,.65); color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0F1512; --surface:#18211D; --ink:#EEF3EF; --muted:#9FB0A7; --line:#2B3730; --chip:#222D27;
-  --accent:#FF7C9F; --accent-ink:#2B0713; --leaf:#5ED0A0; --leaf-soft:#173A2B; --scrim:rgba(0,0,0,.65); color-scheme:dark;
-}
+:root{color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
