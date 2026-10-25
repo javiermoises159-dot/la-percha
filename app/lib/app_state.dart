@@ -8,7 +8,9 @@ class Account {
       {required this.id,
       required this.username,
       required this.city,
-      required this.email});
+      required this.email,
+      this.isAdmin = false});
+  final bool isAdmin;
   final String id;
   final String username;
   final String city;
@@ -60,6 +62,7 @@ class AppState extends ChangeNotifier {
           username: row['username'] as String,
           city: row['city'] as String,
           email: user.email ?? '',
+          isAdmin: row['is_admin'] == true,
         );
         final f = await _db.from('favorites').select('listing_id');
         favs = {for (final r in f) r['listing_id'] as String};

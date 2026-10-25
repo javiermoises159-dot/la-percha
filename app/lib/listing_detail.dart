@@ -5,6 +5,7 @@ import 'chat_page.dart';
 import 'explore_page.dart';
 import 'listing.dart';
 import 'orders_page.dart';
+import 'seller_profile.dart';
 import 'theme.dart';
 
 /// Comisión de protección al comprador (la paga quien compra).
@@ -58,16 +59,23 @@ class ListingDetail extends StatelessWidget {
                       ? 'Sin descripción.'
                       : item.description),
                   const SizedBox(height: 16),
-                  Row(children: [
-                    CircleAvatar(
-                        backgroundColor: context.chip,
-                        child: Text(item.seller.isEmpty
-                            ? '?'
-                            : item.seller[0].toUpperCase())),
-                    const SizedBox(width: 10),
-                    Text('@${item.seller}',
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ]),
+                  InkWell(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => SellerProfilePage(
+                            sellerId: item.sellerId, username: item.seller))),
+                    child: Row(children: [
+                      CircleAvatar(
+                          backgroundColor: context.chip,
+                          child: Text(item.seller.isEmpty
+                              ? '?'
+                              : item.seller[0].toUpperCase())),
+                      const SizedBox(width: 10),
+                      Text('@${item.seller}',
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      const Icon(Icons.chevron_right),
+                    ]),
+                  ),
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(14),

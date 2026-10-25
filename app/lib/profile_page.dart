@@ -6,7 +6,9 @@ import 'auth_sheet.dart';
 import 'explore_page.dart';
 import 'info_pages.dart';
 import 'listing.dart';
+import 'admin_page.dart';
 import 'orders_page.dart';
+import 'seller_profile.dart';
 import 'theme.dart';
 
 /// Perfil: cabecera y menú completo.
@@ -65,6 +67,12 @@ class ProfilePage extends StatelessWidget {
               ]),
             ),
           ),
+          if (a.isAdmin)
+            _item(context, Icons.admin_panel_settings_outlined,
+                'Panel de administración',
+                page: const AdminPage()),
+          _item(context, Icons.person_outline, 'Ver mi perfil público',
+              page: SellerProfilePage(sellerId: a.id, username: a.username)),
           _item(context, Icons.favorite_border, 'Favoritos',
               page: const FavoritesPage()),
           _item(context, Icons.account_balance_wallet_outlined, 'Saldo',
