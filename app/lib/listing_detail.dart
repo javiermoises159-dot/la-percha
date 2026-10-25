@@ -4,6 +4,7 @@ import 'app_state.dart';
 import 'chat_page.dart';
 import 'explore_page.dart';
 import 'listing.dart';
+import 'orders_page.dart';
 import 'theme.dart';
 
 /// Comisión de protección al comprador (la paga quien compra).
@@ -100,10 +101,7 @@ class ListingDetail extends StatelessWidget {
                         style: TextStyle(color: context.muted))
                   else ...[
                     FilledButton(
-                      onPressed: () => ScaffoldMessenger.of(context)
-                          .showSnackBar(const SnackBar(
-                              content: Text(
-                                  'La compra protegida llega en la siguiente etapa.'))),
+                      onPressed: () => startCheckout(context, item),
                       child: const Text('Comprar'),
                     ),
                     const SizedBox(height: 10),

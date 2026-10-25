@@ -6,6 +6,7 @@ import 'auth_sheet.dart';
 import 'explore_page.dart';
 import 'info_pages.dart';
 import 'listing.dart';
+import 'orders_page.dart';
 import 'theme.dart';
 
 /// Perfil: cabecera y menú completo.
@@ -73,10 +74,7 @@ class ProfilePage extends StatelessWidget {
                   body:
                       'Aquí verás el dinero de tus ventas, disponible para retirar a tu Pago Móvil o a Binance Pay.\n\nEl dinero llega a tu saldo cuando el comprador confirma que recibió la prenda.\n\nEsta función se activa con los pedidos protegidos.')),
           _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
-              page: const InfoPage(
-                  title: 'Mis pedidos',
-                  body:
-                      'Aquí verás tus compras y ventas, con el estado de cada una: esperando pago, retenido, enviado y liberado.\n\nSe activa con la compra protegida, que es la siguiente etapa.')),
+              page: const OrdersPage()),
           _item(context, Icons.rocket_launch_outlined, 'Herramientas de promoción',
               page: const InfoPage(
                   title: 'Herramientas de promoción',
