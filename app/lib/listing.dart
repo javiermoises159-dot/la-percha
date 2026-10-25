@@ -58,7 +58,7 @@ const _tints = [
 
 const categories = [
   'Todo', 'Mujer', 'Hombre', 'Niños', 'Bebés', 'Zapatos', 'Accesorios',
-  'Hogar', 'Electrónica', 'Libros y juegos', 'Deportes', 'Mascotas',
+  'Hogar', 'Libros y juegos', 'Deportes', 'Mascotas',
 ];
 
 const _clothing = {'Mujer', 'Hombre', 'Niños', 'Bebés'};
@@ -86,7 +86,6 @@ const categoryIcons = {
   'Zapatos': Icons.hiking,
   'Accesorios': Icons.watch_outlined,
   'Hogar': Icons.chair_outlined,
-  'Electrónica': Icons.devices_other,
   'Libros y juegos': Icons.menu_book_outlined,
   'Deportes': Icons.sports_soccer,
   'Mascotas': Icons.pets,
