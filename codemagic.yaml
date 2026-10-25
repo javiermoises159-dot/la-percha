@@ -20,8 +20,23 @@ workflows:
           perl -pi -e 's/android:label="[^"]*"/android:label="La Percha"/' android/app/src/main/AndroidManifest.xml
       - name: Instalar dependencias
         script: cd app && flutter pub get
+      - name: Revisar el código
+        ignore_failure: true
+        script: cd app && flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings 2>&1 | grep -E "error|Error" | head -60
       - name: Compilar APK
-        script: cd app && flutter build apk --debug
+        ignore_failure: true
+        script: |
+          set -o pipefail
+          cd app && flutter build apk --debug 2>&1 | tee ../build.log
+      - name: Resumen del resultado
+        script: |
+          if ls app/build/app/outputs/flutter-apk/*.apk >/dev/null 2>&1; then
+            echo "APK LISTO"
+          else
+            echo "=== ERRORES DE LA COMPILACION ==="
+            grep -nE "error:|Error:|What went wrong|FAILURE|\.dart:[0-9]+" -A2 build.log | head -70
+            exit 1
+          fi
     artifacts:
       - app/build/app/outputs/flutter-apk/*.apk
 
