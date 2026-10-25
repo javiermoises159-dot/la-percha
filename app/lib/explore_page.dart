@@ -27,11 +27,7 @@ class ListingCard extends StatelessWidget {
           children: [
             Expanded(
               child: Stack(children: [
-                Positioned.fill(
-                    child: Container(
-                        color: item.color,
-                        child: const Icon(Icons.checkroom,
-                            size: 48, color: Colors.white70))),
+                Positioned.fill(child: ListingPhoto(item: item)),
                 Positioned(
                   right: 6,
                   top: 6,
@@ -92,8 +88,22 @@ class _ExplorePageState extends State<ExplorePage> {
   String _cat = 'Todo';
 
   @override
+  void initState() {
+    super.initState();
+    listingsStore.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    listingsStore.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
-    final items = sampleListings.where((l) {
+    final items = listingsStore.all.where((l) {
       final okCat = _cat == 'Todo' || l.category == _cat;
       final okQ = _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
       return okCat && okQ;

@@ -39,9 +39,7 @@ class _ListingDetailState extends State<ListingDetail> {
       body: ListView(children: [
         AspectRatio(
           aspectRatio: 1,
-          child: Container(
-              color: item.color,
-              child: const Icon(Icons.checkroom, size: 96, color: Colors.white70)),
+          child: ListingPhoto(item: item, iconSize: 96),
         ),
         Padding(
           padding: const EdgeInsets.all(20),

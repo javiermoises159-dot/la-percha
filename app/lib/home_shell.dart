@@ -5,6 +5,7 @@ import 'auth_sheet.dart';
 import 'explore_page.dart';
 import 'listing.dart';
 import 'logo.dart';
+import 'sell_page.dart';
 import 'theme.dart';
 
 /// Navegación principal. Las pantallas se irán llenando por etapas.
@@ -49,8 +50,7 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           ExplorePage(favs: _favs, onFav: _toggleFav),
           _FavsPage(favs: _favs, onFav: _toggleFav),
-          const _Soon(Icons.add_circle_outline, 'Vender',
-              'Publicar una prenda con fotos y precio. Llega en la etapa 3.'),
+          SellPage(state: widget.state, onPublished: () => setState(() => _index = 0)),
           const _Soon(Icons.chat_bubble_outline, 'Mensajes',
               'Chat con vendedores y compradores, y ofertas. Llega en la etapa 3.'),
           ProfilePage(state: widget.state),
@@ -170,7 +170,7 @@ class _FavsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = sampleListings.where((l) => favs.contains(l.id)).toList();
+    final items = listingsStore.all.where((l) => favs.contains(l.id)).toList();
     if (items.isEmpty) {
       return const _Soon(Icons.favorite_border, 'Sin favoritos',
           'Toca el corazón de una prenda para guardarla aquí.');
