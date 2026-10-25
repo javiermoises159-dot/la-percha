@@ -104,10 +104,7 @@ class _ChatPageState extends State<ChatPage> {
       await _db
           .from('messages')
           .insert({'thread_id': widget.threadId, 'text': text});
-      await _db.from('threads').update({
-        'last_message': text.length > 80 ? text.substring(0, 80) : text,
-        'last_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', widget.threadId);
+      // El resumen del chat lo actualiza el servidor.
       _ctrl.clear();
       await _load();
     } catch (_) {
@@ -138,7 +135,8 @@ class _ChatPageState extends State<ChatPage> {
                   itemBuilder: (_, i) {
                     final m = _msgs[i];
                     final mine = m['sender_id'] == me;
-                    return Align(
+                    final aviso = m['aviso'] == true && !mine;
+                    final bubble = Align(
                       alignment:
                           mine ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
@@ -156,6 +154,8 @@ class _ChatPageState extends State<ChatPage> {
                                 color: mine ? scheme.onPrimary : scheme.onSurface)),
                       ),
                     );
+                    if (!aviso) return bubble;
+                    return Column(children: [bubble, const _AvisoEstafa()]);
                   },
                 ),
         ),
@@ -179,6 +179,36 @@ class _ChatPageState extends State<ChatPage> {
                   onPressed: _sending ? null : _send,
                   icon: const Icon(Icons.send)),
             ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Aviso bajo mensajes que piden pagar o hablar fuera de La Percha.
+class _AvisoEstafa extends StatelessWidget {
+  const _AvisoEstafa();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 2, bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade700),
+      ),
+      child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.shield_outlined, size: 18),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Cuidado: este mensaje menciona contactos o pagos fuera de La Percha. '
+            'Paga siempre con "Comprar" dentro de la app: si pagas por fuera, '
+            'tu dinero no está protegido.',
+            style: TextStyle(fontSize: 12.5),
           ),
         ),
       ]),

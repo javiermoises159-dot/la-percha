@@ -185,12 +185,16 @@ class _OrderPageState extends State<OrderPage> {
       final row = await _db
           .from('orders')
           .select(
-              '*, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('id', widget.orderId)
           .single();
+      // La dirección y el teléfono solo los entrega el servidor a quien puede verlos
+      // (el vendedor, solo cuando el pago está confirmado).
+      final delivery =
+          await _db.rpc('order_delivery', params: {'oid': widget.orderId});
       if (!mounted) return;
       setState(() {
-        _o = row;
+        _o = {...row, 'delivery': delivery};
         _loading = false;
       });
     } catch (_) {

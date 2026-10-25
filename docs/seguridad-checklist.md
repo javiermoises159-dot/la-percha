@@ -15,6 +15,7 @@ Marca cada punto cuando lo hagas. Están ordenados por importancia.
 - [ ] Authentication → Attack Protection: activar **CAPTCHA** (Cloudflare Turnstile, gratis) para frenar cuentas falsas.
 - [ ] Authentication → Rate Limits: dejar los límites por defecto o más estrictos.
 - [ ] Project Settings → activar **copias de seguridad** (Database → Backups) cuando haya usuarios reales; el plan gratuito no las incluye, el de pago sí.
+- [ ] Database → Extensions: activar **pg_cron** (caducidad de pedidos y liberación automática).
 - [ ] Tu cuenta de administrador: en SQL Editor, `update public.profiles set is_admin = true where username = 'TU_USUARIO';`
 
 ## 3. GitHub
