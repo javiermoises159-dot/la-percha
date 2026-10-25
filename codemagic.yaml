@@ -24,3 +24,29 @@ workflows:
         script: cd app && flutter build apk --debug
     artifacts:
       - app/build/app/outputs/flutter-apk/*.apk
+
+  base-de-datos:
+    name: La Percha - Actualizar base de datos
+    instance_type: mac_mini_m2
+    max_build_duration: 15
+    environment:
+      groups:
+        - SUPABASE_ACCESS_TOKEN
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Instalar Supabase CLI
+        script: brew install supabase/tap/supabase
+      - name: Conectar con el proyecto
+        script: |
+          [ -f supabase/config.toml ] || supabase init
+          supabase link --project-ref udhyuyokrxggdnnepbmr --password "$SUPABASE_DB_PASSWORD"
+      - name: Marcar como ya aplicadas las migraciones que se pegaron a mano
+        script: |
+          supabase migration repair --status applied 0001 0002 0003 0004 --password "$SUPABASE_DB_PASSWORD"
+      - name: Aplicar las migraciones nuevas
+        script: supabase db push --password "$SUPABASE_DB_PASSWORD"
