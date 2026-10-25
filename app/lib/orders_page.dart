@@ -20,6 +20,12 @@ const _statusLabel = {
   'cancelado': 'Cancelado',
 };
 
+/// Lee un campo de un objeto anidado de forma segura.
+String field(Object? m, String key, String fallback) {
+  if (m is Map && m[key] != null) return '${m[key]}';
+  return fallback;
+}
+
 String _money(num v) => '\$${v.toStringAsFixed(2)}';
 
 /// Punto de entrada del botón "Comprar".
@@ -232,10 +238,8 @@ class _OrderPageState extends State<OrderPage> {
     final status = o['status'] as String;
     final price = (o['price'] as num).toDouble();
     final fee = (o['fee'] as num).toDouble();
-    final title = (o['listings'] as Map?)?['title'] ?? 'Prenda';
-    final other = isBuyer
-        ? (o['seller'] as Map?)?['username']
-        : (o['buyer'] as Map?)?['username'];
+    final title = field(o['listings'], 'title', 'Prenda');
+    final other = field(isBuyer ? o['seller'] : o['buyer'], 'username', '');
     final delivery = (o['delivery'] as Map?) ?? const {};
     final ink = Theme.of(context).colorScheme.onSurface;
 
@@ -366,9 +370,9 @@ class _OrderPageState extends State<OrderPage> {
         if (!isBuyer && delivery.isNotEmpty) ...[
           const SizedBox(height: 14),
           _Box(children: [
-            _Line('Enviar a', '${delivery['name'] ?? ''}'),
-            _Line('Teléfono', '${delivery['phone'] ?? ''}'),
-            _Line('Dirección', '${delivery['address'] ?? ''}'),
+            _Line('Enviar a', field(delivery, 'name', '')),
+            _Line('Teléfono', field(delivery, 'phone', '')),
+            _Line('Dirección', field(delivery, 'address', '')),
           ]),
         ],
         if (o['tracking'] != null) ...[
@@ -450,7 +454,7 @@ class _OrdersPageState extends State<OrdersPage> {
       child: ListView(children: [
         for (final r in rows)
           ListTile(
-            title: Text('${(r['listings'] as Map?)?['title'] ?? 'Prenda'}'),
+            title: Text(field(r['listings'], 'title', 'Prenda')),
             subtitle: Text(_statusLabel[r['status']] ?? '${r['status']}'),
             trailing: Text(_money(buying
                 ? (r['price'] as num) + (r['fee'] as num)

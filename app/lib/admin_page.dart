@@ -110,12 +110,12 @@ class _OrdersTabState extends State<_OrdersTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${(r['listings'] as Map?)?['title'] ?? 'Prenda'}',
+                  Text(field(r['listings'], 'title', 'Prenda'),
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 16)),
                   const SizedBox(height: 4),
                   Text(
-                      'Compra @${(r['buyer'] as Map?)?['username']} a @${(r['seller'] as Map?)?['username']}',
+                      'Compra @${field(r['buyer'], 'username', '?')} a @${field(r['seller'], 'username', '?')}',
                       style: TextStyle(color: context.muted)),
                   const SizedBox(height: 4),
                   Text(
@@ -201,14 +201,22 @@ class _ReportsTabState extends State<_ReportsTab> {
         for (final r in _rows)
           ListTile(
             title: Text('${r['reason']}'),
-            subtitle: Text(
-                'De @${(r['reporter'] as Map?)?['username']}'
-                '${r['listings'] != null ? ' · Prenda: ${(r['listings'] as Map)['title']}' : ''}'
-                '${r['target'] != null ? ' · Usuario: @${(r['target'] as Map)['username']}' : ''}'),
+            subtitle: Text(_detalle(r)),
           ),
       ]),
     );
   }
+}
+
+String _detalle(Map<String, dynamic> r) {
+  final partes = <String>['De @${field(r['reporter'], 'username', '?')}'];
+  if (r['listings'] != null) {
+    partes.add('Prenda: ${field(r['listings'], 'title', '')}');
+  }
+  if (r['target'] != null) {
+    partes.add('Usuario: @${field(r['target'], 'username', '')}');
+  }
+  return partes.join(' · ');
 }
 
 class _UsersTab extends StatefulWidget {
