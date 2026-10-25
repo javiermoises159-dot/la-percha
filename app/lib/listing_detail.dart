@@ -7,7 +7,7 @@ import 'listing.dart';
 import 'theme.dart';
 
 /// Comisión de protección al comprador (la paga quien compra).
-double buyerFee(double price) => 0.5 + price * 0.05;
+double buyerFee(double price) => 0.25 + price * 0.05;
 
 class ListingDetail extends StatelessWidget {
   const ListingDetail({super.key, required this.item});
