@@ -71,9 +71,9 @@ class _AuthFlowState extends State<AuthFlow> {
     }
     if (!_login) {
       final u = _user.text.trim();
-      if (u.length < 3 || u.length > 20) {
-        return setState(() =>
-            _error = 'El nombre de usuario debe tener entre 3 y 20 caracteres.');
+      if (!isValidUsername(u)) {
+        return setState(() => _error =
+            'El usuario debe tener 3 a 20 caracteres: letras, números, punto o guion bajo.');
       }
       if (_city.text.trim().length < 2) {
         return setState(() => _error = 'Indica tu ciudad.');

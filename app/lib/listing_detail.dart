@@ -1,117 +1,123 @@
 import 'package:flutter/material.dart';
 
+import 'app_state.dart';
+import 'chat_page.dart';
+import 'explore_page.dart';
 import 'listing.dart';
 import 'theme.dart';
 
 /// Comisión de protección al comprador (la paga quien compra).
 double buyerFee(double price) => 0.5 + price * 0.05;
 
-class ListingDetail extends StatefulWidget {
-  const ListingDetail(
-      {super.key, required this.item, required this.fav, required this.onFav});
+class ListingDetail extends StatelessWidget {
+  const ListingDetail({super.key, required this.item});
   final Listing item;
-  final bool fav;
-  final VoidCallback onFav;
-
-  @override
-  State<ListingDetail> createState() => _ListingDetailState();
-}
-
-class _ListingDetailState extends State<ListingDetail> {
-  late bool _fav = widget.fav;
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
     final ink = Theme.of(context).colorScheme.onSurface;
     final fee = buyerFee(item.price);
-    return Scaffold(
-      appBar: AppBar(actions: [
-        IconButton(
-          icon: Icon(_fav ? Icons.favorite : Icons.favorite_border),
-          color: _fav ? Theme.of(context).colorScheme.primary : null,
-          onPressed: () {
-            widget.onFav();
-            setState(() => _fav = !_fav);
-          },
-        ),
-      ]),
-      body: ListView(children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: ListingPhoto(item: item, iconSize: 96),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('\$${item.price.toStringAsFixed(0)}',
-                  style: display(32, color: ink)),
-              const SizedBox(height: 4),
-              Text(item.title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                _Tag('Talla ${item.size}'),
-                _Tag(item.condition),
-                _Tag(item.city),
-              ]),
-              const SizedBox(height: 16),
-              Text(item.description),
-              const SizedBox(height: 16),
-              Row(children: [
-                CircleAvatar(
-                    backgroundColor: context.chip,
-                    child: Text(item.seller.isEmpty ? '?' : item.seller[0].toUpperCase())),
-                const SizedBox(width: 10),
-                Text('@${item.seller}',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ]),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                    color: context.leafSoft,
-                    borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Compra protegida',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, color: context.leaf)),
-                    const SizedBox(height: 6),
-                    _Row('Prenda', '\$${item.price.toStringAsFixed(2)}'),
-                    _Row('Protección al comprador', '\$${fee.toStringAsFixed(2)}'),
-                    _Row('Total (sin envío)',
-                        '\$${(item.price + fee).toStringAsFixed(2)}',
-                        bold: true),
-                    const SizedBox(height: 6),
-                    Text(
-                        'Tu dinero queda retenido hasta que confirmes que recibiste la prenda. El vendedor no paga comisión.',
-                        style: TextStyle(color: context.muted, fontSize: 13)),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        final fav = appState.favs.contains(item.id);
+        final mine = appState.account?.id == item.sellerId;
+        return Scaffold(
+          appBar: AppBar(actions: [
+            IconButton(
+              icon: Icon(fav ? Icons.favorite : Icons.favorite_border),
+              color: fav ? Theme.of(context).colorScheme.primary : null,
+              onPressed: () => toggleFavorite(context, item.id),
+            ),
+          ]),
+          body: ListView(children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: ListingPhoto(item: item, iconSize: 96),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('\$${item.price.toStringAsFixed(0)}',
+                      style: display(32, color: ink)),
+                  const SizedBox(height: 4),
+                  Text(item.title,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    _Tag('Talla ${item.size}'),
+                    _Tag(item.condition),
+                    _Tag(item.city),
+                  ]),
+                  const SizedBox(height: 16),
+                  Text(item.description.isEmpty
+                      ? 'Sin descripción.'
+                      : item.description),
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    CircleAvatar(
+                        backgroundColor: context.chip,
+                        child: Text(item.seller.isEmpty
+                            ? '?'
+                            : item.seller[0].toUpperCase())),
+                    const SizedBox(width: 10),
+                    Text('@${item.seller}',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ]),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                        color: context.leafSoft,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Compra protegida',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: context.leaf)),
+                        const SizedBox(height: 6),
+                        _Row('Prenda', '\$${item.price.toStringAsFixed(2)}'),
+                        _Row('Protección al comprador',
+                            '\$${fee.toStringAsFixed(2)}'),
+                        _Row('Total (sin envío)',
+                            '\$${(item.price + fee).toStringAsFixed(2)}',
+                            bold: true),
+                        const SizedBox(height: 6),
+                        Text(
+                            'Tu dinero queda retenido hasta que confirmes que recibiste la prenda. El vendedor no paga comisión.',
+                            style: TextStyle(color: context.muted, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (mine)
+                    Text('Este es tu anuncio.',
+                        style: TextStyle(color: context.muted))
+                  else ...[
+                    FilledButton(
+                      onPressed: () => ScaffoldMessenger.of(context)
+                          .showSnackBar(const SnackBar(
+                              content: Text(
+                                  'La compra protegida llega en la siguiente etapa.'))),
+                      child: const Text('Comprar'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () => openChatFor(context, item),
+                      child: const Text('Escribir al vendedor'),
+                    ),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('La compra protegida llega en la etapa 4.'))),
-                child: const Text('Comprar'),
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('El chat y las ofertas llegan en la etapa 3.'))),
-                child: const Text('Hacer una oferta'),
-              ),
-            ],
-          ),
-        ),
-      ]),
+            ),
+          ]),
+        );
+      },
     );
   }
 }

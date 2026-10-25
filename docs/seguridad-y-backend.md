@@ -26,3 +26,7 @@
 - Supabase tiene plan gratis (sin tarjeta) con base de datos, fotos y usuarios suficientes para empezar. Se pausa tras una semana sin uso, y para producción conviene el plan de pago (unos 25 USD al mes).
 - Política de privacidad y términos de uso: redactar con el abogado.
 - Una cuenta de administrador se marca con un permiso especial (`is_admin`) que solo se asigna desde el panel de Supabase.
+
+
+## Endurecimiento (0002)
+Ver `supabase/migrations/0002_hardening.sql` y `docs/seguridad-checklist.md`.

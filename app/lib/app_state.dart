@@ -15,6 +15,8 @@ class Account {
   final String email;
 }
 
+bool isValidUsername(String s) => RegExp(r'^[A-Za-z0-9_.]{3,20}$').hasMatch(s);
+
 bool isValidEmail(String s) =>
     RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s.trim());
 
@@ -167,3 +169,6 @@ class AppState extends ChangeNotifier {
     }
   }
 }
+
+/// Estado único de la sesión, compartido por toda la app.
+final appState = AppState();

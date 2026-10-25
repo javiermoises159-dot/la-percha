@@ -23,19 +23,13 @@ class LaPerchaApp extends StatefulWidget {
 }
 
 class _LaPerchaAppState extends State<LaPerchaApp> {
-  final AppState _state = AppState();
+  final AppState _state = appState;
 
   @override
   void initState() {
     super.initState();
     _state.load();
     listingsStore.load();
-  }
-
-  @override
-  void dispose() {
-    _state.dispose();
-    super.dispose();
   }
 
   @override
@@ -59,11 +53,37 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   }
 }
 
+/// Pantalla de carga: el logo aparece con un pequeño efecto.
 class _Splash extends StatelessWidget {
   const _Splash();
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: LogoMark(size: 72)));
+    return Scaffold(
+      body: Center(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.85, end: 1),
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutBack,
+          builder: (context, v, child) => Opacity(
+            opacity: v.clamp(0.0, 1.0),
+            child: Transform.scale(scale: v, child: child),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LogoMark(size: 88),
+              const SizedBox(height: 16),
+              Text('La Percha',
+                  style: display(30,
+                      color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 6),
+              Text('Dale otra vida a tu ropa',
+                  style: TextStyle(color: context.muted)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
