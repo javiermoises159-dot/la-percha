@@ -1,18 +1,18 @@
-# La Percha: seguridad y servidor
+# La Percha: seguridad y servidor (Supabase)
 
 ## Qué guardamos y quién lo ve
 | Dato | Dónde | Quién lo ve |
 |---|---|---|
-| Nombre de usuario, ciudad, calificación | `users/{id}` | Todos |
-| Teléfono, cuenta de cobro, dirección de entrega | `users/{id}/private` | Solo el dueño y el administrador |
+| Nombre de usuario, ciudad, calificación | `profiles` | Todos |
+| Teléfono, cuenta de cobro, dirección de entrega | `private_profiles` | Solo el dueño y el administrador |
 | Anuncios y fotos | `listings`, Storage | Todos (solo el dueño los edita) |
 | Chats y ofertas | `threads` | Solo comprador y vendedor |
 | Pedidos y pagos | `orders` | Solo comprador, vendedor y administrador |
-| Favoritos | `users/{id}/favs` | Solo el dueño |
+| Favoritos | `favorites` | Solo el dueño |
 
 ## Defensas
-1. **Entrada con SMS** (Firebase Auth): una cuenta = un teléfono real.
-2. **Reglas del servidor** (`backend/firestore.rules`): el filtro vive en el servidor, no en la app. Aunque alguien modifique la app, no puede leer pedidos ajenos, inventar precios, calificarse a sí mismo ni marcar un pago como recibido.
+1. **Entrada con correo** (Supabase Auth, gratis). El SMS con teléfono se añade después, porque requiere un proveedor de pago (Twilio u otro).
+2. **Reglas del servidor (Row Level Security)** (`supabase/migrations/0001_init.sql`): el filtro vive en el servidor, no en la app. Aunque alguien modifique la app, no puede leer pedidos ajenos, inventar precios, calificarse a sí mismo ni marcar un pago como recibido.
 3. **El dinero lo mueve solo el administrador**: el comprador avisa que pagó, el administrador verifica el Pago Móvil y pasa el pedido a "retenido"; al confirmar el comprador la recepción, el administrador paga al vendedor.
 4. **Sin claves en el repositorio**: las claves de Binance Pay y cualquier secreto van en el servidor, nunca en el código ni en GitHub (el repositorio es público).
 5. **App Check** (más adelante): rechaza peticiones que no vengan de la app oficial.
@@ -23,6 +23,6 @@
 ## Límites actuales y pendientes
 - Verificar el pago Pago Móvil a mano al principio. Automatizarlo requiere un servicio con API bancaria, o confirmación por SMS del banco.
 - Retener dinero de terceros puede exigir permisos o una figura legal: ver `docs/preguntas-contador.md`.
-- Las funciones automáticas del servidor (avisos, liberación de pagos) necesitan el plan de pago de Firebase (Blaze). Lo mínimo para empezar (login, base de datos, reglas) funciona sin cobrar, pero las fotos y los SMS de más de unos pocos al día piden tarjeta.
+- Supabase tiene plan gratis (sin tarjeta) con base de datos, fotos y usuarios suficientes para empezar. Se pausa tras una semana sin uso, y para producción conviene el plan de pago (unos 25 USD al mes).
 - Política de privacidad y términos de uso: redactar con el abogado.
-- Una cuenta de administrador se marca con un permiso especial (`admin`) que solo se asigna desde la consola de Firebase.
+- Una cuenta de administrador se marca con un permiso especial (`is_admin`) que solo se asigna desde el panel de Supabase.
