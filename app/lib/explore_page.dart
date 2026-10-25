@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app_state.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
 import 'theme.dart';
@@ -75,8 +76,8 @@ class ListingCard extends StatelessWidget {
 }
 
 class ExplorePage extends StatefulWidget {
-  const ExplorePage({super.key, required this.favs, required this.onFav});
-  final Set<String> favs;
+  const ExplorePage({super.key, required this.state, required this.onFav});
+  final AppState state;
   final void Function(String id) onFav;
 
   @override
@@ -91,11 +92,13 @@ class _ExplorePageState extends State<ExplorePage> {
   void initState() {
     super.initState();
     listingsStore.addListener(_refresh);
+    widget.state.addListener(_refresh);
   }
 
   @override
   void dispose() {
     listingsStore.removeListener(_refresh);
+    widget.state.removeListener(_refresh);
     super.dispose();
   }
 
@@ -139,10 +142,19 @@ class _ExplorePageState extends State<ExplorePage> {
         ),
       ),
       Expanded(
-        child: items.isEmpty
+        child: listingsStore.loading && items.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : items.isEmpty
             ? Center(
-                child: Text('No encontramos prendas con ese filtro.',
-                    style: TextStyle(color: context.muted)))
+                child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                    listingsStore.error ??
+                        (listingsStore.all.isEmpty
+                            ? 'Todavía no hay prendas. ¡Sé el primero en publicar!'
+                            : 'No encontramos prendas con ese filtro.'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: context.muted))))
             : GridView.builder(
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -153,7 +165,7 @@ class _ExplorePageState extends State<ExplorePage> {
                 itemCount: items.length,
                 itemBuilder: (_, i) => ListingCard(
                   item: items[i],
-                  fav: widget.favs.contains(items[i].id),
+                  fav: widget.state.favs.contains(items[i].id),
                   onFav: () => widget.onFav(items[i].id),
                 ),
               ),

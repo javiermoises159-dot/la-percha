@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'config.dart';
 import 'home_shell.dart';
+import 'listing.dart';
 import 'logo.dart';
 import 'theme.dart';
 import 'welcome_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
   runApp(const LaPerchaApp());
 }
 
@@ -25,6 +29,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   void initState() {
     super.initState();
     _state.load();
+    listingsStore.load();
   }
 
   @override

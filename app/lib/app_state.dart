@@ -1,92 +1,169 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Account {
   const Account(
-      {required this.username, required this.phone, required this.city});
+      {required this.id,
+      required this.username,
+      required this.city,
+      required this.email});
+  final String id;
   final String username;
-  final String phone;
   final String city;
+  final String email;
 }
 
-/// Modo de pruebas: "Ya tengo cuenta" entra directo, sin pedir datos ni código.
-/// Poner en false cuando conectemos el registro real (etapa 2).
-const bool kDemoMode = true;
+bool isValidEmail(String s) =>
+    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s.trim());
 
-String digitsOf(String s) => s.replaceAll(RegExp(r'\D'), '');
-
-/// Móvil venezolano, por ejemplo 0414-1234567 o +58 414 1234567.
-bool isValidPhone(String s) => RegExp(r'^(58)?0?4\d{9}$').hasMatch(digitsOf(s));
-
-/// Estado de la cuenta. En la etapa 2 se conectará a Firebase.
+/// Estado de la sesión, conectado a Supabase.
 class AppState extends ChangeNotifier {
-  Account? _saved;
-  bool _signedIn = false;
+  SupabaseClient get _db => Supabase.instance.client;
+
+  Account? account;
+  Set<String> favs = {};
   bool guest = false;
   bool loaded = false;
-
-  Account? get account => _signedIn ? _saved : null;
-  Account? get saved => _saved;
-
-  bool hasSavedPhone(String phone) =>
-      _saved != null && digitsOf(_saved!.phone) == digitsOf(phone);
+  StreamSubscription<AuthState>? _sub;
 
   Future<void> load() async {
-    final p = await SharedPreferences.getInstance();
-    final u = p.getString('acct_u');
-    if (u != null) {
-      _saved = Account(
-        username: u,
-        phone: p.getString('acct_t') ?? '',
-        city: p.getString('acct_c') ?? '',
-      );
-    }
-    _signedIn = p.getBool('signed_in') ?? false;
-    guest = p.getBool('guest') ?? false;
+    _sub = _db.auth.onAuthStateChange.listen((_) => refresh());
+    await refresh();
     loaded = true;
     notifyListeners();
   }
 
-  Future<void> register(Account a) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setString('acct_u', a.username);
-    await p.setString('acct_t', a.phone);
-    await p.setString('acct_c', a.city);
-    await p.setBool('signed_in', true);
-    _saved = a;
-    _signedIn = true;
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> refresh() async {
+    final user = _db.auth.currentUser;
+    if (user == null) {
+      account = null;
+      favs = {};
+      notifyListeners();
+      return;
+    }
+    try {
+      final row =
+          await _db.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (row != null) {
+        account = Account(
+          id: user.id,
+          username: row['username'] as String,
+          city: row['city'] as String,
+          email: user.email ?? '',
+        );
+        final f = await _db.from('favorites').select('listing_id');
+        favs = {for (final r in f) r['listing_id'] as String};
+      }
+    } catch (_) {
+      // Sin conexión: se mantiene lo que ya había.
+    }
     notifyListeners();
   }
 
-  Future<void> enterDemo() async {
-    if (_saved == null) {
-      await register(const Account(
-          username: 'Javier', phone: '0414-0000000', city: 'Valencia'));
-    } else {
-      await signIn();
+  /// Devuelve null si todo salió bien, o el mensaje de error.
+  Future<String?> signUp(
+      {required String email,
+      required String password,
+      required String username,
+      required String city}) async {
+    try {
+      final taken = await _db
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+      if (taken != null) return 'Ese nombre de usuario ya está en uso.';
+      final res = await _db.auth.signUp(email: email, password: password);
+      if (res.session == null || res.user == null) {
+        return 'Revisa tu correo para confirmar la cuenta y luego inicia sesión.';
+      }
+      await _db.from('profiles').insert(
+          {'id': res.user!.id, 'username': username, 'city': city});
+      await refresh();
+      return null;
+    } on AuthException catch (e) {
+      return _authMessage(e.message);
+    } on PostgrestException catch (e) {
+      return e.code == '23505'
+          ? 'Ese nombre de usuario ya está en uso.'
+          : e.message;
+    } catch (_) {
+      return 'No se pudo crear la cuenta. Revisa tu conexión.';
     }
   }
 
-  Future<void> signIn() async {
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('signed_in', true);
-    _signedIn = true;
-    notifyListeners();
+  Future<String?> signIn(String email, String password) async {
+    try {
+      await _db.auth.signInWithPassword(email: email, password: password);
+      await refresh();
+      if (account == null) {
+        return 'Tu cuenta no tiene perfil. Escríbenos para ayudarte.';
+      }
+      return null;
+    } on AuthException catch (e) {
+      return _authMessage(e.message);
+    } catch (_) {
+      return 'No se pudo iniciar sesión. Revisa tu conexión.';
+    }
+  }
+
+  String _authMessage(String m) {
+    final t = m.toLowerCase();
+    if (t.contains('invalid login')) return 'Correo o contraseña incorrectos.';
+    if (t.contains('already registered')) return 'Ese correo ya tiene una cuenta.';
+    if (t.contains('password')) return 'La contraseña debe tener al menos 6 caracteres.';
+    if (t.contains('rate limit')) return 'Demasiados intentos. Espera unos minutos.';
+    return m;
   }
 
   Future<void> signOut() async {
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('signed_in', false);
-    await p.setBool('guest', false);
-    _signedIn = false;
+    await _db.auth.signOut();
     guest = false;
+    account = null;
+    favs = {};
     notifyListeners();
   }
 
-  Future<void> continueAsGuest() async {
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('guest', true);
+  void continueAsGuest() {
     guest = true;
     notifyListeners();
+  }
+
+  Future<void> toggleFav(String listingId) async {
+    final a = account;
+    if (a == null) return;
+    final had = favs.contains(listingId);
+    if (had) {
+      favs.remove(listingId);
+    } else {
+      favs.add(listingId);
+    }
+    notifyListeners();
+    try {
+      if (had) {
+        await _db
+            .from('favorites')
+            .delete()
+            .eq('user_id', a.id)
+            .eq('listing_id', listingId);
+      } else {
+        await _db.from('favorites').insert({'listing_id': listingId});
+      }
+    } catch (_) {
+      if (had) {
+        favs.add(listingId);
+      } else {
+        favs.remove(listingId);
+      }
+      notifyListeners();
+    }
   }
 }

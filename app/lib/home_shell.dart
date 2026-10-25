@@ -19,11 +19,15 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
-  final Set<String> _favs = {};
 
-  void _toggleFav(String id) => setState(() {
-        if (!_favs.remove(id)) _favs.add(id);
-      });
+  void _toggleFav(String id) {
+    if (widget.state.account == null) {
+      showAuthSheet(context, widget.state,
+          message: 'Crea tu cuenta para guardar favoritos.');
+      return;
+    }
+    widget.state.toggleFav(id);
+  }
 
   void _select(int i) {
     if (i == 2 && widget.state.account == null) {
@@ -48,8 +52,8 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          ExplorePage(favs: _favs, onFav: _toggleFav),
-          _FavsPage(favs: _favs, onFav: _toggleFav),
+          ExplorePage(state: widget.state, onFav: _toggleFav),
+          _FavsPage(state: widget.state, onFav: _toggleFav),
           SellPage(state: widget.state, onPublished: () => setState(() => _index = 0)),
           const _Soon(Icons.chat_bubble_outline, 'Mensajes',
               'Chat con vendedores y compradores, y ofertas. Llega en la etapa 3.'),
@@ -128,14 +132,10 @@ class ProfilePage extends StatelessWidget {
                 child: const Text('Crear cuenta')),
             const SizedBox(height: 10),
             OutlinedButton(
-                onPressed: () => kDemoMode
-                        ? state.enterDemo()
-                        : showAuthSheet(context, state, login: true),
+                onPressed: () => showAuthSheet(context, state, login: true),
                 child: const Text('Ya tengo cuenta')),
           ]);
         }
-        final digits = digitsOf(a.phone);
-        final tail = digits.length >= 3 ? digits.substring(digits.length - 3) : '';
         return ListView(padding: const EdgeInsets.all(20), children: [
           Row(children: [
             CircleAvatar(
@@ -150,7 +150,7 @@ class ProfilePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(a.username, style: display(24, color: ink)),
-                  Text('${a.city} · Tel. ••••$tail',
+                  Text('${a.city} · ${a.email}',
                       style: TextStyle(color: context.muted)),
                 ],
               ),
@@ -166,27 +166,33 @@ class ProfilePage extends StatelessWidget {
 }
 
 class _FavsPage extends StatelessWidget {
-  const _FavsPage({required this.favs, required this.onFav});
-  final Set<String> favs;
+  const _FavsPage({required this.state, required this.onFav});
+  final AppState state;
   final void Function(String id) onFav;
 
   @override
   Widget build(BuildContext context) {
-    final items = listingsStore.all.where((l) => favs.contains(l.id)).toList();
-    if (items.isEmpty) {
-      return const _Soon(Icons.favorite_border, 'Sin favoritos',
-          'Toca el corazón de una prenda para guardarla aquí.');
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.72),
-      itemCount: items.length,
-      itemBuilder: (_, i) => ListingCard(
-          item: items[i], fav: true, onFav: () => onFav(items[i].id)),
+    return ListenableBuilder(
+      listenable: Listenable.merge([state, listingsStore]),
+      builder: (context, _) {
+        final items =
+            listingsStore.all.where((l) => state.favs.contains(l.id)).toList();
+        if (items.isEmpty) {
+          return const _Soon(Icons.favorite_border, 'Sin favoritos',
+              'Toca el corazón de una prenda para guardarla aquí.');
+        }
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.72),
+          itemCount: items.length,
+          itemBuilder: (_, i) => ListingCard(
+              item: items[i], fav: true, onFav: () => onFav(items[i].id)),
+        );
+      },
     );
   }
 }

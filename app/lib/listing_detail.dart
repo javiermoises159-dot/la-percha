@@ -64,7 +64,7 @@ class _ListingDetailState extends State<ListingDetail> {
               Row(children: [
                 CircleAvatar(
                     backgroundColor: context.chip,
-                    child: Text(item.seller[0].toUpperCase())),
+                    child: Text(item.seller.isEmpty ? '?' : item.seller[0].toUpperCase())),
                 const SizedBox(width: 10),
                 Text('@${item.seller}',
                     style: const TextStyle(fontWeight: FontWeight.w600)),

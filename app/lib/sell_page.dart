@@ -14,10 +14,6 @@ const _cities = [
   'Puerto La Cruz', 'Mérida', 'San Cristóbal', 'Ciudad Guayana',
   'Isla de Margarita',
 ];
-const _tints = [
-  Color(0xFF9DB7D5), Color(0xFFD9A38F), Color(0xFFE8B4C0),
-  Color(0xFFB5C9A8), Color(0xFFF2D49B), Color(0xFFC9A98A),
-];
 
 /// Pantalla para publicar una prenda.
 class SellPage extends StatefulWidget {
@@ -82,39 +78,47 @@ class _SellPageState extends State<SellPage> {
     );
   }
 
-  void _publish() {
+  bool _busy = false;
+
+  Future<void> _publish() async {
     final price = double.tryParse(_price.text.trim().replaceAll(',', '.'));
     final acct = widget.state.account;
+    if (acct == null) {
+      return setState(() => _error = 'Inicia sesión para vender.');
+    }
     if (_title.text.trim().length < 3) {
       return setState(() => _error = 'Escribe un título (mínimo 3 letras).');
     }
-    if (price == null || price <= 0) {
-      return setState(() => _error = 'Escribe un precio en dólares, por ejemplo 12.');
+    if (price == null || price <= 0 || price > 5000) {
+      return setState(
+          () => _error = 'Escribe un precio en dólares entre 1 y 5000.');
     }
-    final city = _city ?? acct?.city ?? '';
-    if (city.isEmpty) {
-      return setState(() => _error = 'Elige tu ciudad.');
-    }
-    final id = DateTime.now().microsecondsSinceEpoch.toString();
-    listingsStore.add(Listing(
-      id: id,
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await listingsStore.publish(
       title: _title.text.trim(),
+      description: _desc.text.trim(),
       price: price,
       category: _category,
       size: _size,
       condition: _condition,
-      city: city,
-      seller: acct?.username ?? 'tú',
-      description: _desc.text.trim().isEmpty
-          ? 'Sin descripción.'
-          : _desc.text.trim(),
-      color: _tints[DateTime.now().millisecond % _tints.length],
+      city: _city ?? acct.city,
       photo: _photo,
-    ));
+    );
+    if (!mounted) return;
+    if (err != null) {
+      return setState(() {
+        _busy = false;
+        _error = err;
+      });
+    }
     _title.clear();
     _price.clear();
     _desc.clear();
     setState(() {
+      _busy = false;
       _photo = null;
       _error = null;
     });
@@ -239,7 +243,9 @@ class _SellPageState extends State<SellPage> {
             child: Text(_error!),
           ),
         const SizedBox(height: 16),
-        FilledButton(onPressed: _publish, child: const Text('Publicar')),
+        FilledButton(
+            onPressed: _busy ? null : _publish,
+            child: Text(_busy ? 'Publicando…' : 'Publicar')),
         const SizedBox(height: 24),
       ],
     );

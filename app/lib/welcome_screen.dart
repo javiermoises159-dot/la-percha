@@ -47,9 +47,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton(
-                    onPressed: () => kDemoMode
-                        ? state.enterDemo()
-                        : showAuthSheet(context, state, login: true),
+                    onPressed: () => showAuthSheet(context, state, login: true),
                     child: const Text('Ya tengo cuenta'),
                   ),
                   Center(

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Listing {
   const Listing({
@@ -11,9 +12,10 @@ class Listing {
     required this.condition,
     required this.city,
     required this.seller,
+    required this.sellerId,
     required this.description,
+    required this.photos,
     required this.color,
-    this.photo,
   });
 
   final String id;
@@ -24,102 +26,112 @@ class Listing {
   final String condition;
   final String city;
   final String seller;
+  final String sellerId;
   final String description;
+  final List<String> photos;
   final Color color;
-  final Uint8List? photo;
+
+  factory Listing.fromMap(Map<String, dynamic> m) {
+    final id = m['id'] as String;
+    final prof = m['profiles'];
+    return Listing(
+      id: id,
+      title: m['title'] as String,
+      price: (m['price'] as num).toDouble(),
+      category: m['category'] as String,
+      size: m['size'] as String,
+      condition: m['condition'] as String,
+      city: m['city'] as String,
+      seller: prof is Map ? (prof['username'] as String? ?? '') : '',
+      sellerId: m['seller_id'] as String,
+      description: m['description'] as String? ?? '',
+      photos: List<String>.from(m['photos'] as List? ?? const []),
+      color: _tints[id.hashCode.abs() % _tints.length],
+    );
+  }
 }
+
+const _tints = [
+  Color(0xFF9DB7D5), Color(0xFFD9A38F), Color(0xFFE8B4C0),
+  Color(0xFFB5C9A8), Color(0xFFF2D49B), Color(0xFFC9A98A),
+];
 
 const categories = ['Todo', 'Mujer', 'Hombre', 'Niños', 'Zapatos', 'Accesorios'];
 
-/// Anuncios en memoria (ejemplos + los que publica el usuario).
-/// En la etapa 2 se reemplaza por el servidor.
+/// Anuncios que vienen del servidor.
 class ListingsStore extends ChangeNotifier {
-  final List<Listing> _items = [...sampleListings];
+  List<Listing> _items = [];
+  bool loading = false;
+  String? error;
   List<Listing> get all => List.unmodifiable(_items);
-  void add(Listing l) {
-    _items.insert(0, l);
+
+  SupabaseClient get _db => Supabase.instance.client;
+
+  Future<void> load() async {
+    loading = true;
+    notifyListeners();
+    try {
+      final rows = await _db
+          .from('listings')
+          .select('*, profiles(username)')
+          .eq('status', 'active')
+          .order('created_at', ascending: false)
+          .limit(100);
+      _items = [for (final r in rows) Listing.fromMap(r)];
+      error = null;
+    } catch (_) {
+      error = 'No se pudieron cargar las prendas. Revisa tu conexión.';
+    }
+    loading = false;
     notifyListeners();
   }
 
-  void remove(String id) {
-    _items.removeWhere((l) => l.id == id);
-    notifyListeners();
+  /// Devuelve null si salió bien, o el mensaje de error.
+  Future<String?> publish({
+    required String title,
+    required String description,
+    required double price,
+    required String category,
+    required String size,
+    required String condition,
+    required String city,
+    Uint8List? photo,
+  }) async {
+    final uid = _db.auth.currentUser?.id;
+    if (uid == null) return 'Inicia sesión para vender.';
+    try {
+      final photos = <String>[];
+      if (photo != null) {
+        final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.jpg';
+        await _db.storage.from('listing-photos').uploadBinary(path, photo,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'));
+        photos.add(_db.storage.from('listing-photos').getPublicUrl(path));
+      }
+      await _db.from('listings').insert({
+        'title': title,
+        'description': description,
+        'price': price,
+        'category': category,
+        'size': size,
+        'condition': condition,
+        'city': city,
+        'photos': photos,
+      });
+      await load();
+      return null;
+    } on StorageException catch (e) {
+      return 'No se pudo subir la foto: ${e.message}';
+    } on PostgrestException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'No se pudo publicar. Revisa tu conexión.';
+    }
   }
 }
 
 final listingsStore = ListingsStore();
 
-/// Datos de ejemplo. En la etapa 2 vendrán del servidor.
-const sampleListings = <Listing>[
-  Listing(
-      id: '1',
-      title: 'Chaqueta de jean azul',
-      price: 14,
-      category: 'Mujer',
-      size: 'M',
-      condition: 'Muy buen estado',
-      city: 'Valencia',
-      seller: 'maria_v',
-      description: 'Chaqueta de jean clásica, poco uso. Sin manchas ni roturas.',
-      color: Color(0xFF9DB7D5)),
-  Listing(
-      id: '2',
-      title: 'Camisa a cuadros',
-      price: 8,
-      category: 'Hombre',
-      size: 'L',
-      condition: 'Buen estado',
-      city: 'Caracas',
-      seller: 'jose_c',
-      description: 'Camisa de manga larga, algodón suave.',
-      color: Color(0xFFD9A38F)),
-  Listing(
-      id: '3',
-      title: 'Vestido floral verano',
-      price: 12,
-      category: 'Mujer',
-      size: 'S',
-      condition: 'Como nuevo',
-      city: 'Maracaibo',
-      seller: 'ana_m',
-      description: 'Vestido ligero, usado una sola vez.',
-      color: Color(0xFFE8B4C0)),
-  Listing(
-      id: '4',
-      title: 'Zapatillas deportivas',
-      price: 20,
-      category: 'Zapatos',
-      size: '42',
-      condition: 'Buen estado',
-      city: 'Barquisimeto',
-      seller: 'luis_b',
-      description: 'Zapatillas cómodas para caminar y correr.',
-      color: Color(0xFFB5C9A8)),
-  Listing(
-      id: '5',
-      title: 'Conjunto infantil',
-      price: 9,
-      category: 'Niños',
-      size: '4 años',
-      condition: 'Muy buen estado',
-      city: 'Maracay',
-      seller: 'carla_p',
-      description: 'Camiseta y pantalón para niño de 4 años.',
-      color: Color(0xFFF2D49B)),
-  Listing(
-      id: '6',
-      title: 'Bolso de cuero marrón',
-      price: 18,
-      category: 'Accesorios',
-      size: 'Único',
-      condition: 'Buen estado',
-      city: 'Mérida',
-      seller: 'pedro_r',
-      description: 'Bolso mediano con cierre, forro interior en buen estado.',
-      color: Color(0xFFC9A98A)),
-];
-
-/// "Foto" de la prenda: la real si existe, o un color con icono.
+/// Foto de la prenda: la real si existe, o un color con icono.
 class ListingPhoto extends StatelessWidget {
   const ListingPhoto({super.key, required this.item, this.iconSize = 48});
   final Listing item;
@@ -127,11 +139,18 @@ class ListingPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (item.photo != null) {
-      return Image.memory(item.photo!, fit: BoxFit.cover);
-    }
-    return Container(
+    final placeholder = Container(
         color: item.color,
         child: Icon(Icons.checkroom, size: iconSize, color: Colors.white70));
+    if (item.photos.isEmpty) return placeholder;
+    return Image.network(
+      item.photos.first,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => placeholder,
+      loadingBuilder: (_, child, progress) =>
+          progress == null ? child : placeholder,
+    );
   }
 }
