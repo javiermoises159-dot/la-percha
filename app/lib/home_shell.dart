@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'auth_sheet.dart';
+import 'explore_page.dart';
+import 'listing.dart';
 import 'logo.dart';
 import 'theme.dart';
 
@@ -16,6 +18,11 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  final Set<String> _favs = {};
+
+  void _toggleFav(String id) => setState(() {
+        if (!_favs.remove(id)) _favs.add(id);
+      });
 
   void _select(int i) {
     if (i == 2 && widget.state.account == null) {
@@ -40,10 +47,8 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          const _Soon(Icons.grid_view_rounded, 'Explorar',
-              'Aquí aparecerán los anuncios con fotos, búsqueda y filtros. Llega en la etapa 3.'),
-          const _Soon(Icons.favorite_border, 'Favoritos',
-              'Las prendas que guardes estarán aquí. Llega en la etapa 3.'),
+          ExplorePage(favs: _favs, onFav: _toggleFav),
+          _FavsPage(favs: _favs, onFav: _toggleFav),
           const _Soon(Icons.add_circle_outline, 'Vender',
               'Publicar una prenda con fotos y precio. Llega en la etapa 3.'),
           const _Soon(Icons.chat_bubble_outline, 'Mensajes',
@@ -154,6 +159,32 @@ class ProfilePage extends StatelessWidget {
               onPressed: state.signOut, child: const Text('Cerrar sesión')),
         ]);
       },
+    );
+  }
+}
+
+class _FavsPage extends StatelessWidget {
+  const _FavsPage({required this.favs, required this.onFav});
+  final Set<String> favs;
+  final void Function(String id) onFav;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = sampleListings.where((l) => favs.contains(l.id)).toList();
+    if (items.isEmpty) {
+      return const _Soon(Icons.favorite_border, 'Sin favoritos',
+          'Toca el corazón de una prenda para guardarla aquí.');
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.72),
+      itemCount: items.length,
+      itemBuilder: (_, i) => ListingCard(
+          item: items[i], fav: true, onFav: () => onFav(items[i].id)),
     );
   }
 }
