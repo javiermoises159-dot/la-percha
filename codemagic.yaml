@@ -4,6 +4,8 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 30
     environment:
+      groups:
+        - SUPABASE_ACCESS_TOKEN
       flutter: stable
       java: 17
     triggering:
@@ -13,6 +15,14 @@ workflows:
         - pattern: main
           include: true
     scripts:
+      - name: Actualizar base de datos (Supabase)
+        ignore_failure: true
+        script: |
+          brew install supabase/tap/supabase
+          [ -f supabase/config.toml ] || supabase init
+          supabase link --project-ref udhyuyokrxggdnnepbmr --password "$SUPABASE_DB_PASSWORD"
+          supabase migration repair --status applied 0001 0002 0003 0004 --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
       - name: Generar la parte Android del proyecto
         script: |
           cd app
@@ -47,12 +57,6 @@ workflows:
     environment:
       groups:
         - SUPABASE_ACCESS_TOKEN
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
     scripts:
       - name: Instalar Supabase CLI
         script: brew install supabase/tap/supabase
