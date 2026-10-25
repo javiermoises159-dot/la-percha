@@ -9,6 +9,10 @@ class Account {
   final String city;
 }
 
+/// Modo de pruebas: "Ya tengo cuenta" entra directo, sin pedir datos ni código.
+/// Poner en false cuando conectemos el registro real (etapa 2).
+const bool kDemoMode = true;
+
 String digitsOf(String s) => s.replaceAll(RegExp(r'\D'), '');
 
 /// Móvil venezolano, por ejemplo 0414-1234567 o +58 414 1234567.
@@ -52,6 +56,15 @@ class AppState extends ChangeNotifier {
     _saved = a;
     _signedIn = true;
     notifyListeners();
+  }
+
+  Future<void> enterDemo() async {
+    if (_saved == null) {
+      await register(const Account(
+          username: 'Javier', phone: '0414-0000000', city: 'Valencia'));
+    } else {
+      await signIn();
+    }
   }
 
   Future<void> signIn() async {

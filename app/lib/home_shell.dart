@@ -128,7 +128,9 @@ class ProfilePage extends StatelessWidget {
                 child: const Text('Crear cuenta')),
             const SizedBox(height: 10),
             OutlinedButton(
-                onPressed: () => showAuthSheet(context, state, login: true),
+                onPressed: () => kDemoMode
+                        ? state.enterDemo()
+                        : showAuthSheet(context, state, login: true),
                 child: const Text('Ya tengo cuenta')),
           ]);
         }
