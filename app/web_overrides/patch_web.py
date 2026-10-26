@@ -12,20 +12,20 @@ s = open(p, encoding="utf-8").read()
 head_extra = """
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@800&display=swap">
-  <meta name="theme-color" content="#FFFFFF">
+  <meta name="theme-color" content="#F5B731">
   <meta name="apple-mobile-web-app-title" content="Pavito">
   <meta name="description" content="Pavito: vende lo que ya no usas y compra con pago protegido en toda Venezuela.">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <style>
-    html,body{margin:0;height:100%;background:#FFFFFF}
+    html,body{margin:0;height:100%;background:#F5B731}
     #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
-      justify-content:center;background:#FFFFFF;z-index:9999;transition:opacity .35s;
+      justify-content:center;background:#F5B731;z-index:9999;transition:opacity .35s;
       font-family:'Onest',system-ui,sans-serif;color:#161412}
     #splash.hide{opacity:0;pointer-events:none}
     #splash svg{width:88px;height:88px;animation:pop .6s ease-out both}
     #splash svg{animation:pop .6s ease-out both}
     #splash h1{margin:10px 0 6px;font-size:40px;font-weight:800;letter-spacing:-1.6px;animation:pop .6s ease-out both}
-    #splash p{margin:0;font:16px system-ui,sans-serif;color:#77716B}
+    #splash p{margin:0;font:600 16px system-ui,sans-serif;color:#161412;opacity:.75}
     @keyframes pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
   </style>
 """
@@ -71,7 +71,7 @@ m.update({
     "name": "Pavito",
     "short_name": "Pavito",
     "description": "Compra y vende ropa usada en toda Venezuela.",
-    "background_color": "#FFFFFF",
+    "background_color": "#F5B731",
     "theme_color": "#FFFFFF",
     "lang": "es",
 })

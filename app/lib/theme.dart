@@ -11,6 +11,7 @@ class LP {
   static const line = Color(0xFFECE8E3);
   static const soft = Color(0xFFF6F3EF);
   static const clay = Color(0xFFE0452C); // acento de marca
+  static const yellow = Color(0xFFF5B731); // amarillo de marca (icono, carga)
   static const ok = Color(0xFF1F7A4D); // compra protegida, bajadas de precio
   static const okSoft = Color(0xFFE3F1E9);
 
@@ -191,15 +192,16 @@ extension PaletteX on BuildContext {
 
 /// Logo de Pavito: la guacamaya junto al nombre.
 class Wordmark extends StatelessWidget {
-  const Wordmark({super.key, this.size = 24});
+  const Wordmark({super.key, this.size = 24, this.color});
   final double size;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Guacamaya(size: size * 1.45),
       SizedBox(width: size * 0.22),
-      Text('pavito', style: display(size, color: context.ink).copyWith(letterSpacing: -size * 0.045)),
+      Text('pavito', style: display(size, color: color ?? context.ink).copyWith(letterSpacing: -size * 0.045)),
     ]);
   }
 }

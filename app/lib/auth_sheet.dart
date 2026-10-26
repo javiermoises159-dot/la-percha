@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
+import 'info_pages.dart';
 import 'theme.dart';
 
 const _cities = [
@@ -175,8 +176,24 @@ class _AuthFlowState extends State<AuthFlow> {
               value: _terms,
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text('Acepto los términos y la privacidad'),
+              title: const Text('Tengo 18 años o más y acepto los términos y la privacidad'),
               onChanged: (v) => setState(() => _terms = v ?? false),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(spacing: 4, children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const TermsPage())),
+                  child: const Text('Leer los términos'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const InfoPage(
+                          title: 'Política de privacidad', body: privacyText))),
+                  child: const Text('Leer la privacidad'),
+                ),
+              ]),
             ),
           ],
           const SizedBox(height: 8),

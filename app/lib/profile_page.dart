@@ -134,8 +134,7 @@ class ProfilePage extends StatelessWidget {
             page: const InfoPage(
                 title: 'Política de privacidad', body: privacyText)),
         _item(context, Icons.description_outlined, 'Términos y condiciones',
-            page: const InfoPage(
-                title: 'Términos y condiciones', body: termsText)),
+            page: const TermsPage()),
         _item(context, Icons.cookie_outlined, 'Cookies',
             page: const InfoPage(title: 'Cookies', body: cookiesText)),
       ];
