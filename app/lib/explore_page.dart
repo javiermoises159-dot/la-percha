@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
+import 'extras.dart';
 import 'features.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
@@ -26,8 +27,8 @@ class ListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => ListingDetail(item: item))),
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => ListingDetail(item: item))),
       child: Container(
         decoration: BoxDecoration(
             color: surface, borderRadius: BorderRadius.circular(14)),
@@ -52,7 +53,8 @@ class ListingCard extends StatelessWidget {
                               : null;
                       if (label == null) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                             color: item.featured
                                 ? Theme.of(context).colorScheme.primary
@@ -60,7 +62,9 @@ class ListingCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10)),
                         child: Text(label,
                             style: const TextStyle(
-                                color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700)),
                       );
                     },
                   ),
@@ -172,6 +176,7 @@ class ExplorePage extends StatefulWidget {
 class _ExplorePageState extends State<ExplorePage> {
   String _q = '';
   String _cat = 'Todo';
+  Filtros _f = const Filtros();
 
   @override
   void initState() {
@@ -193,21 +198,41 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget build(BuildContext context) {
     final items = listingsStore.all.where((l) {
       final okCat = _cat == 'Todo' ||
-          (_cat == _siguiendo ? followStore.ids.contains(l.sellerId) : l.category == _cat);
-      final okQ = _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
-      return okCat && okQ;
+          (_cat == _siguiendo
+              ? followStore.ids.contains(l.sellerId)
+              : l.category == _cat);
+      final okQ =
+          _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
+      return okCat && okQ && _f.ok(l);
     }).toList();
 
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: TextField(
-          onChanged: (v) => setState(() => _q = v.trim()),
-          decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Buscar artículos',
-              contentPadding: EdgeInsets.symmetric(vertical: 0)),
-        ),
+        child: Row(children: [
+          Expanded(
+            child: TextField(
+              onChanged: (v) => setState(() => _q = v.trim()),
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Buscar artículos',
+                  contentPadding: EdgeInsets.symmetric(vertical: 0)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            tooltip: 'Filtros',
+            onPressed: () async {
+              final f = await showFiltros(context, _f);
+              if (f != null) setState(() => _f = f);
+            },
+            icon: Badge(
+              isLabelVisible: _f.activos,
+              label: Text('${_f.cuantos}'),
+              child: const Icon(Icons.tune),
+            ),
+          ),
+        ]),
       ),
       SizedBox(
         height: 44,
@@ -247,8 +272,6 @@ class _ExplorePageState extends State<ExplorePage> {
     ]);
   }
 }
-
-
 
 /// Explorar: búsqueda y categorías en cuadrícula.
 class CategoriesPage extends StatefulWidget {
@@ -315,8 +338,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(c, style: display(18,
-                        color: Theme.of(context).colorScheme.onSurface)),
+                    Text(c,
+                        style: display(18,
+                            color: Theme.of(context).colorScheme.onSurface)),
                     Text('$n prendas',
                         style: TextStyle(color: context.muted, fontSize: 12)),
                     const Spacer(),

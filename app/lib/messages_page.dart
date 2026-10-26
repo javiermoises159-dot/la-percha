@@ -22,8 +22,9 @@ class MessagesPage extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.mail_outline, size: 48, color: context.muted),
                 const SizedBox(height: 12),
-                Text('Tus mensajes', style: display(22,
-                    color: Theme.of(context).colorScheme.onSurface)),
+                Text('Tus mensajes',
+                    style: display(22,
+                        color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 6),
                 Text('Crea tu cuenta para hablar con compradores y vendedores.',
                     textAlign: TextAlign.center,
@@ -39,7 +40,8 @@ class MessagesPage extends StatelessWidget {
         return DefaultTabController(
           length: 2,
           child: Column(children: [
-            const TabBar(tabs: [Tab(text: 'Mensajes'), Tab(text: 'Notificaciones')]),
+            const TabBar(
+                tabs: [Tab(text: 'Mensajes'), Tab(text: 'Notificaciones')]),
             Expanded(
               child: TabBarView(children: [
                 const _ThreadList(),
@@ -94,17 +96,24 @@ class _ThreadListState extends State<_ThreadList> {
         for (final r in rows)
           (r['buyer_id'] == me ? r['seller_id'] : r['buyer_id']) as String
       }.toList();
-      final listingIds = <String>{for (final r in rows) r['listing_id'] as String}.toList();
+      final listingIds =
+          <String>{for (final r in rows) r['listing_id'] as String}.toList();
       final names = <String, String>{};
       final titles = <String, String>{};
       if (userIds.isNotEmpty) {
-        final p = await db.from('profiles').select('id,username').inFilter('id', userIds);
+        final p = await db
+            .from('profiles')
+            .select('id,username')
+            .inFilter('id', userIds);
         for (final r in p) {
           names[r['id'] as String] = r['username'] as String;
         }
       }
       if (listingIds.isNotEmpty) {
-        final l = await db.from('listings').select('id,title').inFilter('id', listingIds);
+        final l = await db
+            .from('listings')
+            .select('id,title')
+            .inFilter('id', listingIds);
         for (final r in l) {
           titles[r['id'] as String] = r['title'] as String;
         }
@@ -130,7 +139,8 @@ class _ThreadListState extends State<_ThreadList> {
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
-      return Center(child: Text(_error!, style: TextStyle(color: context.muted)));
+      return Center(
+          child: Text(_error!, style: TextStyle(color: context.muted)));
     }
     if (_rows.isEmpty) {
       return Center(
@@ -151,14 +161,16 @@ class _ThreadListState extends State<_ThreadList> {
         separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (_, i) {
           final r = _rows[i];
-          final other = (r['buyer_id'] == me ? r['seller_id'] : r['buyer_id']) as String;
+          final other =
+              (r['buyer_id'] == me ? r['seller_id'] : r['buyer_id']) as String;
           final name = _names[other] ?? 'Usuario';
           final title = _titles[r['listing_id']] ?? 'Prenda';
           return ListTile(
             leading: CircleAvatar(
                 backgroundColor: context.chip,
                 child: Text(name.isEmpty ? '?' : name[0].toUpperCase())),
-            title: Text('@$name · $title', maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text('@$name · $title',
+                maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text((r['last_message'] as String?) ?? 'Sin mensajes',
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             onTap: () async {

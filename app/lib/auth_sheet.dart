@@ -4,8 +4,15 @@ import 'app_state.dart';
 import 'theme.dart';
 
 const _cities = [
-  'Caracas', 'Valencia', 'Maracaibo', 'Barquisimeto', 'Maracay',
-  'Puerto La Cruz', 'Mérida', 'San Cristóbal', 'Ciudad Guayana',
+  'Caracas',
+  'Valencia',
+  'Maracaibo',
+  'Barquisimeto',
+  'Maracay',
+  'Puerto La Cruz',
+  'Mérida',
+  'San Cristóbal',
+  'Ciudad Guayana',
   'Isla de Margarita',
 ];
 
@@ -151,8 +158,8 @@ class _AuthFlowState extends State<AuthFlow> {
           const SizedBox(height: 12),
           if (!_login) ...[
             Autocomplete<String>(
-              optionsBuilder: (v) => _cities.where(
-                  (c) => c.toLowerCase().contains(v.text.toLowerCase())),
+              optionsBuilder: (v) => _cities
+                  .where((c) => c.toLowerCase().contains(v.text.toLowerCase())),
               onSelected: (v) => _city.text = v,
               fieldViewBuilder: (ctx, controller, focus, onSubmit) {
                 controller.addListener(() => _city.text = controller.text);

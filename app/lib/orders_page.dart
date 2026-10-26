@@ -100,7 +100,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
           .insert({
             'listing_id': widget.item.id,
             'price': widget.item.price,
-            'delivery': {'name': name, 'phone': phone, 'address': address, 'metodo': _metodo},
+            'delivery': {
+              'name': name,
+              'phone': phone,
+              'address': address,
+              'metodo': _metodo
+            },
           })
           .select('id')
           .single();
@@ -110,7 +115,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } on PostgrestException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'No se pudo crear el pedido. Revisa tu conexión.');
+      setState(
+          () => _error = 'No se pudo crear el pedido. Revisa tu conexión.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -128,9 +134,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         _Box(children: [
-          if (price < item.price)
-            _Line('Precio original', _money(item.price)),
-          _Line(price < item.price ? 'Precio acordado' : 'Artículo', _money(price)),
+          if (price < item.price) _Line('Precio original', _money(item.price)),
+          _Line(price < item.price ? 'Precio acordado' : 'Artículo',
+              _money(price)),
           _Line('Protección al comprador', _money(fee)),
           _Line('Total (sin envío)', _money(price + fee), bold: true),
           if (bsText(price + fee).isNotEmpty) _Line('', bsText(price + fee)),
@@ -143,7 +149,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           initialValue: _metodo,
           decoration: const InputDecoration(labelText: 'Cómo lo recibes'),
           items: [
-            for (final m in metodosEntrega) DropdownMenuItem(value: m, child: Text(m)),
+            for (final m in metodosEntrega)
+              DropdownMenuItem(value: m, child: Text(m)),
           ],
           onChanged: (v) => setState(() => _metodo = v ?? _metodo),
         ),
@@ -225,16 +232,25 @@ class _OrderPageState extends State<OrderPage> {
       final row = await _db
           .from('orders')
           .select(
-              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('id', widget.orderId)
           .single();
       // La dirección y el teléfono solo los entrega el servidor a quien puede verlos
       // (el vendedor, solo cuando el pago está confirmado).
       final delivery =
           await _db.rpc('order_delivery', params: {'oid': widget.orderId});
+      // En un lote, se muestran y se actualizan todos los artículos juntos.
+      List<Map<String, dynamic>> group = const [];
+      if (row['bundle_id'] != null) {
+        group = List<Map<String, dynamic>>.from(await _db
+            .from('orders')
+            .select('id, price, fee, listings(title)')
+            .eq('bundle_id', row['bundle_id'] as String)
+            .order('created_at'));
+      }
       if (!mounted) return;
       setState(() {
-        _o = {...row, 'delivery': delivery};
+        _o = {...row, 'delivery': delivery, 'group': group};
         _loading = false;
       });
     } catch (_) {
@@ -252,7 +268,10 @@ class _OrderPageState extends State<OrderPage> {
       _error = null;
     });
     try {
-      await _db.from('orders').update(values).eq('id', widget.orderId);
+      final bundle = _o?['bundle_id'] as String?;
+      bundle == null
+          ? await _db.from('orders').update(values).eq('id', widget.orderId)
+          : await _db.from('orders').update(values).eq('bundle_id', bundle);
       await _load();
     } on PostgrestException catch (e) {
       setState(() => _error = e.message);
@@ -280,9 +299,16 @@ class _OrderPageState extends State<OrderPage> {
     final me = appState.account?.id;
     final isBuyer = o['buyer_id'] == me;
     final status = o['status'] as String;
-    final price = (o['price'] as num).toDouble();
-    final fee = (o['fee'] as num).toDouble();
-    final title = field(o['listings'], 'title', 'Prenda');
+    final group = (o['group'] as List?) ?? const [];
+    double total(String k) => group.isEmpty
+        ? (o[k] as num).toDouble()
+        : group.fold(0.0, (a, r) => a + ((r as Map)[k] as num).toDouble());
+    final price = total('price');
+    final fee = total('fee');
+    final title = group.isEmpty
+        ? field(o['listings'], 'title', 'Artículo')
+        : 'Lote de ${group.length} artículos';
+    final reviewId = (o['bundle_id'] as String?) ?? widget.orderId;
     final other = field(isBuyer ? o['seller'] : o['buyer'], 'username', '');
     final delivery = (o['delivery'] as Map?) ?? const {};
     final ink = Theme.of(context).colorScheme.onSurface;
@@ -398,8 +424,19 @@ class _OrderPageState extends State<OrderPage> {
           decoration: BoxDecoration(
               color: context.leafSoft, borderRadius: BorderRadius.circular(12)),
           child: Text(_statusLabel[status] ?? status,
-              style: TextStyle(fontWeight: FontWeight.w700, color: context.leaf)),
+              style:
+                  TextStyle(fontWeight: FontWeight.w700, color: context.leaf)),
         ),
+        if (group.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final g in group)
+            Text(
+                '• ${field((g as Map)['listings'], 'title', 'Artículo')} · ${_money(g['price'] as num)}',
+                style: TextStyle(color: context.muted)),
+          if (!isBuyer)
+            Text('Envía todo junto en un solo paquete.',
+                style: TextStyle(color: context.muted, fontSize: 13)),
+        ],
         if (hint.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(hint, style: TextStyle(color: context.muted)),
@@ -408,7 +445,8 @@ class _OrderPageState extends State<OrderPage> {
         _Box(children: [
           _Line('Prenda', _money(price)),
           if (isBuyer) _Line('Protección', _money(fee)),
-          _Line(isBuyer ? 'Total' : 'Recibes', _money(isBuyer ? price + fee : price),
+          _Line(isBuyer ? 'Total' : 'Recibes',
+              _money(isBuyer ? price + fee : price),
               bold: true),
         ]),
         if (!isBuyer && delivery.isNotEmpty) ...[
@@ -427,7 +465,7 @@ class _OrderPageState extends State<OrderPage> {
         const SizedBox(height: 18),
         ...actions,
         if (status == 'liberado' && other.isNotEmpty)
-          ReviewButton(orderId: widget.orderId, otherName: other),
+          ReviewButton(orderId: reviewId, otherName: other),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: const TextStyle(color: Color(0xFFB3261E))),
@@ -474,14 +512,21 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   Widget build(BuildContext context) {
     final me = appState.account?.id;
-    final buys = [for (final r in _rows) if (r['buyer_id'] == me) r];
-    final sells = [for (final r in _rows) if (r['buyer_id'] != me) r];
+    final buys = [
+      for (final r in _rows)
+        if (r['buyer_id'] == me) r
+    ];
+    final sells = [
+      for (final r in _rows)
+        if (r['buyer_id'] != me) r
+    ];
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mis pedidos'),
-          bottom: const TabBar(tabs: [Tab(text: 'Compras'), Tab(text: 'Ventas')]),
+          bottom:
+              const TabBar(tabs: [Tab(text: 'Compras'), Tab(text: 'Ventas')]),
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -493,7 +538,8 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget _list(List<Map<String, dynamic>> rows, bool buying) {
     if (rows.isEmpty) {
       return Center(
-          child: Text(buying ? 'Aún no has comprado nada.' : 'Aún no has vendido nada.',
+          child: Text(
+              buying ? 'Aún no has comprado nada.' : 'Aún no has vendido nada.',
               style: TextStyle(color: context.muted)));
     }
     return RefreshIndicator(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'extras.dart';
 import 'features.dart';
 import 'explore_page.dart';
 import 'listing.dart';
@@ -39,8 +40,18 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
   }
 
   static const _meses = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
-    'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre'
   ];
 
   @override
@@ -52,7 +63,18 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
     final since = DateTime.tryParse('${p?['created_at'] ?? ''}')?.toLocal();
     final isMe = appState.account?.id == widget.sellerId;
     return Scaffold(
-      appBar: AppBar(title: Text('@${widget.username}')),
+      appBar: AppBar(title: Text('@${widget.username}'), actions: [
+        if (!isMe)
+          PopupMenuButton<String>(
+            tooltip: 'Más opciones',
+            onSelected: (_) =>
+                showReportSheet(context, userId: widget.sellerId),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                  value: 'denunciar', child: Text('Denunciar usuario')),
+            ],
+          ),
+      ]),
       body: ListenableBuilder(
         listenable: listingsStore,
         builder: (context, _) {
@@ -76,29 +98,43 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(widget.username, style: display(22, color: ink)),
-                      if (p != null) Text('${p['city']}', style: TextStyle(color: context.muted)),
+                      if (p != null)
+                        Text('${p['city']}',
+                            style: TextStyle(color: context.muted)),
                       const SizedBox(height: 4),
                       InkWell(
-                        onTap: count == 0
-                            ? null
-                            : () => Navigator.of(context).push(MaterialPageRoute<void>(
-                                builder: (_) => ReviewsPage(
-                                    userId: widget.sellerId, username: widget.username))),
-                        child: Row(children: [
-                        const Icon(Icons.star_rounded,
-                            size: 18, color: Color(0xFFE8A317)),
-                        const SizedBox(width: 4),
-                        Text(count == 0
-                            ? 'Aún sin valoraciones'
-                            : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
-                      ])),
+                          onTap: count == 0
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                      builder: (_) => ReviewsPage(
+                                          userId: widget.sellerId,
+                                          username: widget.username))),
+                          child: Row(children: [
+                            const Icon(Icons.star_rounded,
+                                size: 18, color: Color(0xFFE8A317)),
+                            const SizedBox(width: 4),
+                            Text(count == 0
+                                ? 'Aún sin valoraciones'
+                                : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
+                          ])),
                       if (!isMe) ...[
                         const SizedBox(height: 8),
                         FollowButton(sellerId: widget.sellerId),
+                        const SizedBox(height: 6),
+                        OutlinedButton.icon(
+                          onPressed: () => openBundle(
+                              context, widget.sellerId, widget.username),
+                          icon:
+                              const Icon(Icons.shopping_bag_outlined, size: 18),
+                          label: const Text('Comprar varios (lote)'),
+                        ),
                       ],
                       if (since != null)
-                        Text('En La Percha desde ${_meses[since.month - 1]} de ${since.year}',
-                            style: TextStyle(color: context.muted, fontSize: 13)),
+                        Text(
+                            'En La Percha desde ${_meses[since.month - 1]} de ${since.year}',
+                            style:
+                                TextStyle(color: context.muted, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -109,13 +145,15 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(isMe ? 'Mis prendas' : 'Prendas de @${widget.username}',
+                child: Text(
+                    isMe ? 'Mis prendas' : 'Prendas de @${widget.username}',
                     style: display(18, color: ink)),
               ),
             ),
             Expanded(
               child: ListingGrid(
-                  items: items, emptyText: 'Todavía no tiene prendas a la venta.'),
+                  items: items,
+                  emptyText: 'Todavía no tiene prendas a la venta.'),
             ),
           ]);
         },

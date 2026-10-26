@@ -38,8 +38,8 @@ Future<void> openChatFor(BuildContext context, Listing item) async {
             title: '@${item.seller} · ${item.title}')));
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el chat. Intenta de nuevo.')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No se pudo abrir el chat. Intenta de nuevo.')));
   }
 }
 
@@ -122,7 +122,8 @@ class _ChatPageState extends State<ChatPage> {
     final me = appState.account?.id;
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title, style: const TextStyle(fontSize: 16))),
+      appBar: AppBar(
+          title: Text(widget.title, style: const TextStyle(fontSize: 16))),
       body: Column(children: [
         OfferBar(threadId: widget.threadId, onChanged: _load),
         Expanded(
@@ -153,7 +154,9 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                         child: Text(m['text'] as String,
                             style: TextStyle(
-                                color: mine ? scheme.onPrimary : scheme.onSurface)),
+                                color: mine
+                                    ? scheme.onPrimary
+                                    : scheme.onSurface)),
                       ),
                     );
                     if (!aviso) return bubble;
@@ -170,10 +173,15 @@ class _ChatPageState extends State<ChatPage> {
                 child: TextField(
                   controller: _ctrl,
                   maxLength: 1000,
-                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                  buildCounter: (_,
+                          {required currentLength,
+                          required isFocused,
+                          maxLength}) =>
+                      null,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _send(),
-                  decoration: const InputDecoration(hintText: 'Escribe un mensaje'),
+                  decoration:
+                      const InputDecoration(hintText: 'Escribe un mensaje'),
                 ),
               ),
               const SizedBox(width: 8),

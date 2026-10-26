@@ -15,13 +15,14 @@ class AdminPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Administración'),
           bottom: const TabBar(isScrollable: true, tabs: [
             Tab(text: 'Pagos'),
             Tab(text: 'Problemas'),
+            Tab(text: 'Pagar a vendedores'),
             Tab(text: 'Denuncias'),
             Tab(text: 'Usuarios'),
             Tab(text: 'Destacados y tasa'),
@@ -30,6 +31,7 @@ class AdminPage extends StatelessWidget {
         body: const TabBarView(children: [
           _OrdersTab(status: 'revision'),
           _OrdersTab(status: 'disputa'),
+          _PayoutsTab(),
           _ReportsTab(),
           _UsersTab(),
           _PromosTab(),
@@ -62,7 +64,7 @@ class _OrdersTabState extends State<_OrdersTab> {
       final r = await _db
           .from('orders')
           .select(
-              'id, price, fee, status, pay_ref, tracking, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, price, fee, status, pay_ref, tracking, bundle_id, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('status', widget.status)
           .order('created_at');
       if (!mounted) return;
@@ -83,7 +85,14 @@ class _OrdersTabState extends State<_OrdersTab> {
 
   Future<void> _set(String id, String status) async {
     try {
-      await _db.from('orders').update({'status': status}).eq('id', id);
+      // En un lote se cambian todos los artículos a la vez.
+      final r = _rows.firstWhere((x) => x['id'] == id, orElse: () => const {});
+      final b = r['bundle_id'] as String?;
+      b == null
+          ? await _db.from('orders').update({'status': status}).eq('id', id)
+          : await _db
+              .from('orders')
+              .update({'status': status}).eq('bundle_id', b);
     } on PostgrestException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -99,7 +108,11 @@ class _OrdersTabState extends State<_OrdersTab> {
     final pagos = widget.status == 'revision';
     if (_rows.isEmpty) {
       return Center(
-          child: Text(_error ?? (pagos ? 'No hay pagos por revisar.' : 'No hay problemas abiertos.'),
+          child: Text(
+              _error ??
+                  (pagos
+                      ? 'No hay pagos por revisar.'
+                      : 'No hay problemas abiertos.'),
               style: TextStyle(color: context.muted)));
     }
     return RefreshIndicator(
@@ -113,6 +126,11 @@ class _OrdersTabState extends State<_OrdersTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (r['bundle_id'] != null)
+                    const Text(
+                        'LOTE: se confirma junto con sus otros artículos',
+                        style: TextStyle(
+                            fontSize: 11, fontWeight: FontWeight.w700)),
                   Text(field(r['listings'], 'title', 'Prenda'),
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 16)),
@@ -123,7 +141,8 @@ class _OrdersTabState extends State<_OrdersTab> {
                   const SizedBox(height: 4),
                   Text(
                       'Total cobrado: \$${((r['price'] as num) + (r['fee'] as num)).toStringAsFixed(2)}  ·  Vendedor recibe: \$${(r['price'] as num).toStringAsFixed(2)}'),
-                  if (pagos) Text('Referencia del pago: ${r['pay_ref'] ?? '-'}'),
+                  if (pagos)
+                    Text('Referencia del pago: ${r['pay_ref'] ?? '-'}'),
                   if (!pagos && r['tracking'] != null)
                     Text('Seguimiento: ${r['tracking']}'),
                   const SizedBox(height: 10),
@@ -144,8 +163,10 @@ class _OrdersTabState extends State<_OrdersTab> {
                     ),
                   ]),
                   TextButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => OrderPage(orderId: r['id'] as String))),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                OrderPage(orderId: r['id'] as String))),
                     child: const Text('Ver pedido completo'),
                   ),
                 ],
@@ -178,7 +199,8 @@ class _ReportsTabState extends State<_ReportsTab> {
       final r = await _db
           .from('reports')
           .select(
-              'reason, created_at, reporter:profiles!reports_reporter_id_fkey(username), listings(title), target:profiles!reports_user_id_fkey(username)')
+              'id, reason, created_at, reporter:profiles!reports_reporter_id_fkey(username), listings(title), target:profiles!reports_user_id_fkey(username)')
+          .eq('status', 'abierta')
           .order('created_at', ascending: false)
           .limit(50);
       if (!mounted) return;
@@ -196,7 +218,8 @@ class _ReportsTabState extends State<_ReportsTab> {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_rows.isEmpty) {
       return Center(
-          child: Text('No hay denuncias.', style: TextStyle(color: context.muted)));
+          child: Text('No hay denuncias.',
+              style: TextStyle(color: context.muted)));
     }
     return RefreshIndicator(
       onRefresh: _load,
@@ -205,6 +228,16 @@ class _ReportsTabState extends State<_ReportsTab> {
           ListTile(
             title: Text('${r['reason']}'),
             subtitle: Text(_detalle(r)),
+            trailing: TextButton(
+              onPressed: () async {
+                try {
+                  await _db
+                      .rpc('admin_close_report', params: {'p_id': r['id']});
+                } catch (_) {}
+                _load();
+              },
+              child: const Text('Revisada'),
+            ),
           ),
       ]),
     );
@@ -275,7 +308,8 @@ class _UsersTabState extends State<_UsersTab> {
       child: ListView(children: [
         for (final r in _rows)
           ListTile(
-            title: Text('@${r['username']}${r['is_admin'] == true ? '  (admin)' : ''}'),
+            title: Text(
+                '@${r['username']}${r['is_admin'] == true ? '  (admin)' : ''}'),
             subtitle: Text(
                 '${r['city']}${r['blocked'] == true ? ' · BLOQUEADO' : ''}'),
             trailing: r['is_admin'] == true
@@ -283,7 +317,8 @@ class _UsersTabState extends State<_UsersTab> {
                 : TextButton(
                     onPressed: () =>
                         _block(r['id'] as String, r['blocked'] != true),
-                    child: Text(r['blocked'] == true ? 'Desbloquear' : 'Bloquear'),
+                    child:
+                        Text(r['blocked'] == true ? 'Desbloquear' : 'Bloquear'),
                   ),
           ),
       ]),
@@ -319,10 +354,15 @@ class _PromosTabState extends State<_PromosTab> {
     try {
       final r = await _db
           .from('promotions')
-          .select('id, days, amount, pay_ref, created_at, listings(title), profiles(username)')
+          .select(
+              'id, days, amount, pay_ref, created_at, listings(title), profiles(username)')
           .eq('status', 'revision')
           .order('created_at');
-      final t = await _db.from('ajustes').select('valor, actualizado').eq('clave', 'tasa_bs').single();
+      final t = await _db
+          .from('ajustes')
+          .select('valor, actualizado')
+          .eq('clave', 'tasa_bs')
+          .single();
       if (!mounted) return;
       setState(() {
         _rows = List<Map<String, dynamic>>.from(r);
@@ -338,7 +378,8 @@ class _PromosTabState extends State<_PromosTab> {
       listingsStore.load();
     } on PostgrestException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (_) {}
   }
@@ -348,16 +389,20 @@ class _PromosTabState extends State<_PromosTab> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(padding: const EdgeInsets.all(16), children: [
-        Text('Tasa BCV actual: ${_tasa == null ? '…' : 'Bs ${_tasa!.toStringAsFixed(2)}'}',
+        Text(
+            'Tasa BCV actual: ${_tasa == null ? '…' : 'Bs ${_tasa!.toStringAsFixed(2)}'}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
-        const Text('Se actualiza sola cada hora. Cámbiala solo si la fuente falla.',
+        const Text(
+            'Se actualiza sola cada hora. Cámbiala solo si la fuente falla.',
             style: TextStyle(fontSize: 12)),
         Row(children: [
           Expanded(
             child: TextField(
               controller: _ctrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Nueva tasa (Bs por dólar)'),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration:
+                  const InputDecoration(labelText: 'Nueva tasa (Bs por dólar)'),
             ),
           ),
           const SizedBox(width: 8),
@@ -372,31 +417,136 @@ class _PromosTabState extends State<_PromosTab> {
           ),
         ]),
         const Divider(height: 32),
-        Text(_rows.isEmpty ? 'No hay destacados por revisar.' : 'Destacados por revisar',
+        Text(
+            _rows.isEmpty
+                ? 'No hay destacados por revisar.'
+                : 'Destacados por revisar',
             style: const TextStyle(fontWeight: FontWeight.w700)),
         for (final r in _rows)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(field(r['listings'], 'title', 'Anuncio'),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text('@${field(r['profiles'], 'username', '')} · ${r['days']} días · '
-                    '\$${(r['amount'] as num).toStringAsFixed(2)}'),
-                Text('Referencia: ${r['pay_ref']}'),
-                const SizedBox(height: 8),
-                Row(children: [
-                  OutlinedButton(
-                      onPressed: () => _do(() => _db.rpc('admin_review_promotion',
-                          params: {'p_id': r['id'], 'p_ok': false})),
-                      child: const Text('Rechazar')),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                      onPressed: () => _do(() => _db.rpc('admin_review_promotion',
-                          params: {'p_id': r['id'], 'p_ok': true})),
-                      child: const Text('Pago recibido: activar')),
-                ]),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(field(r['listings'], 'title', 'Anuncio'),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                        '@${field(r['profiles'], 'username', '')} · ${r['days']} días · '
+                        '\$${(r['amount'] as num).toStringAsFixed(2)}'),
+                    Text('Referencia: ${r['pay_ref']}'),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      OutlinedButton(
+                          onPressed: () => _do(() => _db.rpc(
+                              'admin_review_promotion',
+                              params: {'p_id': r['id'], 'p_ok': false})),
+                          child: const Text('Rechazar')),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                          onPressed: () => _do(() => _db.rpc(
+                              'admin_review_promotion',
+                              params: {'p_id': r['id'], 'p_ok': true})),
+                          child: const Text('Pago recibido: activar')),
+                    ]),
+                  ]),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Ventas completadas que falta pagar al vendedor, con sus datos de Pago Móvil.
+class _PayoutsTab extends StatefulWidget {
+  const _PayoutsTab();
+  @override
+  State<_PayoutsTab> createState() => _PayoutsTabState();
+}
+
+class _PayoutsTabState extends State<_PayoutsTab> {
+  List<Map<String, dynamic>>? _rows;
+  Map<String, Map> _payout = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db
+          .from('orders')
+          .select(
+              'id, price, seller_id, bundle_id, updated_at, listings(title), seller:profiles!orders_seller_id_fkey(username)')
+          .eq('status', 'liberado')
+          .isFilter('paid_out_at', null)
+          .order('updated_at');
+      final ids = {for (final x in r) x['seller_id'] as String}.toList();
+      final p = ids.isEmpty
+          ? <Map<String, dynamic>>[]
+          : await _db
+              .from('private_profiles')
+              .select('id, payout')
+              .inFilter('id', ids);
+      if (!mounted) return;
+      setState(() {
+        _rows = List<Map<String, dynamic>>.from(r);
+        _payout = {
+          for (final x in p)
+            x['id'] as String: (x['payout'] as Map?) ?? const {}
+        };
+      });
+    } catch (_) {
+      if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    if (rows == null) return const Center(child: CircularProgressIndicator());
+    if (rows.isEmpty) {
+      return Center(
+          child: Text('No hay pagos pendientes a vendedores.',
+              style: TextStyle(color: context.muted)));
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(padding: const EdgeInsets.all(16), children: [
+        for (final r in rows)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(field(r['listings'], 'title', 'Artículo'),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                        '@${field(r['seller'], 'username', '?')} recibe \$${(r['price'] as num).toStringAsFixed(2)}'
+                        '${r['bundle_id'] != null ? ' (parte de un lote)' : ''}'),
+                    const SizedBox(height: 4),
+                    Builder(builder: (_) {
+                      final p = _payout[r['seller_id']] ?? const {};
+                      return Text(p.isEmpty
+                          ? 'El vendedor no ha puesto sus datos de cobro (Perfil → Saldo).'
+                          : 'Pago Móvil: ${p['banco']} · ${p['cedula']} · ${p['telefono']}');
+                    }),
+                    const SizedBox(height: 8),
+                    FilledButton(
+                      onPressed: () async {
+                        try {
+                          await _db.rpc('admin_mark_paid',
+                              params: {'p_order': r['id']});
+                        } catch (_) {}
+                        _load();
+                      },
+                      child: const Text('Ya le pagué'),
+                    ),
+                  ]),
             ),
           ),
       ]),

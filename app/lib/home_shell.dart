@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'auth_sheet.dart';
 import 'explore_page.dart';
+import 'extras.dart';
 import 'features.dart';
+import 'listing.dart';
 import 'logo.dart';
 import 'messages_page.dart';
 import 'profile_page.dart';
@@ -21,6 +23,13 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    ListingsStore.prefScore = prefsStore.score;
+    prefsStore.load().then((_) => listingsStore.resort());
+  }
 
   void _select(int i) {
     if (i == 2 && widget.state.account == null) {

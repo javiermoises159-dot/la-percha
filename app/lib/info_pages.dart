@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 /// Página de texto simple (ayuda, legales, funciones próximas).
 class InfoPage extends StatelessWidget {
   const InfoPage({super.key, required this.title, required this.body});
@@ -50,7 +49,8 @@ Importante para tu seguridad
 
 Contacto de soporte: se publicará aquí antes del lanzamiento.''';
 
-const aboutText = '''La Percha es un mercado de ropa usada para toda Venezuela. Queremos que la ropa tenga una segunda vida, que vender sea gratis y que comprar sea seguro.
+const aboutText =
+    '''La Percha es un mercado de ropa usada para toda Venezuela. Queremos que la ropa tenga una segunda vida, que vender sea gratis y que comprar sea seguro.
 
 Versión de prueba.''';
 

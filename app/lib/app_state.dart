@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
 
   Account? account;
   Set<String> favs = {};
+
   /// Precio de cada favorito cuando se guardó (para avisar si baja).
   Map<String, double> favPriceAt = {};
   bool guest = false;
@@ -97,8 +98,9 @@ class AppState extends ChangeNotifier {
       if (res.session == null || res.user == null) {
         return 'Revisa tu correo para confirmar la cuenta y luego inicia sesión.';
       }
-      await _db.from('profiles').insert(
-          {'id': res.user!.id, 'username': username, 'city': city});
+      await _db
+          .from('profiles')
+          .insert({'id': res.user!.id, 'username': username, 'city': city});
       await refresh();
       return null;
     } on AuthException catch (e) {
@@ -130,9 +132,12 @@ class AppState extends ChangeNotifier {
   String _authMessage(String m) {
     final t = m.toLowerCase();
     if (t.contains('invalid login')) return 'Correo o contraseña incorrectos.';
-    if (t.contains('already registered')) return 'Ese correo ya tiene una cuenta.';
-    if (t.contains('password')) return 'La contraseña debe tener al menos 6 caracteres.';
-    if (t.contains('rate limit')) return 'Demasiados intentos. Espera unos minutos.';
+    if (t.contains('already registered'))
+      return 'Ese correo ya tiene una cuenta.';
+    if (t.contains('password'))
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    if (t.contains('rate limit'))
+      return 'Demasiados intentos. Espera unos minutos.';
     return m;
   }
 

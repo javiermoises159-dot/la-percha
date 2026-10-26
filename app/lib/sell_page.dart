@@ -7,10 +7,22 @@ import 'app_state.dart';
 import 'listing.dart';
 import 'theme.dart';
 
-const _conditions = ['Como nuevo', 'Muy buen estado', 'Buen estado', 'Con detalles'];
+const _conditions = [
+  'Como nuevo',
+  'Muy buen estado',
+  'Buen estado',
+  'Con detalles'
+];
 const _cities = [
-  'Caracas', 'Valencia', 'Maracaibo', 'Barquisimeto', 'Maracay',
-  'Puerto La Cruz', 'Mérida', 'San Cristóbal', 'Ciudad Guayana',
+  'Caracas',
+  'Valencia',
+  'Maracaibo',
+  'Barquisimeto',
+  'Maracay',
+  'Puerto La Cruz',
+  'Mérida',
+  'San Cristóbal',
+  'Ciudad Guayana',
   'Isla de Margarita',
 ];
 
@@ -28,7 +40,7 @@ class _SellPageState extends State<SellPage> {
   final _title = TextEditingController();
   final _price = TextEditingController();
   final _desc = TextEditingController();
-  Uint8List? _photo;
+  final List<Uint8List> _photos = [];
   String _category = 'Mujer';
   String _size = 'M';
   String _condition = 'Muy buen estado';
@@ -48,7 +60,7 @@ class _SellPageState extends State<SellPage> {
         .pickImage(source: src, maxWidth: 1000, imageQuality: 80);
     if (x == null) return;
     final bytes = await x.readAsBytes();
-    setState(() => _photo = bytes);
+    if (_photos.length < 5) setState(() => _photos.add(bytes));
   }
 
   void _choosePhoto() {
@@ -104,7 +116,7 @@ class _SellPageState extends State<SellPage> {
       size: _size,
       condition: _condition,
       city: _city ?? acct.city,
-      photo: _photo,
+      photos: _photos,
     );
     if (!mounted) return;
     if (err != null) {
@@ -118,11 +130,11 @@ class _SellPageState extends State<SellPage> {
     _desc.clear();
     setState(() {
       _busy = false;
-      _photo = null;
+      _photos.clear();
       _error = null;
     });
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('¡Publicado! Ya está a la venta.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Publicado! Ya está a la venta.')));
     widget.onPublished();
   }
 
@@ -138,40 +150,74 @@ class _SellPageState extends State<SellPage> {
         Text('Sin comisión: cobras el precio completo.',
             style: TextStyle(color: context.muted)),
         const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _choosePhoto,
-          child: AspectRatio(
-            aspectRatio: 1.4,
-            child: Container(
-              decoration: BoxDecoration(
-                color: context.chip,
-                borderRadius: BorderRadius.circular(14),
-                image: _photo == null
-                    ? null
-                    : DecorationImage(
-                        image: MemoryImage(_photo!), fit: BoxFit.cover),
+        SizedBox(
+          height: 110,
+          child: ListView(scrollDirection: Axis.horizontal, children: [
+            for (var i = 0; i < _photos.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Stack(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(_photos[i],
+                        width: 110, height: 110, fit: BoxFit.cover),
+                  ),
+                  if (i == 0)
+                    Positioned(
+                      left: 6,
+                      bottom: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(6)),
+                        child: const Text('Portada',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 11)),
+                      ),
+                    ),
+                  Positioned(
+                    right: 2,
+                    top: 2,
+                    child: IconButton.filledTonal(
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 16,
+                      tooltip: 'Quitar foto',
+                      onPressed: () => setState(() => _photos.removeAt(i)),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ),
+                ]),
               ),
-              child: _photo == null
-                  ? Column(
+            if (_photos.length < 5)
+              GestureDetector(
+                onTap: _choosePhoto,
+                child: Container(
+                  width: 110,
+                  decoration: BoxDecoration(
+                      color: context.chip,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_a_photo_outlined,
-                            size: 36, color: context.muted),
-                        const SizedBox(height: 6),
-                        Text('Añadir foto',
-                            style: TextStyle(color: context.muted)),
-                      ],
-                    )
-                  : null,
-            ),
-          ),
+                        Icon(Icons.add_a_photo_outlined, color: context.muted),
+                        const SizedBox(height: 4),
+                        Text(
+                            _photos.isEmpty
+                                ? 'Añadir fotos'
+                                : '${_photos.length}/5',
+                            style:
+                                TextStyle(color: context.muted, fontSize: 12)),
+                      ]),
+                ),
+              ),
+          ]),
         ),
-        if (_photo != null)
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-                onPressed: _choosePhoto, child: const Text('Cambiar foto')),
-          ),
+        const SizedBox(height: 6),
+        Text(
+            'Hasta 5 fotos con buena luz: de frente, detalles y etiqueta. Más fotos, más confianza.',
+            style: TextStyle(color: context.muted, fontSize: 12)),
         const SizedBox(height: 12),
         TextField(
           controller: _title,

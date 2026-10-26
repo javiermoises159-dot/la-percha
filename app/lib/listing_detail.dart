@@ -4,6 +4,7 @@ import 'app_state.dart';
 import 'features.dart';
 import 'chat_page.dart';
 import 'explore_page.dart';
+import 'extras.dart';
 import 'listing.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
@@ -32,16 +33,30 @@ class ListingDetail extends StatelessWidget {
               color: fav ? Theme.of(context).colorScheme.primary : null,
               onPressed: () => toggleFavorite(context, item.id),
             ),
+            if (!mine)
+              PopupMenuButton<String>(
+                tooltip: 'Más opciones',
+                onSelected: (v) {
+                  if (v == 'denunciar')
+                    showReportSheet(context, listingId: item.id);
+                  if (v == 'lote')
+                    openBundle(context, item.sellerId, item.seller);
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                      value: 'lote',
+                      child: Text('Comprar varios de este vendedor')),
+                  PopupMenuItem(
+                      value: 'denunciar', child: Text('Denunciar anuncio')),
+                ],
+              ),
           ]),
           body: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 720),
               child: ListView(children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: ListingPhoto(item: item, iconSize: 96),
-                ),
+                PhotoCarousel(item: item),
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(

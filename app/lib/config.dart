@@ -10,4 +10,3 @@ const supabaseKey = 'sb_publishable_PFt4DdXlWbQEvyEgP58BZQ_CKXaoHGG';
 const pagoMovilBanco = '0102 - Banco de Venezuela (ejemplo)';
 const pagoMovilCedula = 'J-00000000-0 (ejemplo)';
 const pagoMovilTelefono = '0412-0000000 (ejemplo)';
-

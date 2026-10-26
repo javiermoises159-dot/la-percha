@@ -42,16 +42,21 @@ Future<double?> askOfferAmount(BuildContext context,
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-                labelText: 'Tu oferta en dólares', prefixText: '\$ ', errorText: error),
+                labelText: 'Tu oferta en dólares',
+                prefixText: '\$ ',
+                errorText: error),
           ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
           FilledButton(
             onPressed: () {
               final v = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
               if (v == null || v < min || v >= price) {
-                setState(() => error = 'Entre ${_usd(min)} y menos de ${_usd(price)}');
+                setState(() =>
+                    error = 'Entre ${_usd(min)} y menos de ${_usd(price)}');
                 return;
               }
               Navigator.pop(ctx, v);
@@ -67,18 +72,22 @@ Future<double?> askOfferAmount(BuildContext context,
 /// Botón "Hacer una oferta" desde el anuncio: envía la oferta y abre el chat.
 Future<void> makeOfferFor(BuildContext context, Listing item) async {
   if (appState.account == null) {
-    showAuthSheet(context, appState, message: 'Crea tu cuenta para hacer ofertas.');
+    showAuthSheet(context, appState,
+        message: 'Crea tu cuenta para hacer ofertas.');
     return;
   }
-  final amount = await askOfferAmount(context, price: item.price, title: 'Hacer una oferta');
+  final amount = await askOfferAmount(context,
+      price: item.price, title: 'Hacer una oferta');
   if (amount == null || !context.mounted) return;
   try {
-    await _db.rpc('make_offer', params: {'p_listing': item.id, 'p_amount': amount});
+    await _db
+        .rpc('make_offer', params: {'p_listing': item.id, 'p_amount': amount});
     if (!context.mounted) return;
     _snack(context, 'Oferta enviada. Te avisamos en el chat.');
     await openChatFor(context, item);
   } catch (e) {
-    if (context.mounted) _snack(context, _errorText(e, 'No se pudo enviar la oferta.'));
+    if (context.mounted)
+      _snack(context, _errorText(e, 'No se pudo enviar la oferta.'));
   }
 }
 
@@ -158,7 +167,8 @@ class _OfferBarState extends State<OfferBar> {
     if (l == null || t == null) return;
     final iAmSeller = appState.account?.id == t['seller_id'];
     final amount = await askOfferAmount(context,
-        price: l.price, title: iAmSeller ? 'Hacer una contraoferta' : 'Hacer una oferta');
+        price: l.price,
+        title: iAmSeller ? 'Hacer una contraoferta' : 'Hacer una oferta');
     if (amount == null) return;
     await _run(
         () => _db.rpc('make_offer', params: {
@@ -187,7 +197,8 @@ class _OfferBarState extends State<OfferBar> {
       } else {
         content = Row(children: [
           Expanded(
-              child: Text('${iAmBuyer ? 'Contraoferta' : 'Oferta'}: ${_usd(amount)}',
+              child: Text(
+                  '${iAmBuyer ? 'Contraoferta' : 'Oferta'}: ${_usd(amount)}',
                   style: const TextStyle(fontWeight: FontWeight.w700))),
           TextButton(
               onPressed: _busy
@@ -216,7 +227,8 @@ class _OfferBarState extends State<OfferBar> {
                   onPressed: () => startCheckout(context, l),
                   child: Text('Comprar a ${_usd(amount)}')),
             ])
-          : Text('Aceptaste ${_usd(amount)}. Esperando que el comprador pague.');
+          : Text(
+              'Aceptaste ${_usd(amount)}. Esperando que el comprador pague.');
     }
 
     final canPropose = (o == null || o['status'] != 'aceptada');
@@ -231,7 +243,8 @@ class _OfferBarState extends State<OfferBar> {
         Row(children: [
           Expanded(
             child: Text('${l.title} · ${_usd(l.price)}',
-                maxLines: 1, overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: context.muted)),
           ),
           if (canPropose)
@@ -260,7 +273,8 @@ Future<double> myPriceFor(Listing item) async {
 
 /// Botón para dejar reseña cuando el pedido está completado.
 class ReviewButton extends StatefulWidget {
-  const ReviewButton({super.key, required this.orderId, required this.otherName});
+  const ReviewButton(
+      {super.key, required this.orderId, required this.otherName});
   final String orderId;
   final String otherName;
 
@@ -297,17 +311,22 @@ class _ReviewButtonState extends State<ReviewButton> {
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('¿Cómo fue con @${widget.otherName}?',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               for (var i = 1; i <= 5; i++)
                 IconButton(
                   iconSize: 36,
                   onPressed: () => setState(() => stars = i),
-                  icon: Icon(i <= stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                  icon: Icon(
+                      i <= stars
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       color: const Color(0xFFE8A317)),
                 ),
             ]),
@@ -341,7 +360,8 @@ class _ReviewButtonState extends State<ReviewButton> {
       setState(() => _done = true);
       _snack(context, '¡Gracias! Tu reseña ayuda a toda la comunidad.');
     } catch (e) {
-      if (mounted) _snack(context, _errorText(e, 'No se pudo guardar la reseña.'));
+      if (mounted)
+        _snack(context, _errorText(e, 'No se pudo guardar la reseña.'));
     }
   }
 
@@ -349,7 +369,8 @@ class _ReviewButtonState extends State<ReviewButton> {
   Widget build(BuildContext context) {
     if (_done == null) return const SizedBox.shrink();
     if (_done!) {
-      return Text('Ya dejaste tu reseña. ¡Gracias!', style: TextStyle(color: context.muted));
+      return Text('Ya dejaste tu reseña. ¡Gracias!',
+          style: TextStyle(color: context.muted));
     }
     return FilledButton.icon(
         onPressed: _open,
@@ -381,7 +402,8 @@ class _ReviewsPageState extends State<ReviewsPage> {
     try {
       final r = await _db
           .from('reviews')
-          .select('stars, text, created_at, author:profiles!reviews_author_id_fkey(username)')
+          .select(
+              'stars, text, created_at, author:profiles!reviews_author_id_fkey(username)')
           .eq('target_id', widget.userId)
           .order('created_at', ascending: false)
           .limit(100);
@@ -414,11 +436,16 @@ class _ReviewsPageState extends State<ReviewsPage> {
                       contentPadding: EdgeInsets.zero,
                       title: Row(children: [
                         for (var s = 1; s <= 5; s++)
-                          Icon(s <= stars ? Icons.star_rounded : Icons.star_outline_rounded,
-                              size: 18, color: const Color(0xFFE8A317)),
+                          Icon(
+                              s <= stars
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              size: 18,
+                              color: const Color(0xFFE8A317)),
                         const SizedBox(width: 8),
                         Text('@${field(r['author'], 'username', 'usuario')}',
-                            style: TextStyle(color: context.muted, fontSize: 13)),
+                            style:
+                                TextStyle(color: context.muted, fontSize: 13)),
                       ]),
                       subtitle: text.isEmpty ? null : Text(text),
                     );
@@ -463,7 +490,9 @@ class _VacationPageState extends State<VacationPage> {
   Future<void> _set(bool v) async {
     setState(() => _busy = true);
     try {
-      await _db.from('profiles').update({'vacation': v}).eq('id', appState.account!.id);
+      await _db
+          .from('profiles')
+          .update({'vacation': v}).eq('id', appState.account!.id);
       setState(() => _on = v);
       listingsStore.load();
     } catch (_) {
@@ -490,7 +519,9 @@ class _VacationPageState extends State<VacationPage> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Estoy de vacaciones'),
-            subtitle: Text(on ? 'Tus anuncios están ocultos' : 'Tus anuncios están visibles'),
+            subtitle: Text(on
+                ? 'Tus anuncios están ocultos'
+                : 'Tus anuncios están visibles'),
             value: on,
             onChanged: _busy ? null : _set,
           ),
@@ -523,7 +554,11 @@ class FollowStore extends ChangeNotifier {
     if (me == null) return 'Inicia sesión para seguir vendedores.';
     try {
       if (ids.contains(sellerId)) {
-        await _db.from('follows').delete().eq('follower_id', me).eq('seller_id', sellerId);
+        await _db
+            .from('follows')
+            .delete()
+            .eq('follower_id', me)
+            .eq('seller_id', sellerId);
         ids.remove(sellerId);
       } else {
         await _db.from('follows').insert({'seller_id': sellerId});
@@ -560,7 +595,8 @@ class _FollowButtonState extends State<FollowButton> {
 
   Future<void> _loadCount() async {
     try {
-      final n = await _db.rpc('followers_count', params: {'p_user': widget.sellerId});
+      final n =
+          await _db.rpc('followers_count', params: {'p_user': widget.sellerId});
       if (mounted) setState(() => _count = (n as num).toInt());
     } catch (_) {}
   }
@@ -578,7 +614,8 @@ class _FollowButtonState extends State<FollowButton> {
               : FilledButton(onPressed: _tap, child: Text(label)),
           if (_count != null) ...[
             const SizedBox(width: 10),
-            Text('$_count seguidores', style: TextStyle(color: context.muted, fontSize: 13)),
+            Text('$_count seguidores',
+                style: TextStyle(color: context.muted, fontSize: 13)),
           ],
         ]);
       },
@@ -587,7 +624,8 @@ class _FollowButtonState extends State<FollowButton> {
 
   Future<void> _tap() async {
     if (appState.account == null) {
-      showAuthSheet(context, appState, message: 'Crea tu cuenta para seguir vendedores.');
+      showAuthSheet(context, appState,
+          message: 'Crea tu cuenta para seguir vendedores.');
       return;
     }
     final err = await followStore.toggle(widget.sellerId);
@@ -668,7 +706,8 @@ class _PromotePageState extends State<PromotePage> {
       await _db.rpc('request_promotion',
           params: {'p_listing': _listingId, 'p_days': _days, 'p_pay_ref': ref});
       _ref.clear();
-      if (mounted) _snack(context, 'Recibido. Lo activamos cuando confirmemos el pago.');
+      if (mounted)
+        _snack(context, 'Recibido. Lo activamos cuando confirmemos el pago.');
       await _load();
     } catch (e) {
       if (mounted) _snack(context, _errorText(e, 'No se pudo enviar.'));
@@ -705,7 +744,8 @@ class _PromotePageState extends State<PromotePage> {
                     for (final l in mine)
                       DropdownMenuItem(
                           value: l.id,
-                          child: Text(l.title, overflow: TextOverflow.ellipsis)),
+                          child:
+                              Text(l.title, overflow: TextOverflow.ellipsis)),
                   ],
                   onChanged: (v) => setState(() => _listingId = v),
                 ),
@@ -713,7 +753,9 @@ class _PromotePageState extends State<PromotePage> {
                 SegmentedButton<int>(
                   segments: [
                     for (final e in _planes.entries)
-                      ButtonSegment(value: e.key, label: Text('${e.key} días · ${_usd(e.value)}')),
+                      ButtonSegment(
+                          value: e.key,
+                          label: Text('${e.key} días · ${_usd(e.value)}')),
                   ],
                   selected: {_days},
                   onSelectionChanged: (s) => setState(() => _days = s.first),
@@ -721,19 +763,23 @@ class _PromotePageState extends State<PromotePage> {
                 const SizedBox(height: 16),
                 Text('1. Paga ${_usd(_planes[_days]!)} por Pago Móvil',
                     style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
-                if (bsText(_planes[_days]!).isNotEmpty) Text(bsText(_planes[_days]!)),
+                if (bsText(_planes[_days]!).isNotEmpty)
+                  Text(bsText(_planes[_days]!)),
                 const SizedBox(height: 4),
                 Text('$pagoMovilBanco\n$pagoMovilCedula\n$pagoMovilTelefono',
                     style: TextStyle(color: context.muted)),
                 const SizedBox(height: 12),
-                Text('2. Escribe la referencia', style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                Text('2. Escribe la referencia',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
                 const SizedBox(height: 6),
                 TextField(
                     controller: _ref,
                     maxLength: 40,
-                    decoration: const InputDecoration(labelText: 'Referencia del Pago Móvil')),
+                    decoration: const InputDecoration(
+                        labelText: 'Referencia del Pago Móvil')),
                 FilledButton(
-                    onPressed: _busy ? null : _send, child: const Text('Enviar para revisión')),
+                    onPressed: _busy ? null : _send,
+                    child: const Text('Enviar para revisión')),
               ],
               if (_requests.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -742,7 +788,8 @@ class _PromotePageState extends State<PromotePage> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(field(r['listings'], 'title', 'Anuncio')),
-                    subtitle: Text('${r['days']} días · ${_usd(r['amount'] as num)}'),
+                    subtitle:
+                        Text('${r['days']} días · ${_usd(r['amount'] as num)}'),
                     trailing: Text(_estado[r['status']] ?? '${r['status']}'),
                   ),
               ],
@@ -765,7 +812,8 @@ class AvisosStore extends ChangeNotifier {
   Future<void> load() async {
     if (appState.account == null) return;
     try {
-      final r = await _db.from('avisos').select('id').eq('leido', false).limit(100);
+      final r =
+          await _db.from('avisos').select('id').eq('leido', false).limit(100);
       if (r.length != sinLeer) {
         sinLeer = r.length;
         notifyListeners();
@@ -845,18 +893,24 @@ class _AvisosPageState extends State<AvisosPage> {
   Future<void> _open(Map<String, dynamic> a) async {
     if (a['leido'] != true) {
       try {
-        await _db.from('avisos').update({'leido': true}).eq('id', a['id'] as int);
+        await _db
+            .from('avisos')
+            .update({'leido': true}).eq('id', a['id'] as int);
       } catch (_) {}
     }
     if (!mounted) return;
     final ref = a['ref_id'] as String?;
     Widget? page;
     if (a['tipo'] == 'pedido' && ref != null) page = OrderPage(orderId: ref);
-    if (a['tipo'] == 'chat' && ref != null) page = ChatPage(threadId: ref, title: 'Conversación');
+    if (a['tipo'] == 'chat' && ref != null)
+      page = ChatPage(threadId: ref, title: 'Conversación');
     if (a['tipo'] == 'perfil' && appState.account != null) {
-      page = ReviewsPage(userId: appState.account!.id, username: appState.account!.username);
+      page = ReviewsPage(
+          userId: appState.account!.id, username: appState.account!.username);
     }
-    if (page != null) await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page!));
+    if (page != null)
+      await Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => page!));
     _load();
   }
 
@@ -891,7 +945,8 @@ class _AvisosPageState extends State<AvisosPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Avisos'), actions: [
         if (rows != null && rows.any((a) => a['leido'] != true))
-          TextButton(onPressed: _allRead, child: const Text('Marcar todo leído')),
+          TextButton(
+              onPressed: _allRead, child: const Text('Marcar todo leído')),
       ]),
       body: rows == null
           ? const Center(child: CircularProgressIndicator())
@@ -913,12 +968,16 @@ class _AvisosPageState extends State<AvisosPage> {
                       final a = rows[i];
                       final unread = a['leido'] != true;
                       return ListTile(
-                        tileColor: unread ? scheme.primary.withValues(alpha: 0.06) : null,
+                        tileColor: unread
+                            ? scheme.primary.withValues(alpha: 0.06)
+                            : null,
                         leading: Icon(_icon('${a['tipo']}'),
                             color: unread ? scheme.primary : context.muted),
                         title: Text('${a['texto']}',
                             style: TextStyle(
-                                fontWeight: unread ? FontWeight.w600 : FontWeight.w400)),
+                                fontWeight: unread
+                                    ? FontWeight.w600
+                                    : FontWeight.w400)),
                         subtitle: Text(_cuando('${a['creado']}')),
                         onTap: () => _open(a),
                       );

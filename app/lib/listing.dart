@@ -65,24 +65,62 @@ String bsText(double usd) {
   if (tasaBs <= 0) return '';
   final v = usd * tasaBs;
   final parts = v.toStringAsFixed(2).split('.');
-  final ent = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+  final ent =
+      parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
   return '≈ Bs $ent,${parts[1]}';
 }
 
 const _tints = [
-  Color(0xFF9DB7D5), Color(0xFFD9A38F), Color(0xFFE8B4C0),
-  Color(0xFFB5C9A8), Color(0xFFF2D49B), Color(0xFFC9A98A),
+  Color(0xFF9DB7D5),
+  Color(0xFFD9A38F),
+  Color(0xFFE8B4C0),
+  Color(0xFFB5C9A8),
+  Color(0xFFF2D49B),
+  Color(0xFFC9A98A),
 ];
 
 const categories = [
-  'Todo', 'Mujer', 'Hombre', 'Niños', 'Bebés', 'Zapatos', 'Accesorios',
-  'Hogar', 'Libros y juegos', 'Deportes', 'Mascotas',
+  'Todo',
+  'Mujer',
+  'Hombre',
+  'Niños',
+  'Bebés',
+  'Zapatos',
+  'Accesorios',
+  'Hogar',
+  'Libros y juegos',
+  'Deportes',
+  'Mascotas',
 ];
 
 const _clothing = {'Mujer', 'Hombre', 'Niños', 'Bebés'};
 const _clothingSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Única'];
-const _babySizes = ['0-3 m', '3-6 m', '6-12 m', '12-18 m', '18-24 m', '2 años', '3 años', '4 años'];
-const _shoeSizes = ['22-27', '28-33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
+const _babySizes = [
+  '0-3 m',
+  '3-6 m',
+  '6-12 m',
+  '12-18 m',
+  '18-24 m',
+  '2 años',
+  '3 años',
+  '4 años'
+];
+const _shoeSizes = [
+  '22-27',
+  '28-33',
+  '34',
+  '35',
+  '36',
+  '37',
+  '38',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45'
+];
 
 /// Tallas según la categoría; lo que no es ropa no lleva talla.
 List<String> sizesFor(String category) {
@@ -94,7 +132,9 @@ List<String> sizesFor(String category) {
 
 /// ¿La categoría usa la palabra "prenda" o "artículo"?
 bool isClothing(String category) =>
-    _clothing.contains(category) || category == 'Zapatos' || category == 'Accesorios';
+    _clothing.contains(category) ||
+    category == 'Zapatos' ||
+    category == 'Accesorios';
 
 const categoryIcons = {
   'Mujer': Icons.woman,
@@ -112,6 +152,28 @@ const categoryIcons = {
 /// Anuncios que vienen del servidor.
 class ListingsStore extends ChangeNotifier {
   List<Listing> _items = [];
+  List<Listing> _raw = [];
+
+  /// Puntuación extra por preferencias (ciudad, categorías); la pone extras.dart.
+  static int Function(Listing)? prefScore;
+
+  // Destacados primero; luego lo que encaja con tus preferencias; luego lo más nuevo.
+  void _sort() {
+    final s = prefScore;
+    final list = [..._raw];
+    list.sort((a, b) {
+      final f = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      if (f != 0) return f;
+      return s == null ? 0 : s(b) - s(a);
+    });
+    _items = list;
+  }
+
+  void resort() {
+    _sort();
+    notifyListeners();
+  }
+
   bool loading = false;
   String? error;
   List<Listing> get all => List.unmodifiable(_items);
@@ -127,12 +189,15 @@ class ListingsStore extends ChangeNotifier {
           .select('*, profiles(username)')
           .eq('status', 'active')
           .order('created_at', ascending: false)
-          .limit(100);
-      final items = [for (final r in rows) Listing.fromMap(r)];
-      // Los destacados primero; el resto, del más nuevo al más viejo.
-      _items = [...items.where((l) => l.featured), ...items.where((l) => !l.featured)];
+          .limit(300);
+      _raw = [for (final r in rows) Listing.fromMap(r)];
+      _sort();
       try {
-        final t = await _db.from('ajustes').select('valor').eq('clave', 'tasa_bs').maybeSingle();
+        final t = await _db
+            .from('ajustes')
+            .select('valor')
+            .eq('clave', 'tasa_bs')
+            .maybeSingle();
         tasaBs = (t?['valor'] as num?)?.toDouble() ?? tasaBs;
       } catch (_) {}
       error = null;
@@ -152,17 +217,17 @@ class ListingsStore extends ChangeNotifier {
     required String size,
     required String condition,
     required String city,
-    Uint8List? photo,
+    List<Uint8List> photos = const [],
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
     try {
-      final photos = <String>[];
-      if (photo != null) {
+      final urls = <String>[];
+      for (final photo in photos.take(5)) {
         final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.jpg';
         await _db.storage.from('listing-photos').uploadBinary(path, photo,
             fileOptions: const FileOptions(contentType: 'image/jpeg'));
-        photos.add(_db.storage.from('listing-photos').getPublicUrl(path));
+        urls.add(_db.storage.from('listing-photos').getPublicUrl(path));
       }
       await _db.from('listings').insert({
         'title': title,
@@ -172,7 +237,7 @@ class ListingsStore extends ChangeNotifier {
         'size': size,
         'condition': condition,
         'city': city,
-        'photos': photos,
+        'photos': urls,
       });
       await load();
       return null;

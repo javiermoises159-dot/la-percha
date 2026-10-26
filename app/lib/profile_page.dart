@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'extras.dart';
 import 'features.dart';
 import 'auth_sheet.dart';
 import 'explore_page.dart';
@@ -27,7 +28,8 @@ class ProfilePage extends StatelessWidget {
           return ListView(padding: const EdgeInsets.all(20), children: [
             Text('Crea tu cuenta', style: display(24, color: ink)),
             const SizedBox(height: 6),
-            Text('La necesitas para vender, comprar y escribir a otros usuarios.',
+            Text(
+                'La necesitas para vender, comprar y escribir a otros usuarios.',
                 style: TextStyle(color: context.muted)),
             const SizedBox(height: 16),
             FilledButton(
@@ -77,32 +79,23 @@ class ProfilePage extends StatelessWidget {
           _item(context, Icons.favorite_border, 'Favoritos',
               page: const FavoritesPage()),
           _item(context, Icons.account_balance_wallet_outlined, 'Saldo',
-              trailing: '\$0.00',
-              page: const InfoPage(
-                  title: 'Saldo',
-                  body:
-                      'Aquí verás el dinero de tus ventas, disponible para retirar a tu Pago Móvil o a Binance Pay.\n\nEl dinero llega a tu saldo cuando el comprador confirma que recibió la prenda.\n\nEsta función se activa con los pedidos protegidos.')),
+              page: const SaldoPage()),
           _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
               page: const OrdersPage()),
-          _item(context, Icons.rocket_launch_outlined, 'Herramientas de promoción',
+          _item(context, Icons.rocket_launch_outlined,
+              'Herramientas de promoción',
               page: const PromotePage()),
           const Divider(height: 1),
           _item(context, Icons.tune, 'Personalización',
-              page: const InfoPage(
-                  title: 'Personalización',
-                  body:
-                      'Pronto podrás elegir tus categorías, tallas y ciudad favoritas para ver primero lo que te interesa.')),
+              page: const PrefsPage()),
           _item(context, Icons.local_offer_outlined, 'Descuentos por lote',
-              trailing: 'No activos',
-              page: const InfoPage(
-                  title: 'Descuentos por lote',
-                  body:
-                      'Pronto podrás ofrecer un descuento a quien compre varias de tus prendas a la vez.')),
+              page: const LoteDiscountsPage()),
           _item(context, Icons.beach_access_outlined, 'Modo vacaciones',
               page: const VacationPage()),
           const Divider(height: 1),
           _item(context, Icons.help_outline, 'Guía de La Percha',
-              page: const InfoPage(title: 'Guía de La Percha', body: guideText)),
+              page:
+                  const InfoPage(title: 'Guía de La Percha', body: guideText)),
           _item(context, Icons.support_agent_outlined, 'Centro de ayuda',
               page: const InfoPage(title: 'Centro de ayuda', body: helpText)),
           const Divider(height: 1),
@@ -115,8 +108,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  static void _go(BuildContext context, Widget page) => Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => page));
+  static void _go(BuildContext context, Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 
   static Widget _item(BuildContext context, IconData icon, String label,
       {String? trailing, required Widget page}) {
@@ -138,9 +131,11 @@ class ProfilePage extends StatelessWidget {
         _item(context, Icons.gavel_outlined, 'Notas legales',
             page: const InfoPage(title: 'Notas legales', body: legalText)),
         _item(context, Icons.privacy_tip_outlined, 'Privacidad',
-            page: const InfoPage(title: 'Política de privacidad', body: privacyText)),
+            page: const InfoPage(
+                title: 'Política de privacidad', body: privacyText)),
         _item(context, Icons.description_outlined, 'Términos y condiciones',
-            page: const InfoPage(title: 'Términos y condiciones', body: termsText)),
+            page: const InfoPage(
+                title: 'Términos y condiciones', body: termsText)),
         _item(context, Icons.cookie_outlined, 'Cookies',
             page: const InfoPage(title: 'Cookies', body: cookiesText)),
       ];
@@ -201,7 +196,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
       if (!mounted) return;
       setState(() {
         _items = [for (final r in rows) Listing.fromMap(r)];
-        _status = {for (final r in rows) r['id'] as String: r['status'] as String};
+        _status = {
+          for (final r in rows) r['id'] as String: r['status'] as String
+        };
         _loading = false;
         _error = null;
       });
@@ -356,8 +353,9 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) setState(() => _msg = 'Guardado.');
     } on PostgrestException catch (e) {
       if (mounted) {
-        setState(() => _msg =
-            e.code == '23505' ? 'Ese nombre de usuario ya está en uso.' : e.message);
+        setState(() => _msg = e.code == '23505'
+            ? 'Ese nombre de usuario ya está en uso.'
+            : e.message);
       }
     } catch (_) {
       if (mounted) setState(() => _msg = 'No se pudo guardar.');
@@ -412,8 +410,7 @@ class _SettingsPageState extends State<SettingsPage> {
         Text('Correo: ${appState.account?.email ?? ''}',
             style: TextStyle(color: context.muted)),
         if (_msg != null)
-          Padding(
-              padding: const EdgeInsets.only(top: 12), child: Text(_msg!)),
+          Padding(padding: const EdgeInsets.only(top: 12), child: Text(_msg!)),
         const SizedBox(height: 16),
         FilledButton(
             onPressed: _busy ? null : _save, child: const Text('Guardar')),
@@ -421,14 +418,16 @@ class _SettingsPageState extends State<SettingsPage> {
         OutlinedButton(
             onPressed: () async {
               await appState.signOut();
-              if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+              if (context.mounted)
+                Navigator.of(context).popUntil((r) => r.isFirst);
             },
             child: const Text('Cerrar sesión')),
         const SizedBox(height: 32),
         TextButton(
             onPressed: _deleteAccount,
             child: Text('Eliminar mi cuenta',
-                style: TextStyle(color: Theme.of(context).colorScheme.primary))),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.primary))),
       ]),
     );
   }
