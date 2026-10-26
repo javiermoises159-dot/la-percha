@@ -1,4 +1,4 @@
-# Lista de seguridad de La Percha
+# Lista de seguridad de Pavito
 
 Marca cada punto cuando lo hagas. Están ordenados por importancia.
 

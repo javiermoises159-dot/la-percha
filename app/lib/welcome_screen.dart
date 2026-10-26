@@ -82,7 +82,7 @@ class WelcomeScreen extends StatelessWidget {
                       children: [
                         FilledButton(
                           onPressed: () => showAuthSheet(context, state),
-                          child: const Text('Únete a La Percha'),
+                          child: const Text('Únete a Pavito'),
                         ),
                         const SizedBox(height: 10),
                         OutlinedButton(

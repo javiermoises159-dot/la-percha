@@ -159,7 +159,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           Text(
               'Queden en un lugar público y concurrido (centro comercial, plaza con vigilancia), '
               'de día. Revisa el artículo ANTES de confirmar en la app. Nunca pagues en efectivo '
-              'aparte: el pago va siempre por La Percha.',
+              'aparte: el pago va siempre por Pavito.',
               style: TextStyle(color: context.muted, fontSize: 13)),
         ],
         const SizedBox(height: 10),

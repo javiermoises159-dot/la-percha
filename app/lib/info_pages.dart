@@ -21,7 +21,7 @@ class InfoPage extends StatelessWidget {
 const _draft =
     '\n\n(Borrador informativo. Será revisado por un abogado antes del lanzamiento oficial.)';
 
-const guideText = '''Cómo funciona La Percha
+const guideText = '''Cómo funciona Pavito
 
 Comprar
 1. Busca una prenda y ábrela.
@@ -36,27 +36,27 @@ Vender
 Consejos
 - Toma fotos con buena luz y muestra los detalles.
 - Describe el estado con honestidad.
-- Nunca pagues ni cobres fuera de La Percha: así no tendrás protección.''';
+- Nunca pagues ni cobres fuera de Pavito: así no tendrás protección.''';
 
 const helpText = '''Centro de ayuda
 
 ¿Algún problema con una compra o una venta? Escríbenos y lo revisamos.
 
 Importante para tu seguridad
-- La Percha nunca te pedirá tu contraseña por mensaje.
+- Pavito nunca te pedirá tu contraseña por mensaje.
 - No pagues por fuera de la app ni compartas códigos.
 - Si algo no parece normal, usa la opción de denunciar o escríbenos.
 
 Contacto de soporte: se publicará aquí antes del lanzamiento.''';
 
 const aboutText =
-    '''La Percha es un mercado de ropa usada para toda Venezuela. Queremos que la ropa tenga una segunda vida, que vender sea gratis y que comprar sea seguro.
+    '''Pavito es un mercado de ropa usada para toda Venezuela. Queremos que la ropa tenga una segunda vida, que vender sea gratis y que comprar sea seguro.
 
 Versión de prueba.''';
 
 const legalText = '''Notas legales
 
-La Percha es una plataforma que conecta a personas que compran y venden ropa usada. Las prendas las venden usuarios particulares.$_draft''';
+Pavito es una plataforma que conecta a personas que compran y venden ropa usada. Las prendas las venden usuarios particulares.$_draft''';
 
 const privacyText = '''Política de privacidad
 
@@ -78,9 +78,9 @@ const termsText = '''Términos y condiciones
 - Debes tener al menos 18 años o permiso de tus padres.
 - Publica solo prendas que te pertenezcan y descríbelas con honestidad.
 - Está prohibido vender artículos falsificados, robados o ilegales.
-- Los pagos se hacen dentro de La Percha para tener protección.
+- Los pagos se hacen dentro de Pavito para tener protección.
 - Podemos retirar anuncios o cuentas que incumplan estas reglas.$_draft''';
 
 const cookiesText = '''Cookies
 
-La Percha usa almacenamiento en tu dispositivo solo para mantener tu sesión iniciada. No usamos cookies de publicidad.''';
+Pavito usa almacenamiento en tu dispositivo solo para mantener tu sesión iniciada. No usamos cookies de publicidad.''';

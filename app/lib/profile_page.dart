@@ -93,9 +93,9 @@ class ProfilePage extends StatelessWidget {
           _item(context, Icons.beach_access_outlined, 'Modo vacaciones',
               page: const VacationPage()),
           const Divider(height: 1),
-          _item(context, Icons.help_outline, 'Guía de La Percha',
+          _item(context, Icons.help_outline, 'Guía de Pavito',
               page:
-                  const InfoPage(title: 'Guía de La Percha', body: guideText)),
+                  const InfoPage(title: 'Guía de Pavito', body: guideText)),
           _item(context, Icons.support_agent_outlined, 'Centro de ayuda',
               page: const InfoPage(title: 'Centro de ayuda', body: helpText)),
           const Divider(height: 1),
@@ -126,8 +126,8 @@ class ProfilePage extends StatelessWidget {
   }
 
   static List<Widget> _legalItems(BuildContext context) => [
-        _item(context, Icons.info_outline, 'Información sobre La Percha',
-            page: const InfoPage(title: 'Sobre La Percha', body: aboutText)),
+        _item(context, Icons.info_outline, 'Información sobre Pavito',
+            page: const InfoPage(title: 'Sobre Pavito', body: aboutText)),
         _item(context, Icons.gavel_outlined, 'Notas legales',
             page: const InfoPage(title: 'Notas legales', body: legalText)),
         _item(context, Icons.privacy_tip_outlined, 'Privacidad',

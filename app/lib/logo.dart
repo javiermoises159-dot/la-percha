@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Logo de La Percha: una percha sobre un cuadrado redondeado.
+/// Logo de Pavito: una percha sobre un cuadrado redondeado.
 class LogoMark extends StatelessWidget {
   const LogoMark({super.key, this.size = 48});
   final double size;

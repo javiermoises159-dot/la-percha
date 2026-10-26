@@ -223,7 +223,7 @@ class _ExplorePageState extends State<ExplorePage> {
               onChanged: (v) => setState(() => _q = v.trim()),
               decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.search),
-                  hintText: 'Buscar en La Percha',
+                  hintText: 'Buscar en Pavito',
                   contentPadding: EdgeInsets.symmetric(vertical: 0)),
             ),
           ),

@@ -34,7 +34,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'La Percha',
+      title: 'Pavito',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       themeMode: ThemeMode.light,

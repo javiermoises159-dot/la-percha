@@ -42,7 +42,7 @@ const estados = [
 
 const _motivos = [
   'Parece una estafa',
-  'Pide pagar o hablar fuera de La Percha',
+  'Pide pagar o hablar fuera de Pavito',
   'Artículo falso o imitación',
   'Artículo prohibido o peligroso',
   'Fotos o textos ofensivos',

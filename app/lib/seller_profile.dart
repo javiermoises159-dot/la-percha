@@ -132,7 +132,7 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                       ],
                       if (since != null)
                         Text(
-                            'En La Percha desde ${_meses[since.month - 1]} de ${since.year}',
+                            'En Pavito desde ${_meses[since.month - 1]} de ${since.year}',
                             style:
                                 TextStyle(color: context.muted, fontSize: 13)),
                     ],

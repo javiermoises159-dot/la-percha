@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Identidad de La Percha: blanco, tinta cálida y un solo acento rojo arcilla.
+/// Identidad de Pavito: blanco, tinta cálida y un solo acento rojo arcilla.
 /// La foto del artículo es la protagonista; el color se usa solo para actuar.
 class LP {
   static const ink = Color(0xFF161412);
@@ -187,7 +187,7 @@ extension PaletteX on BuildContext {
   Color get chip => soft;
 }
 
-/// Logotipo de texto: "la percha." con el punto en rojo arcilla.
+/// Logotipo de texto: "pavito." con el punto en rojo arcilla.
 class Wordmark extends StatelessWidget {
   const Wordmark({super.key, this.size = 24});
   final double size;
@@ -196,7 +196,7 @@ class Wordmark extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(children: [
-        const TextSpan(text: 'la percha'),
+        const TextSpan(text: 'pavito'),
         TextSpan(
             text: '.',
             style: TextStyle(color: Theme.of(context).colorScheme.primary)),

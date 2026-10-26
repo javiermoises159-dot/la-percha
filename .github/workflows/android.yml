@@ -28,7 +28,7 @@ jobs:
           channel: stable
           cache: true
       - name: Generar la parte Android del proyecto
-        run: flutter create --platforms=android --org com.lapercha --project-name la_percha .
+        run: flutter create --platforms=android --org com.pavito --project-name pavito .
       - name: Nombre visible de la app
         run: sed -i 's/android:label="[^"]*"/android:label="La Percha"/' android/app/src/main/AndroidManifest.xml
       - run: flutter pub get

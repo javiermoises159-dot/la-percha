@@ -1,4 +1,4 @@
-// La Percha — función "escanear": recibe una foto y devuelve los datos del anuncio.
+// Pavito — función "escanear": recibe una foto y devuelve los datos del anuncio.
 // La clave de Gemini vive SOLO aquí, como secreto de Supabase (GEMINI_API_KEY).
 // Nunca va dentro de la app.
 
@@ -32,7 +32,7 @@ function json(status: number, body: unknown) {
   });
 }
 
-const PROMPT = `Eres el asistente de La Percha, un mercado de artículos usados en Venezuela.
+const PROMPT = `Eres el asistente de Pavito, un mercado de artículos usados en Venezuela.
 Mira la foto y describe el artículo principal que alguien quiere vender (si la persona lo lleva puesto, describe la prenda, no a la persona).
 Responde en español de Venezuela, sin inventar: si no ves la marca o la talla, dilo.
 - titulo: corto y claro, máximo 60 caracteres (ej. "Camiseta México Adidas blanca").
@@ -134,7 +134,7 @@ export async function handle(req: Request, env: Env): Promise<Response> {
   }
 
   if (datos.es_electronico === true) {
-    return json(422, { error: "Por ahora La Percha no acepta electrónicos.", codigo: "electronico" });
+    return json(422, { error: "Por ahora Pavito no acepta electrónicos.", codigo: "electronico" });
   }
 
   const precio = Math.min(5000, Math.max(1, Math.round(Number(datos.precio_sugerido_usd) || 5)));

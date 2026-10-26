@@ -9,7 +9,7 @@ RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="$(mktemp -d)"
 cp -r "$RAIZ/app" "$TMP/app" && cd "$TMP/app"
 rm -rf build .dart_tool
-flutter create --platforms=web --org com.lapercha --project-name la_percha . >/dev/null
+flutter create --platforms=web --org com.pavito --project-name pavito . >/dev/null
 for f in Icon-192 Icon-512 Icon-maskable-192 Icon-maskable-512 apple-touch-icon; do
   cp "web_overrides/icons/$f.png" web/icons/
 done

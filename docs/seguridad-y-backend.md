@@ -1,4 +1,4 @@
-# La Percha: seguridad y servidor (Supabase)
+# Pavito: seguridad y servidor (Supabase)
 
 ## Qué guardamos y quién lo ve
 | Dato | Dónde | Quién lo ve |

@@ -1,4 +1,4 @@
-# La Percha
+# Pavito
 
 Prototipo de mercado de ropa usada para Venezuela, con el modelo de Vinted:
 el vendedor no paga comisión y el comprador paga una tarifa de protección.
@@ -16,7 +16,7 @@ el vendedor no paga comisión y el comprador paga una tarifa de protección.
 ## Archivos
 - `la-percha.html`: todo el prototipo en un solo archivo. Es un fragmento sin
   `<html>` ni `<head>`: se completa al publicarlo como artefacto de Claude.
-- `assets/logo.svg`: logo de La Percha (base para el icono de la app)
+- `assets/logo.svg`: logo de Pavito (base para el icono de la app)
 
 ## Pendiente
 - App real con base de datos propia y usuarios verificados por SMS

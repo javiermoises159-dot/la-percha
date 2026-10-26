@@ -1,4 +1,4 @@
-# La Percha (app Flutter)
+# Pavito (app Flutter)
 
 Etapa 1: tema, logo, bienvenida, registro (con SMS simulado) y navegación.
 

@@ -196,7 +196,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 }
 
-/// Aviso bajo mensajes que piden pagar o hablar fuera de La Percha.
+/// Aviso bajo mensajes que piden pagar o hablar fuera de Pavito.
 class _AvisoEstafa extends StatelessWidget {
   const _AvisoEstafa();
 
@@ -215,7 +215,7 @@ class _AvisoEstafa extends StatelessWidget {
         SizedBox(width: 8),
         Expanded(
           child: Text(
-            'Cuidado: este mensaje menciona contactos o pagos fuera de La Percha. '
+            'Cuidado: este mensaje menciona contactos o pagos fuera de Pavito. '
             'Paga siempre con "Comprar" dentro de la app: si pagas por fuera, '
             'tu dinero no está protegido.',
             style: TextStyle(fontSize: 12.5),

@@ -1,4 +1,4 @@
-"""Genera los iconos PNG de La Percha (logo de la percha sobre fondo frambuesa)."""
+"""Genera los iconos PNG de Pavito (logo de pavito sobre fondo frambuesa)."""
 from PIL import Image, ImageDraw
 import sys
 
@@ -8,7 +8,7 @@ S = 4  # supersampling
 
 
 def hanger(draw, k, ox, oy, w):
-    """Dibuja la percha. k = píxeles por unidad (48 unidades), (ox, oy) = origen."""
+    """Dibuja pavito. k = píxeles por unidad (48 unidades), (ox, oy) = origen."""
     def P(x, y):
         return (ox + x * k, oy + y * k)
 

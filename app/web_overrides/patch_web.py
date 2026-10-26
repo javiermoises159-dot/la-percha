@@ -13,8 +13,8 @@ head_extra = """
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@800&display=swap">
   <meta name="theme-color" content="#FFFFFF">
-  <meta name="apple-mobile-web-app-title" content="La Percha">
-  <meta name="description" content="La Percha: compra y vende ropa usada en toda Venezuela.">
+  <meta name="apple-mobile-web-app-title" content="Pavito">
+  <meta name="description" content="Pavito: vende lo que ya no usas y compra con pago protegido en toda Venezuela.">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <style>
     html,body{margin:0;height:100%;background:#FFFFFF}
@@ -29,10 +29,10 @@ head_extra = """
   </style>
 """
 s = s.replace("</head>", head_extra + "</head>", 1)
-s = re.sub(r"<title>.*?</title>", "<title>La Percha</title>", s, flags=re.S)
+s = re.sub(r"<title>.*?</title>", "<title>Pavito</title>", s, flags=re.S)
 
 splash = """<div id="splash">
-  <h1>la percha<span style="color:#E0452C">.</span></h1>
+  <h1>pavito<span style="color:#E0452C">.</span></h1>
   <p>Vende lo que ya no usas</p>
 </div>
 <script>
@@ -55,8 +55,8 @@ open(p, "w", encoding="utf-8").write(s)
 p = f"{web}/manifest.json"
 m = json.load(open(p, encoding="utf-8"))
 m.update({
-    "name": "La Percha",
-    "short_name": "La Percha",
+    "name": "Pavito",
+    "short_name": "Pavito",
     "description": "Compra y vende ropa usada en toda Venezuela.",
     "background_color": "#FFFFFF",
     "theme_color": "#FFFFFF",
