@@ -60,7 +60,7 @@ class _Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LP.yellow,
+      backgroundColor: LP.clay,
       body: Center(
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.85, end: 1),
@@ -73,11 +73,11 @@ class _Splash extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Wordmark(size: 40, color: LP.ink),
+              const Wordmark(size: 40, color: Colors.white),
               const SizedBox(height: 6),
               Text('Vende lo que ya no usas',
                   style: TextStyle(
-                      color: LP.ink.withValues(alpha: .75),
+                      color: Colors.white,
                       fontWeight: FontWeight.w600)),
             ],
           ),

@@ -1,0 +1,72 @@
+<style>
+#splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#E0452C;color:#fff;z-index:9999;font-family:'Onest',system-ui,sans-serif;transition:opacity .35s;overflow:hidden}
+#splash.hide{opacity:0;pointer-events:none}
+#splash .col{display:flex;flex-direction:column;align-items:center;margin-top:-40px}
+#splash .g{overflow:visible}
+#splash .piso{width:230px;height:3px;border-radius:2px;background:#fff;margin-top:-3px;animation:fuera 0.28s 1.33s both}
+@keyframes fuera{to{opacity:0;transform:scaleX(.4)}}
+#splash .w{font-weight:800;font-size:46px;letter-spacing:-2px;margin-top:26px;height:56px}
+#splash .w span{display:inline-block;animation:up 0.24s both}
+#splash .t{font-size:15px;font-weight:600;margin-top:4px;color:#F5B731;animation:up 0.35s 1.82s both}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#splash .ave{transform-box:view-box;transform-origin:70px 118px;animation:sec 1.54s both}
+@keyframes sec{0%{opacity:0;transform:translate(-230px,-300px) rotate(-25deg) scale(.5)}12%{opacity:1}
+ 40%{transform:none;animation-timing-function:ease-in-out}52%{transform:none;animation-timing-function:ease-in}
+ 63%{transform:rotate(-38deg)}70%{transform:rotate(-38deg);animation-timing-function:cubic-bezier(.3,1.5,.5,1)}88%,100%{transform:none}}
+#splash .ala{transform-box:fill-box;transform-origin:top left;animation:aleteo 0.13s 5 alternate ease-in-out}
+@keyframes aleteo{to{transform:rotate(-30deg)}}
+#splash .piso-tag{animation:coge 1.54s steps(1,end) both}
+@keyframes coge{0%,69%{opacity:1}70%,100%{opacity:0}}
+#splash .tag{transform-box:view-box;transform-origin:28px 79px;animation:aparece 1.54s steps(1,end) both,swing 0.98s 1.08s ease-out both}
+@keyframes aparece{0%,69%{opacity:0}70%,100%{opacity:1}}
+@keyframes swing{0%{transform:rotate(-30deg)}25%{transform:rotate(20deg)}50%{transform:rotate(-10deg)}75%{transform:rotate(4deg)}100%{transform:none}}
+#splash .ojo{transform-box:fill-box;transform-origin:center;animation:blink 3s 1.82s infinite}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+
+#splash .t{color:#fff}
+@media (prefers-reduced-motion:reduce){#splash *{animation:none!important}#splash .piso,#splash .piso-tag{display:none}}
+
+</style>
+<!--SPLASH-->
+<div id="splash" role="img" aria-label="Pavito, cargando"><div class="col"><svg class="g" viewBox="0 0 120 120" width="140" height="140"><g stroke="#161412" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+<g class="piso-tag" transform="translate(15 110) rotate(-2) scale(1 .45)"><path d="M0 0 L-13 -18 H-70 a5 5 0 0 0 -5 5 V13 a5 5 0 0 0 5 5 H-13 Z" fill="#fff" stroke-width="3.5"/>
+<circle cx="-9" cy="0" r="3" fill="#161412" stroke-width="2"/><rect x="-62" y="-3" width="42" height="6" rx="3" fill="#ECE8E3" stroke="none"/></g>
+<g class="ave">
+<path d="M44 76c2 18 10 32 22 42h44c4-26-2-50-18-66" fill="#E0452C"/>
+<path class="ala" d="M86 78c14 6 22 20 24 40H94c0-16-4-28-8-40z" fill="#F5B731"/><path class="ala" d="M99 94c6 6 10 14 11 24h-8c0-9-1-17-3-24z" fill="#1F5FBF"/>
+<g class="cab"><circle cx="72" cy="50" r="32" fill="#E0452C"/>
+<path d="M48 40c6-10 20-12 28-5 8 8 7 22-2 28-9 6-21 4-27-4-4-6-3-13 1-19z" fill="#fff"/>
+<g class="tag"><path d="M28 79 L12 108" fill="none" stroke="#fff" stroke-width="2.5"/>
+<g transform="translate(12 108) rotate(-10)"><path d="M0 0 L-13 -18 H-70 a5 5 0 0 0 -5 5 V13 a5 5 0 0 0 5 5 H-13 Z" fill="#fff" stroke-width="3.5"/>
+<circle cx="-9" cy="0" r="3" fill="#161412" stroke-width="2"/>
+<text class="pct" x="-41" y="5.5" text-anchor="middle" font-family="Onest" font-weight="800" font-size="15" fill="#E0452C" stroke="none" letter-spacing="-.5">0%</text></g></g>
+<path d="M50 34C32 28 15 38 14 58c0 10 4 18 11 24-1-10 3-18 12-21l13-1z" fill="#F2E4CC"/>
+<path d="M37 61c-6 4-7 13-2 19 7-1 13-7 14-17z" fill="#161412"/>
+<g class="ojo"><circle cx="64" cy="46" r="5" fill="#161412" stroke="none"/><circle cx="65.5" cy="44.5" r="1.5" fill="#fff" stroke="none"/></g></g></g></g></svg><div class="piso"></div><div class="w"><span style="animation-delay:1.43s">p</span><span style="animation-delay:1.48s">a</span><span style="animation-delay:1.53s">v</span><span style="animation-delay:1.58s">i</span><span style="animation-delay:1.63s">t</span><span style="animation-delay:1.68s">o</span></div><div class="t">Vende lo que ya no usas</div></div></div>
+<script>
+  (function () {
+    var el = document.getElementById('splash'), pct = el.querySelector('.pct');
+    var t0 = performance.now(), listo = false, fin = false, shown = 0;
+    // La etiqueta avanza hasta 90 % por tiempo y solo marca 100 % cuando la app ya cargó.
+    window.addEventListener('flutter-first-frame', function () { listo = true; });
+    function hide() {
+      if (fin) return; fin = true;
+      el.classList.add('hide');
+      setTimeout(function () { el.remove(); }, 400);
+    }
+    function loop(now) {
+      if (fin) return;
+      var s = (now - t0) / 1000, p = Math.max(0, Math.min(1, (s - 1.4) / 1.2));
+      var meta = 90 * (1 - Math.pow(1 - p, 2));
+      if (listo && s > 2.1) meta = 100;
+      shown += (meta - shown) * (meta === 100 ? 0.35 : 1);
+      var v = Math.round(shown);
+      pct.textContent = v >= 100 ? '¡Listo!' : v + '%';
+      if (v >= 100) { setTimeout(hide, 450); return; }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    setTimeout(hide, 15000);
+  })();
+</script>
