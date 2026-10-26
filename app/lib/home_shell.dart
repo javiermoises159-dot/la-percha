@@ -6,7 +6,6 @@ import 'explore_page.dart';
 import 'extras.dart';
 import 'features.dart';
 import 'listing.dart';
-import 'logo.dart';
 import 'messages_page.dart';
 import 'profile_page.dart';
 import 'sell_page.dart';
@@ -45,12 +44,23 @@ class _HomeShellState extends State<HomeShell> {
     final ink = Theme.of(context).colorScheme.onSurface;
     final wide = MediaQuery.sizeOf(context).width >= 900;
     const items = [
-      (Icons.home_outlined, 'Inicio'),
-      (Icons.grid_view_rounded, 'Explorar'),
-      (Icons.add_circle_outline, 'Vender'),
-      (Icons.mail_outline, 'Mensajes'),
-      (Icons.person_outline, 'Perfil'),
+      (Icons.home_outlined, Icons.home_rounded, 'Inicio'),
+      (Icons.search_rounded, Icons.search_rounded, 'Buscar'),
+      (Icons.add_rounded, Icons.add_rounded, 'Vender'),
+      (Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Buzón'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Yo'),
     ];
+    // Vender: botón rojo (o tinta cuando estás en Vender).
+    Widget sellIcon(bool on) => Container(
+          width: 40,
+          height: 30,
+          decoration: BoxDecoration(
+              color: on ? context.ink : Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(10)),
+          child: Icon(Icons.add_rounded,
+              color: on ? Theme.of(context).colorScheme.surface : Colors.white),
+        );
+    final city = prefsStore.prefs.city ?? widget.state.account?.city;
     final pages = IndexedStack(
       index: _index,
       children: [
@@ -64,14 +74,22 @@ class _HomeShellState extends State<HomeShell> {
     );
     return Scaffold(
       appBar: AppBar(
-        title: Row(children: [
-          const LogoMark(size: 30),
-          const SizedBox(width: 8),
-          Text('La Percha', style: display(22, color: ink)),
-        ]),
+        title: const Wordmark(size: 25),
         actions: [
+          if (city != null && !wide)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: ActionChip(
+                avatar: Icon(Icons.place_outlined, size: 16, color: ink),
+                label: Text(city),
+                onPressed: () => Navigator.of(context)
+                    .push(MaterialPageRoute<void>(
+                        builder: (_) => const PrefsPage()))
+                    .then((_) => setState(() {})),
+              ),
+            ),
           if (widget.state.account != null) const AvisosButton(),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
         ],
       ),
       // En ordenador: menú lateral y contenido centrado. En móvil: barra inferior.
@@ -85,9 +103,12 @@ class _HomeShellState extends State<HomeShell> {
                     ? NavigationRailLabelType.none
                     : NavigationRailLabelType.all,
                 destinations: [
-                  for (final (icon, label) in items)
+                  for (final (icon, sel, label) in items)
                     NavigationRailDestination(
-                        icon: Icon(icon), label: Text(label)),
+                        icon: label == 'Vender' ? sellIcon(false) : Icon(icon),
+                        selectedIcon:
+                            label == 'Vender' ? sellIcon(true) : Icon(sel),
+                        label: Text(label)),
                 ],
               ),
               const VerticalDivider(width: 1),
@@ -103,13 +124,21 @@ class _HomeShellState extends State<HomeShell> {
           : pages,
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: _select,
-              destinations: [
-                for (final (icon, label) in items)
-                  NavigationDestination(icon: Icon(icon), label: label),
-              ],
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: context.line))),
+              child: NavigationBar(
+                selectedIndex: _index,
+                onDestinationSelected: _select,
+                destinations: [
+                  for (final (icon, sel, label) in items)
+                    NavigationDestination(
+                        icon: label == 'Vender' ? sellIcon(false) : Icon(icon),
+                        selectedIcon:
+                            label == 'Vender' ? sellIcon(true) : Icon(sel),
+                        label: label),
+                ],
+              ),
             ),
     );
   }

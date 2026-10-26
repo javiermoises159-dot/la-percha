@@ -5,7 +5,6 @@ import 'app_state.dart';
 import 'config.dart';
 import 'home_shell.dart';
 import 'listing.dart';
-import 'logo.dart';
 import 'theme.dart';
 import 'welcome_screen.dart';
 
@@ -73,13 +72,9 @@ class _Splash extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const LogoMark(size: 88),
-              const SizedBox(height: 16),
-              Text('La Percha',
-                  style: display(30,
-                      color: Theme.of(context).colorScheme.onSurface)),
+              const Wordmark(size: 40),
               const SizedBox(height: 6),
-              Text('Dale otra vida a tu ropa',
+              Text('Vende lo que ya no usas',
                   style: TextStyle(color: context.muted)),
             ],
           ),

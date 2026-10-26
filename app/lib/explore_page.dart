@@ -18,78 +18,76 @@ void toggleFavorite(BuildContext context, String id) {
   appState.toggleFav(id);
 }
 
-/// Tarjeta de una prenda.
+/// Tarjeta de un artículo: la foto manda; precio, título y detalles debajo.
 class ListingCard extends StatelessWidget {
   const ListingCard({super.key, required this.item});
   final Listing item;
 
   @override
   Widget build(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
-    return GestureDetector(
+    final bs = bsText(item.price).replaceFirst('≈ ', '');
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
       onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => ListingDetail(item: item))),
-      child: Container(
-        decoration: BoxDecoration(
-            color: surface, borderRadius: BorderRadius.circular(14)),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
               child: Stack(children: [
                 Positioned.fill(child: ListingPhoto(item: item)),
                 Positioned(
-                  left: 6,
-                  top: 6,
+                  left: 8,
+                  top: 8,
                   child: ListenableBuilder(
                     listenable: appState,
                     builder: (context, _) {
                       final before = appState.favPriceAt[item.id];
+                      final drop = before != null && before > item.price;
                       final label = item.featured
                           ? 'Destacado'
-                          : (before != null && before > item.price)
+                          : drop
                               ? 'Bajó de \$${before.toStringAsFixed(0)}'
                               : null;
                       if (label == null) return const SizedBox.shrink();
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                            horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                            color: item.featured
-                                ? Theme.of(context).colorScheme.primary
-                                : const Color(0xFF2E7D32),
-                            borderRadius: BorderRadius.circular(10)),
+                            color: item.featured ? Colors.white : context.leaf,
+                            borderRadius: BorderRadius.circular(6)),
                         child: Text(label,
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: item.featured ? LP.ink : Colors.white,
                                 fontSize: 11,
-                                fontWeight: FontWeight.w700)),
+                                fontWeight: FontWeight.w600)),
                       );
                     },
                   ),
                 ),
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: 8,
+                  bottom: 8,
                   child: ListenableBuilder(
                     listenable: appState,
                     builder: (context, _) {
                       final fav = appState.favs.contains(item.id);
                       return Material(
-                        color: surface,
+                        color: Colors.white.withValues(alpha: 0.92),
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
                           onTap: () => toggleFavorite(context, item.id),
                           child: Padding(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(7),
                             child: Icon(
                                 fav ? Icons.favorite : Icons.favorite_border,
-                                size: 18,
+                                size: 17,
                                 color: fav
                                     ? Theme.of(context).colorScheme.primary
-                                    : context.muted),
+                                    : LP.ink),
                           ),
                         ),
                       );
@@ -98,28 +96,38 @@ class ListingCard extends StatelessWidget {
                 ),
               ]),
             ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('\$${item.price.toStringAsFixed(0)}',
-                      style: display(18,
-                          color: Theme.of(context).colorScheme.onSurface)),
-                  if (bsText(item.price).isNotEmpty)
-                    Text(bsText(item.price),
-                        style: TextStyle(color: context.muted, fontSize: 11)),
-                  Text(item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('${item.size} · ${item.city}',
-                      style: TextStyle(color: context.muted, fontSize: 12)),
+          ),
+          const SizedBox(height: 7),
+          Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text('\$${item.price.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2)),
+                if (bs.isNotEmpty) ...[
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(bs,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: context.muted, fontSize: 12)),
+                  ),
                 ],
-              ),
-            ),
-          ],
-        ),
+              ]),
+          Text(item.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13)),
+          Text(
+              [if (item.size != 'No aplica') item.size, item.condition]
+                  .join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: context.muted, fontSize: 12)),
+        ],
       ),
     );
   }
@@ -143,7 +151,7 @@ class ListingGrid extends StatelessWidget {
           child: Text(
               listingsStore.error ??
                   emptyText ??
-                  'No encontramos prendas con ese filtro.',
+                  'No encontramos nada con ese filtro.',
               textAlign: TextAlign.center,
               style: TextStyle(color: context.muted)),
         ),
@@ -154,9 +162,9 @@ class ListingGrid extends StatelessWidget {
       // 2 columnas en móvil; más en pantallas anchas.
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 240,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.72),
+          mainAxisSpacing: 18,
+          crossAxisSpacing: 10,
+          childAspectRatio: 0.6),
       itemCount: items.length,
       itemBuilder: (_, i) => ListingCard(item: items[i]),
     );
@@ -215,7 +223,7 @@ class _ExplorePageState extends State<ExplorePage> {
               onChanged: (v) => setState(() => _q = v.trim()),
               decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.search),
-                  hintText: 'Buscar artículos',
+                  hintText: 'Buscar en La Percha',
                   contentPadding: EdgeInsets.symmetric(vertical: 0)),
             ),
           ),
@@ -235,29 +243,49 @@ class _ExplorePageState extends State<ExplorePage> {
         ]),
       ),
       SizedBox(
-        height: 44,
+        height: 92,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           children: [
             for (final c in [
               categories.first,
               if (appState.account != null) _siguiendo,
               ...categories.skip(1),
             ])
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ChoiceChip(
-                  label: Text(c),
-                  selected: _cat == c,
-                  onSelected: (_) {
-                    if (c == _siguiendo) followStore.load();
-                    setState(() => _cat = c);
-                  },
-                ),
+              _CatTile(
+                label: c,
+                icon: c == 'Todo'
+                    ? Icons.grid_view_rounded
+                    : c == _siguiendo
+                        ? Icons.favorite_border_rounded
+                        : (categoryIcons[c] ?? Icons.checkroom),
+                selected: _cat == c,
+                onTap: () {
+                  if (c == _siguiendo) followStore.load();
+                  setState(() => _cat = c);
+                },
               ),
           ],
         ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        child: Row(children: [
+          Text(
+              _cat == 'Todo'
+                  ? (prefsStore.prefs.city != null
+                      ? 'Cerca de ti'
+                      : 'Recién colgado')
+                  : _cat,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3)),
+          const Spacer(),
+          Text('${items.length} artículos',
+              style: TextStyle(color: context.muted, fontSize: 13)),
+        ]),
       ),
       Expanded(
         child: RefreshIndicator(
@@ -265,7 +293,7 @@ class _ExplorePageState extends State<ExplorePage> {
           child: ListingGrid(
               items: items,
               emptyText: listingsStore.all.isEmpty
-                  ? 'Todavía no hay prendas. ¡Sé el primero en publicar!'
+                  ? 'Todavía no hay nada colgado. ¡Sé el primero en publicar!'
                   : null),
         ),
       ),
@@ -385,6 +413,54 @@ class CategoryResults extends StatelessWidget {
           items:
               listingsStore.all.where((l) => l.category == category).toList(),
           emptyText: 'Todavía no hay prendas en esta categoría.',
+        ),
+      ),
+    );
+  }
+}
+
+/// Categoría como cuadro con icono (la seleccionada va en tinta).
+class _CatTile extends StatelessWidget {
+  const _CatTile(
+      {required this.label,
+      required this.icon,
+      required this.selected,
+      required this.onTap});
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: SizedBox(
+          width: 66,
+          child: Column(children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                  color: selected ? context.ink : context.soft,
+                  borderRadius: BorderRadius.circular(16)),
+              child: Icon(icon,
+                  size: 26,
+                  color: selected
+                      ? Theme.of(context).colorScheme.surface
+                      : context.ink),
+            ),
+            const SizedBox(height: 5),
+            Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          ]),
         ),
       ),
     );

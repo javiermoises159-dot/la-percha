@@ -45,10 +45,14 @@ class _SellPageState extends State<SellPage> {
   final List<Uint8List> _photos = [];
   bool _fotoIa = false; // la primera foto es una portada creada por la IA
   bool _scanning = false;
+  bool _autoScan = false;
 
   /// "Vende con una foto": la IA del servidor rellena el anuncio.
   Future<void> _scan() async {
-    if (_photos.isEmpty) return _choosePhoto();
+    if (_photos.isEmpty) {
+      _autoScan = true; // al elegir la foto, se arma el anuncio solo
+      return _choosePhoto();
+    }
     final foto = _photos[_fotoIa && _photos.length > 1 ? 1 : 0];
     setState(() {
       _scanning = true;
@@ -123,6 +127,10 @@ class _SellPageState extends State<SellPage> {
     if (x == null) return;
     final bytes = await x.readAsBytes();
     if (_photos.length < 5) setState(() => _photos.add(bytes));
+    if (_autoScan) {
+      _autoScan = false;
+      _scan();
+    }
   }
 
   void _choosePhoto() {
@@ -213,11 +221,16 @@ class _SellPageState extends State<SellPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Vende lo que ya no usas', style: display(24, color: ink)),
+        Text('Vender', style: display(26, color: ink)),
         const SizedBox(height: 4),
-        Text('Sin comisión: cobras el precio completo.',
+        Text(
+            'Sin comisión: cobras el precio completo. O escríbelo tú mismo más abajo.',
             style: TextStyle(color: context.muted)),
         const SizedBox(height: 16),
+        if (_photos.isEmpty) ...[
+          _MagicButton(busy: _scanning, hasPhoto: false, onTap: _scan),
+          const SizedBox(height: 20),
+        ],
         SizedBox(
           height: 110,
           child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -306,12 +319,10 @@ class _SellPageState extends State<SellPage> {
         Text(
             'Hasta 5 fotos con buena luz: de frente, detalles y etiqueta. Más fotos, más confianza.',
             style: TextStyle(color: context.muted, fontSize: 12)),
-        const SizedBox(height: 10),
-        _MagicButton(
-          busy: _scanning,
-          hasPhoto: _photos.isNotEmpty,
-          onTap: _scan,
-        ),
+        if (_photos.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _MagicButton(busy: _scanning, hasPhoto: true, onTap: _scan),
+        ],
         if (_fotoIa)
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -432,7 +443,7 @@ class _Drop extends StatelessWidget {
   }
 }
 
-/// Botón destacado: hacer la foto y que la app arme el anuncio.
+/// "Foto y listo": sin fotos, una tarjeta oscura tipo cámara; con foto, un botón.
 class _MagicButton extends StatelessWidget {
   const _MagicButton(
       {required this.busy, required this.hasPhoto, required this.onTap});
@@ -442,55 +453,101 @@ class _MagicButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final title = busy
-        ? 'Armando tu anuncio…'
-        : hasPhoto
-            ? 'Arma el anuncio con esta foto'
-            : 'Foto y listo';
-    final sub = busy
-        ? 'Un momento, estamos mirando tu foto'
-        : 'Toma una foto y te escribimos título, precio y descripción en segundos';
-    return Material(
-      color: scheme.primary,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+    final accent = Theme.of(context).colorScheme.primary;
+    if (hasPhoto) {
+      return FilledButton.icon(
+        style: FilledButton.styleFrom(
+            backgroundColor: LP.ink, foregroundColor: Colors.white),
+        onPressed: busy ? null : onTap,
+        icon: busy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.bolt_rounded),
+        label: Text(
+            busy ? 'Armando tu anuncio…' : 'Arma el anuncio con esta foto'),
+      );
+    }
+    Widget step(String n, String t) => Expanded(
+          child: Column(children: [
+            CircleAvatar(
+                radius: 14,
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                child: Text(n,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: context.ink))),
+            const SizedBox(height: 6),
+            Text(t,
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+          ]),
+        );
+    return Column(children: [
+      GestureDetector(
         onTap: busy ? null : onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                  color: scheme.onPrimary.withValues(alpha: 0.18),
-                  shape: BoxShape.circle),
-              child: busy
-                  ? Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2.5, color: scheme.onPrimary))
-                  : Icon(Icons.bolt_rounded, color: scheme.onPrimary, size: 28),
+        child: Container(
+          height: 230,
+          decoration: BoxDecoration(
+              color: const Color(0xFF211D1A),
+              borderRadius: BorderRadius.circular(20)),
+          child: Stack(alignment: Alignment.center, children: [
+            Positioned(
+              left: 54,
+              right: 54,
+              top: 30,
+              bottom: 76,
+              child: Container(
+                decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.8), width: 2),
+                    borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.photo_camera_outlined,
+                    color: Colors.white70, size: 40),
+              ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: display(19, color: scheme.onPrimary)),
-                    const SizedBox(height: 2),
-                    Text(sub,
-                        style: TextStyle(
-                            color: scheme.onPrimary.withValues(alpha: 0.9),
-                            fontSize: 13)),
-                  ]),
+            const Positioned(
+              bottom: 46,
+              child: Text('Encuadra el artículo con buena luz',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)),
             ),
-            if (!busy)
-              Icon(Icons.arrow_forward_rounded, color: scheme.onPrimary),
+            Positioned(
+              bottom: 8,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: accent, width: 4)),
+              ),
+            ),
           ]),
         ),
       ),
-    );
+      const SizedBox(height: 18),
+      Text('Foto y listo', style: display(24, color: context.ink)),
+      const SizedBox(height: 4),
+      Text('Nosotros escribimos el anuncio. Tú solo revisas el precio.',
+          textAlign: TextAlign.center, style: TextStyle(color: context.muted)),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: context.soft, borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          step('1', 'Haz la foto'),
+          step('2', 'Revisa los datos'),
+          step('3', 'Publica gratis'),
+        ]),
+      ),
+    ]);
   }
 }

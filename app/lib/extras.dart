@@ -932,7 +932,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
           ]),
         ),
         Positioned(
-          top: 10,
+          bottom: 10,
           right: 10,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

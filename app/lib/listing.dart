@@ -18,6 +18,7 @@ class Listing {
     required this.color,
     this.featuredUntil,
     this.fotoIa = false,
+    this.createdAt,
   });
 
   final String id;
@@ -34,6 +35,7 @@ class Listing {
   final Color color;
   final DateTime? featuredUntil;
   final bool fotoIa;
+  final DateTime? createdAt;
 
   bool get featured =>
       featuredUntil != null && featuredUntil!.isAfter(DateTime.now());
@@ -56,6 +58,7 @@ class Listing {
       color: _tints[id.hashCode.abs() % _tints.length],
       featuredUntil: DateTime.tryParse('${m['featured_until'] ?? ''}'),
       fotoIa: m['foto_ia'] == true,
+      createdAt: DateTime.tryParse('${m['created_at'] ?? ''}')?.toLocal(),
     );
   }
 }
@@ -67,10 +70,10 @@ double tasaBs = 0;
 String bsText(double usd) {
   if (tasaBs <= 0) return '';
   final v = usd * tasaBs;
-  final parts = v.toStringAsFixed(2).split('.');
+  final parts = v.toStringAsFixed(v >= 100 ? 0 : 2).split('.');
   final ent =
       parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
-  return '≈ Bs $ent,${parts[1]}';
+  return parts.length > 1 ? '≈ Bs $ent,${parts[1]}' : '≈ Bs $ent';
 }
 
 const _tints = [
@@ -270,9 +273,9 @@ class ListingPhoto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final placeholder = Container(
-        color: item.color,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Icon(categoryIcons[item.category] ?? Icons.checkroom,
-            size: iconSize, color: Colors.white70));
+            size: iconSize, color: const Color(0xFFB9B2AA)));
     if (item.photos.isEmpty) return placeholder;
     return Image.network(
       item.photos.first,

@@ -6,7 +6,6 @@ import 'package:flutter/scheduler.dart';
 import 'app_state.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
-import 'logo.dart';
 import 'theme.dart';
 
 /// Bienvenida: dos filas de prendas que se deslizan solas en sentidos opuestos,
@@ -25,9 +24,7 @@ class WelcomeScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
               child: Row(children: [
-                const LogoMark(size: 30),
-                const SizedBox(width: 8),
-                Text('La Percha', style: display(20, color: ink)),
+                const Wordmark(size: 24),
                 const Spacer(),
                 TextButton(
                   onPressed: state.continueAsGuest,
@@ -128,12 +125,12 @@ class WelcomeScreen extends StatelessWidget {
 }
 
 const _pastels = [
-  Color(0xFFF2D4DC),
-  Color(0xFFCFE0EE),
-  Color(0xFFE9E1C4),
-  Color(0xFFD3E6D6),
-  Color(0xFFF1D9C8),
-  Color(0xFFDCD3EC),
+  Color(0xFFF3E2DC),
+  Color(0xFFEFE9E2),
+  Color(0xFFF6F3EF),
+  Color(0xFFE8E4DE),
+  Color(0xFFF1E7DD),
+  Color(0xFFECE6E0),
 ];
 
 class _PhotoTile extends StatelessWidget {

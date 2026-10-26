@@ -987,3 +987,37 @@ class _AvisosPageState extends State<AvisosPage> {
     );
   }
 }
+
+/// Botón pequeño de Seguir (para el anuncio).
+class FollowButtonCompact extends StatelessWidget {
+  const FollowButtonCompact({super.key, required this.sellerId});
+  final String sellerId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (followStore.ids.isEmpty && appState.account != null) followStore.load();
+    return ListenableBuilder(
+      listenable: followStore,
+      builder: (context, _) {
+        final on = followStore.ids.contains(sellerId);
+        return OutlinedButton(
+          style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              textStyle:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          onPressed: () async {
+            if (appState.account == null) {
+              showAuthSheet(context, appState,
+                  message: 'Crea tu cuenta para seguir vendedores.');
+              return;
+            }
+            final err = await followStore.toggle(sellerId);
+            if (err != null && context.mounted) _snack(context, err);
+          },
+          child: Text(on ? 'Siguiendo' : 'Seguir'),
+        );
+      },
+    );
+  }
+}
