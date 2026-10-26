@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Compila la web y la publica en GitHub Pages (rama gh-pages):
 # https://javiermoises159-dot.github.io/la-percha/
+# Con dominio propio:  DOMINIO=percha.com.ve tools/publicar_web.sh
 set -e
+DOMINIO="${DOMINIO:-}"
+if [ -n "$DOMINIO" ]; then BASE=/; else BASE=/la-percha/; fi
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="$(mktemp -d)"
 cp -r "$RAIZ/app" "$TMP/app" && cd "$TMP/app"
@@ -13,11 +16,12 @@ done
 cp web_overrides/icons/favicon.png web/favicon.png
 python3 web_overrides/patch_web.py web
 flutter pub get >/dev/null
-flutter build web --release --base-href /la-percha/
+flutter build web --release --base-href "$BASE"
 touch build/web/.nojekyll
+[ -n "$DOMINIO" ] && echo "$DOMINIO" > build/web/CNAME
 cd build/web
 git init -q -b gh-pages
 git add -A
 git -c user.name=la-percha -c user.email=noreply@github.com commit -q -m "Publicar web"
 git push -q -f https://github.com/javiermoises159-dot/la-percha gh-pages
-echo "Publicado en https://javiermoises159-dot.github.io/la-percha/"
+echo "Publicado en https://${DOMINIO:-javiermoises159-dot.github.io/la-percha/}"
