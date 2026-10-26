@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 
 import 'app_state.dart';
 import 'auth_sheet.dart';
-import 'listing.dart';
 import 'theme.dart';
 
 /// Bienvenida: dos filas de prendas que se deslizan solas en sentidos opuestos,
@@ -36,31 +35,22 @@ class WelcomeScreen extends StatelessWidget {
             Expanded(
               child: LayoutBuilder(builder: (context, c) {
                 // Las filas se adaptan a la altura disponible.
-                final tileH = math.min(170.0, (c.maxHeight - 24) / 2);
-                return ListenableBuilder(
-                  listenable: listingsStore,
-                  builder: (context, _) {
-                    final photos = [
-                      for (final l in listingsStore.all)
-                        if (l.photos.isNotEmpty) l.photos.first
-                    ];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        MarqueeRow(
-                            height: tileH,
-                            tiles: _tiles(photos, 0),
-                            reverse: false,
-                            speed: 26),
-                        const SizedBox(height: 12),
-                        MarqueeRow(
-                            height: tileH,
-                            tiles: _tiles(photos, 3),
-                            reverse: true,
-                            speed: 26),
-                      ],
-                    );
-                  },
+                final tileH = math.min(210.0, (c.maxHeight - 24) / 2);
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MarqueeRow(
+                        height: tileH,
+                        tiles: [for (final c in _categorias.take(5)) _CategoryTile(c)],
+                        reverse: false,
+                        speed: 26),
+                    const SizedBox(height: 12),
+                    MarqueeRow(
+                        height: tileH,
+                        tiles: [for (final c in _categorias.skip(5)) _CategoryTile(c)],
+                        reverse: true,
+                        speed: 26),
+                  ],
                 );
               }),
             ),
@@ -108,34 +98,25 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  /// Mezcla fotos reales (si ya hay anuncios) con ilustraciones de prendas.
-  List<Widget> _tiles(List<String> photos, int offset) {
-    final out = <Widget>[];
-    for (var i = 0; i < 8; i++) {
-      final k = i + offset;
-      if (photos.isNotEmpty && i % 2 == 1) {
-        out.add(_PhotoTile(url: photos[(k ~/ 2) % photos.length]));
-      } else {
-        out.add(
-            _GarmentTile(kind: k % 6, color: _pastels[k % _pastels.length]));
-      }
-    }
-    return out;
-  }
 }
 
-const _pastels = [
-  Color(0xFFF3E2DC),
-  Color(0xFFEFE9E2),
-  Color(0xFFF6F3EF),
-  Color(0xFFE8E4DE),
-  Color(0xFFF1E7DD),
-  Color(0xFFECE6E0),
+/// Una prenda o artículo por cada categoría de Pavito (fotos incluidas en la app).
+const _categorias = [
+  ('Mujer', 'mujer'),
+  ('Zapatos', 'zapatos'),
+  ('Niños', 'ninos'),
+  ('Hogar', 'hogar'),
+  ('Deportes', 'deportes'),
+  ('Hombre', 'hombre'),
+  ('Accesorios', 'accesorios'),
+  ('Bebés', 'bebes'),
+  ('Libros y juegos', 'libros'),
+  ('Mascotas', 'mascotas'),
 ];
 
-class _PhotoTile extends StatelessWidget {
-  const _PhotoTile({required this.url});
-  final String url;
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile(this.c);
+  final (String, String) c;
 
   @override
   Widget build(BuildContext context) {
@@ -143,146 +124,25 @@ class _PhotoTile extends StatelessWidget {
       aspectRatio: 0.72,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child: Image.network(url,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: context.chip)),
+        child: Stack(fit: StackFit.expand, children: [
+          Image.asset('assets/bienvenida/${c.$2}.jpg',
+              fit: BoxFit.cover, gaplessPlayback: true),
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(20)),
+              child: Text(c.$1,
+                  style: const TextStyle(
+                      color: LP.ink, fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+          ),
+        ]),
       ),
     );
   }
-}
-
-class _GarmentTile extends StatelessWidget {
-  const _GarmentTile({required this.kind, required this.color});
-  final int kind;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 0.72,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          color: color,
-          child: CustomPaint(painter: _GarmentPainter(kind)),
-        ),
-      ),
-    );
-  }
-}
-
-/// Siluetas sencillas de prendas.
-class _GarmentPainter extends CustomPainter {
-  _GarmentPainter(this.kind);
-  final int kind;
-
-  static const _shapes = <List<Offset>>[
-    // camiseta
-    [
-      Offset(.30, .15),
-      Offset(.42, .15),
-      Offset(.50, .22),
-      Offset(.58, .15),
-      Offset(.70, .15),
-      Offset(.88, .32),
-      Offset(.78, .42),
-      Offset(.70, .36),
-      Offset(.70, .88),
-      Offset(.30, .88),
-      Offset(.30, .36),
-      Offset(.22, .42),
-      Offset(.12, .32)
-    ],
-    // vestido
-    [
-      Offset(.38, .10),
-      Offset(.44, .10),
-      Offset(.50, .20),
-      Offset(.56, .10),
-      Offset(.62, .10),
-      Offset(.60, .34),
-      Offset(.76, .88),
-      Offset(.24, .88),
-      Offset(.40, .34)
-    ],
-    // pantalón
-    [
-      Offset(.28, .10),
-      Offset(.72, .10),
-      Offset(.78, .90),
-      Offset(.55, .90),
-      Offset(.50, .38),
-      Offset(.45, .90),
-      Offset(.22, .90)
-    ],
-    // bolso (se dibuja aparte)
-    [],
-    // zapato
-    [
-      Offset(.12, .56),
-      Offset(.40, .40),
-      Offset(.55, .50),
-      Offset(.88, .60),
-      Offset(.90, .76),
-      Offset(.12, .76)
-    ],
-    // chaqueta
-    [
-      Offset(.30, .12),
-      Offset(.42, .12),
-      Offset(.50, .20),
-      Offset(.58, .12),
-      Offset(.70, .12),
-      Offset(.90, .40),
-      Offset(.90, .82),
-      Offset(.78, .82),
-      Offset(.74, .44),
-      Offset(.70, .42),
-      Offset(.70, .88),
-      Offset(.30, .88),
-      Offset(.30, .42),
-      Offset(.26, .44),
-      Offset(.22, .82),
-      Offset(.10, .82),
-      Offset(.10, .40)
-    ],
-  ];
-
-  @override
-  void paint(Canvas canvas, Size s) {
-    final fill = Paint()..color = Colors.white.withAlpha(170);
-    Offset p(Offset o) => Offset(o.dx * s.width, o.dy * s.height);
-    if (kind == 3) {
-      final body = RRect.fromRectAndRadius(
-          Rect.fromLTRB(
-              .18 * s.width, .42 * s.height, .82 * s.width, .86 * s.height),
-          Radius.circular(s.width * .08));
-      canvas.drawRRect(body, fill);
-      final handle = Paint()
-        ..color = Colors.white.withAlpha(170)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = s.width * .05
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(
-          Rect.fromLTRB(
-              .32 * s.width, .18 * s.height, .68 * s.width, .62 * s.height),
-          math.pi,
-          math.pi,
-          false,
-          handle);
-      return;
-    }
-    final pts = _shapes[kind];
-    final path = Path()..moveTo(p(pts.first).dx, p(pts.first).dy);
-    for (final o in pts.skip(1)) {
-      path.lineTo(p(o).dx, p(o).dy);
-    }
-    path.close();
-    canvas.drawPath(path, fill);
-  }
-
-  @override
-  bool shouldRepaint(_GarmentPainter old) => old.kind != kind;
 }
 
 /// Fila que se desliza sola y sin fin.
