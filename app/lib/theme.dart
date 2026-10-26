@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'logo.dart';
+
 /// Identidad de Pavito: blanco, tinta cálida y un solo acento rojo arcilla.
 /// La foto del artículo es la protagonista; el color se usa solo para actuar.
 class LP {
@@ -187,21 +189,17 @@ extension PaletteX on BuildContext {
   Color get chip => soft;
 }
 
-/// Logotipo de texto: "pavito." con el punto en rojo arcilla.
+/// Logo de Pavito: la guacamaya junto al nombre.
 class Wordmark extends StatelessWidget {
   const Wordmark({super.key, this.size = 24});
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(children: [
-        const TextSpan(text: 'pavito'),
-        TextSpan(
-            text: '.',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-      ]),
-      style: display(size, color: context.ink),
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Guacamaya(size: size * 1.45),
+      SizedBox(width: size * 0.22),
+      Text('pavito', style: display(size, color: context.ink).copyWith(letterSpacing: -size * 0.045)),
+    ]);
   }
 }

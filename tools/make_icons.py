@@ -1,52 +1,55 @@
-"""Genera los iconos PNG de Pavito (logo de pavito sobre fondo frambuesa)."""
-from PIL import Image, ImageDraw
-import sys
+#!/usr/bin/env python3
+"""Genera los iconos de Pavito (guacamaya sobre amarillo) para web, Android y Play Store.
 
-BG = (201, 42, 88)
-FG = (255, 255, 255)
-S = 4  # supersampling
+Uso: python3 tools/make_icons.py   (necesita playwright con Chromium)
+"""
+import asyncio
+import pathlib
+import re
 
+from playwright.async_api import async_playwright
 
-def hanger(draw, k, ox, oy, w):
-    """Dibuja pavito. k = píxeles por unidad (48 unidades), (ox, oy) = origen."""
-    def P(x, y):
-        return (ox + x * k, oy + y * k)
+RAIZ = pathlib.Path(__file__).resolve().parent.parent
+SVG = re.search(r"'''(.*?)'''", (RAIZ / "app/lib/logo.dart").read_text(), re.S).group(1).strip()
+AMARILLO = "#F5B731"
+WEB = RAIZ / "app/web_overrides/icons"
+ANDROID = RAIZ / "app/android_icons"
 
-    def line(points):
-        for a, b in zip(points, points[1:]):
-            draw.line([P(*a), P(*b)], fill=FG, width=int(w))
-        for pt in points:
-            x, y = P(*pt)
-            draw.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=FG)
-
-    # gancho: arco que sube desde el cuello y se curva a la izquierda
-    import math
-    pts = [(24 + 4.4 * math.cos(math.radians(a)), 12.4 + 4.4 * math.sin(math.radians(a)))
-           for a in range(180, 451, 6)]
-    line(pts)
-    # cuerpo
-    line([(24, 16.8), (24, 20.5)])
-    line([(24, 20.5), (10.9, 30.1), (11.5, 33.6), (36.5, 33.6), (37.1, 30.1), (24, 20.5)])
-
-
-def icon(size, rounded=True, scale=1.0):
-    big = size * S
-    img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    if rounded:
-        d.rounded_rectangle([0, 0, big - 1, big - 1], radius=big * 13 / 48, fill=BG)
-    else:
-        d.rectangle([0, 0, big, big], fill=BG)
-    k = big / 48 * scale
-    off = (big - 48 * k) / 2
-    hanger(d, k, off, off, 2.9 * k)
-    return img.resize((size, size), Image.LANCZOS)
+# (archivo, tamaño, % del lado que ocupa la guacamaya, esquinas redondeadas)
+SALIDAS = [
+    (WEB / "Icon-192.png", 192, 0.84, True),
+    (WEB / "Icon-512.png", 512, 0.84, True),
+    (WEB / "Icon-maskable-192.png", 192, 0.64, False),
+    (WEB / "Icon-maskable-512.png", 512, 0.64, False),
+    (WEB / "apple-touch-icon.png", 180, 0.80, False),
+    (WEB / "favicon.png", 64, 0.92, True),
+    (ANDROID / "play-store-512.png", 512, 0.80, False),
+]
+for carpeta, lado in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
+    SALIDAS.append((ANDROID / f"mipmap-{carpeta}/ic_launcher.png", lado, 0.80, True))
 
 
-out = sys.argv[1] if len(sys.argv) > 1 else "."
-icon(512).save(f"{out}/Icon-512.png")
-icon(192).save(f"{out}/Icon-192.png")
-icon(512, rounded=False, scale=0.78).save(f"{out}/Icon-maskable-512.png")
-icon(192, rounded=False, scale=0.78).save(f"{out}/Icon-maskable-192.png")
-icon(180, rounded=False).save(f"{out}/apple-touch-icon.png")
-icon(64).save(f"{out}/favicon.png")
+def html(lado, escala, redondo):
+    radio = f"{int(lado * 0.22)}px" if redondo else "0"
+    m = int(lado * escala)
+    return (f"<html><body style='margin:0;background:transparent'>"
+            f"<div style='width:{lado}px;height:{lado}px;background:{AMARILLO};border-radius:{radio};"
+            f"display:grid;place-items:center'>"
+            f"<div style='width:{m}px;height:{m}px'>{SVG.replace('<svg ', f'<svg width=\"{m}\" height=\"{m}\" ', 1)}</div>"
+            f"</div></body></html>")
+
+
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        for ruta, lado, escala, redondo in SALIDAS:
+            ruta.parent.mkdir(parents=True, exist_ok=True)
+            pg = await b.new_page(viewport={"width": lado, "height": lado})
+            await pg.set_content(html(lado, escala, redondo))
+            await pg.screenshot(path=str(ruta), omit_background=True,
+                                clip={"x": 0, "y": 0, "width": lado, "height": lado})
+            await pg.close()
+            print("ok", ruta.relative_to(RAIZ))
+        await b.close()
+
+asyncio.run(main())
