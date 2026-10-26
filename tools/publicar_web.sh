@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Compila la web y la publica en GitHub Pages (rama gh-pages):
-# https://javiermoises159-dot.github.io/la-percha/
-# Con dominio propio:  DOMINIO=percha.com.ve tools/publicar_web.sh
+# Cloudflare Pages la publica en https://la-percha.pages.dev
+# Con dominio propio:  DOMINIO=midominio.com tools/publicar_web.sh
 set -e
 DOMINIO="${DOMINIO:-}"
-if [ -n "$DOMINIO" ]; then BASE=/; else BASE=/la-percha/; fi
+BASE=/
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="$(mktemp -d)"
 cp -r "$RAIZ/app" "$TMP/app" && cd "$TMP/app"
@@ -24,4 +24,4 @@ git init -q -b gh-pages
 git add -A
 git -c user.name=la-percha -c user.email=noreply@github.com commit -q -m "Publicar web"
 git push -q -f https://github.com/javiermoises159-dot/la-percha gh-pages
-echo "Publicado en https://${DOMINIO:-javiermoises159-dot.github.io/la-percha/}"
+echo "Publicado en https://${DOMINIO:-la-percha.pages.dev}"
