@@ -740,6 +740,9 @@ class _BundlePageState extends State<BundlePage> {
   void initState() {
     super.initState();
     _load();
+    cargarMetodosEntrega().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -884,11 +887,16 @@ class _BundlePageState extends State<BundlePage> {
                   decoration:
                       const InputDecoration(labelText: 'Cómo lo recibes'),
                   items: [
-                    for (final m in metodosEntrega)
+                    for (final m in metodosDisponibles())
                       DropdownMenuItem(value: m, child: Text(m))
                   ],
                   onChanged: (v) => setState(() => _metodo = v ?? _metodo),
                 ),
+                if (notaEntrega(_metodo) != null) ...[
+                  const SizedBox(height: 6),
+                  Text(notaEntrega(_metodo)!,
+                      style: TextStyle(color: context.muted, fontSize: 13)),
+                ],
                 const SizedBox(height: 10),
                 TextField(
                     controller: _name,

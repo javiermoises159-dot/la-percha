@@ -46,6 +46,34 @@ const metodosEntrega = [
   'Entrega en persona (punto seguro)',
 ];
 
+/// Envío el mismo día dentro de la ciudad con Yummy. Aparece solo cuando el admin
+/// lo activa (ajustes.yummy_activo = 1), cuando la integración esté lista.
+const metodoYummy = 'Envío Yummy (hoy, en tu ciudad)';
+bool _yummyActivo = false;
+List<String> metodosDisponibles() => _yummyActivo
+    ? [...metodosEntrega.take(metodosEntrega.length - 1), metodoYummy, metodosEntrega.last]
+    : metodosEntrega;
+Future<void> cargarMetodosEntrega() async {
+  try {
+    final r = await _db.from('ajustes').select('valor').eq('clave', 'yummy_activo').maybeSingle();
+    _yummyActivo = (r?['valor'] as num?) == 1;
+  } catch (_) {}
+}
+
+/// Nota que acompaña al método elegido.
+String? notaEntrega(String m) {
+  if (m == metodoYummy) {
+    return 'Un motorizado de Yummy retira el artículo con el vendedor y te lo entrega hoy. '
+        'No tienes que verte con nadie. El costo del envío lo ves antes de pagar.';
+  }
+  if (m == metodosEntrega.last) {
+    return 'Queden en un lugar público y concurrido (centro comercial, plaza con vigilancia), '
+        'de día. Revisa el artículo ANTES de confirmar en la app. Nunca pagues en efectivo '
+        'aparte: el pago va siempre por Pavito.';
+  }
+  return null;
+}
+
 /// Punto de entrada del botón "Comprar".
 void startCheckout(BuildContext context, Listing item) {
   if (appState.account == null) {
@@ -80,6 +108,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     super.initState();
     myPriceFor(widget.item).then((p) {
       if (mounted) setState(() => _price = p);
+    });
+    cargarMetodosEntrega().then((_) {
+      if (mounted) setState(() {});
     });
   }
 
@@ -159,17 +190,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
           initialValue: _metodo,
           decoration: const InputDecoration(labelText: 'Cómo lo recibes'),
           items: [
-            for (final m in metodosEntrega)
+            for (final m in metodosDisponibles())
               DropdownMenuItem(value: m, child: Text(m)),
           ],
           onChanged: (v) => setState(() => _metodo = v ?? _metodo),
         ),
-        if (_metodo == metodosEntrega.last) ...[
+        if (notaEntrega(_metodo) != null) ...[
           const SizedBox(height: 8),
-          Text(
-              'Queden en un lugar público y concurrido (centro comercial, plaza con vigilancia), '
-              'de día. Revisa el artículo ANTES de confirmar en la app. Nunca pagues en efectivo '
-              'aparte: el pago va siempre por Pavito.',
+          Text(notaEntrega(_metodo)!,
               style: TextStyle(color: context.muted, fontSize: 13)),
         ],
         const SizedBox(height: 10),
