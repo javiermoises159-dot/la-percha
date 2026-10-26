@@ -15,23 +15,27 @@ class AdminPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 8,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Administración'),
           bottom: const TabBar(isScrollable: true, tabs: [
+            Tab(text: 'Dinero'),
             Tab(text: 'Pagos'),
             Tab(text: 'Problemas'),
             Tab(text: 'Pagar a vendedores'),
+            Tab(text: 'Reembolsos'),
             Tab(text: 'Denuncias'),
             Tab(text: 'Usuarios'),
             Tab(text: 'Destacados y tasa'),
           ]),
         ),
         body: const TabBarView(children: [
+          _MoneyTab(),
           _OrdersTab(status: 'revision'),
           _OrdersTab(status: 'disputa'),
           _PayoutsTab(),
+          _RefundsTab(),
           _ReportsTab(),
           _UsersTab(),
           _PromosTab(),
@@ -479,7 +483,7 @@ class _PayoutsTabState extends State<_PayoutsTab> {
       final r = await _db
           .from('orders')
           .select(
-              'id, price, seller_id, bundle_id, updated_at, listings(title), seller:profiles!orders_seller_id_fkey(username)')
+              'id, price, seller_id, bundle_id, updated_at, released_at, listings(title), seller:profiles!orders_seller_id_fkey(username)')
           .eq('status', 'liberado')
           .isFilter('paid_out_at', null)
           .order('updated_at');
@@ -523,8 +527,14 @@ class _PayoutsTabState extends State<_PayoutsTab> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(field(r['listings'], 'title', 'Artículo'),
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Row(children: [
+                      Expanded(
+                        child: Text(field(r['listings'], 'title', 'Artículo'),
+                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      if (_atrasado(r['released_at'] ?? r['updated_at'], 2))
+                        const _Atrasado(),
+                    ]),
                     Text(
                         '@${field(r['seller'], 'username', '?')} recibe \$${(r['price'] as num).toStringAsFixed(2)}'
                         '${r['bundle_id'] != null ? ' (parte de un lote)' : ''}'),
@@ -547,6 +557,318 @@ class _PayoutsTabState extends State<_PayoutsTab> {
                       child: const Text('Ya le pagué'),
                     ),
                   ]),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+
+/// ¿Ya pasaron [dias] días hábiles (lunes a viernes) desde [desde]?
+bool _atrasado(Object? desde, int dias) {
+  final t = DateTime.tryParse('${desde ?? ''}');
+  if (t == null) return false;
+  var d = t.toUtc().subtract(const Duration(hours: 4)); // hora de Venezuela
+  var k = 0;
+  while (k < dias) {
+    d = d.add(const Duration(days: 1));
+    if (d.weekday <= 5) k++;
+  }
+  return DateTime.now().toUtc().subtract(const Duration(hours: 4)).isAfter(d);
+}
+
+class _Atrasado extends StatelessWidget {
+  const _Atrasado();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+            color: const Color(0xFFFDE8E4), borderRadius: BorderRadius.circular(20)),
+        child: const Text('Atrasado',
+            style: TextStyle(
+                color: LP.clayText, fontWeight: FontWeight.w700, fontSize: 12)),
+      );
+}
+
+String _usd(Object? v) => '\$${((v as num?) ?? 0).toStringAsFixed(2)}';
+num _n(Object? v) => (v is num) ? v : num.tryParse('${v ?? ''}') ?? 0;
+
+/// Cuadre del dinero: lo que debe haber en la cuenta de Pavito y el registro diario.
+class _MoneyTab extends StatefulWidget {
+  const _MoneyTab();
+  @override
+  State<_MoneyTab> createState() => _MoneyTabState();
+}
+
+class _MoneyTabState extends State<_MoneyTab> {
+  Map<String, dynamic>? _c;
+  List<Map<String, dynamic>> _hist = [];
+  final _saldo = TextEditingController();
+  final _nota = TextEditingController();
+  String? _msg;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _saldo.dispose();
+    _nota.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final c = await _db.rpc('admin_cuadre');
+      final h = await _db
+          .from('cuadres')
+          .select('dia, saldo_bs, saldo_usd, esperado_usd, diferencia_usd, nota')
+          .order('creado', ascending: false)
+          .limit(14);
+      if (!mounted) return;
+      setState(() {
+        _c = Map<String, dynamic>.from(c as Map);
+        _hist = List<Map<String, dynamic>>.from(h);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _c = {});
+    }
+  }
+
+  Future<void> _guardar() async {
+    final v = num.tryParse(_saldo.text.replaceAll('.', '').replaceAll(',', '.').trim());
+    if (v == null || v < 0) {
+      setState(() => _msg = 'Escribe el saldo de la cuenta en bolívares.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final r = Map<String, dynamic>.from(await _db.rpc('admin_guardar_cuadre',
+          params: {'p_saldo_bs': v, 'p_nota': _nota.text.trim()}) as Map);
+      final dif = _n(r['diferencia_usd']);
+      _saldo.clear();
+      _nota.clear();
+      _msg = dif.abs() < 0.5
+          ? 'Cuadre guardado: la cuenta cuadra.'
+          : dif < 0
+              ? 'Cuadre guardado: faltan ${_usd(-dif)} en la cuenta. Revísalo hoy.'
+              : 'Cuadre guardado: sobran ${_usd(dif)} (ganancias no retiradas o pagos sin registrar).';
+      await _load();
+    } catch (e) {
+      _msg = 'No se pudo guardar: $e';
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    if (c == null) return const Center(child: CircularProgressIndicator());
+    if (c.isEmpty) {
+      return Center(
+          child: Text('No se pudo cargar el cuadre.',
+              style: TextStyle(color: context.muted)));
+    }
+    final tasa = _n(c['tasa']);
+    String bs(Object? v) => tasa > 0
+        ? 'Bs ${(_n(v) * tasa).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.')}'
+        : '';
+    Widget fila(String t, Object? v, {bool fuerte = false, String? ayuda}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(t, style: TextStyle(fontWeight: fuerte ? FontWeight.w800 : FontWeight.w500)),
+                if (ayuda != null)
+                  Text(ayuda, style: TextStyle(color: context.muted, fontSize: 12.5)),
+              ]),
+            ),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(_usd(_n(v)),
+                  style: TextStyle(fontWeight: fuerte ? FontWeight.w800 : FontWeight.w600)),
+              if (tasa > 0)
+                Text(bs(v), style: TextStyle(color: context.muted, fontSize: 12.5)),
+            ]),
+          ]),
+        );
+    final alertas = <String>[
+      if (_n(c['pagos_atrasados']) > 0)
+        '${c['pagos_atrasados']} pago(s) a vendedores pasados de 2 días hábiles',
+      if (_n(c['reembolsos_atrasados']) > 0)
+        '${c['reembolsos_atrasados']} reembolso(s) pasados de 5 días hábiles',
+      if (_n(c['disputas_atrasadas']) > 0)
+        '${c['disputas_atrasadas']} problema(s) abiertos hace más de 5 días hábiles',
+      if (_n(c['envios_por_vencer']) > 0)
+        '${c['envios_por_vencer']} venta(s) sin enviar a punto de cancelarse',
+    ];
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(padding: const EdgeInsets.all(16), children: [
+        if (alertas.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: const Color(0xFFFDE8E4), borderRadius: BorderRadius.circular(12)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Atención', style: TextStyle(fontWeight: FontWeight.w800, color: LP.clayText)),
+              for (final a in alertas) Text('• $a'),
+            ]),
+          ),
+        Text('Dinero de otros', style: display(18, color: context.ink)),
+        Text('Siempre tiene que estar en la cuenta de Pavito.',
+            style: TextStyle(color: context.muted)),
+        fila('Pedidos en curso', c['retenido'], ayuda: 'Pagos confirmados que aún no se liberan'),
+        fila('Por pagar a vendedores', c['por_pagar'], ayuda: 'Ventas completadas sin pagar'),
+        fila('Reembolsos pendientes', c['reembolsos'], ayuda: 'Pedidos cancelados ya pagados'),
+        fila('Total de otros', c['terceros'], fuerte: true),
+        const Divider(height: 28),
+        Text('Ganancia de Pavito', style: display(18, color: context.ink)),
+        fila('Tarifas de protección', c['tarifas'], ayuda: 'De ventas completadas'),
+        fila('Destacados', c['destacados']),
+        const Divider(height: 28),
+        fila('Debe haber en la cuenta', c['esperado'],
+            fuerte: true, ayuda: 'Si no has retirado ganancias'),
+        fila('Pagos por verificar', c['por_verificar'],
+            ayuda: 'Reportados por compradores, aún sin confirmar (no se suman)'),
+        const SizedBox(height: 18),
+        Text('Cuadre de hoy', style: display(18, color: context.ink)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _saldo,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Saldo real de la cuenta (Bs)'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _nota,
+          maxLength: 300,
+          decoration: const InputDecoration(labelText: 'Nota (opcional)'),
+        ),
+        FilledButton(
+            onPressed: _busy ? null : _guardar, child: const Text('Guardar cuadre')),
+        if (_msg != null) ...[
+          const SizedBox(height: 8),
+          Text(_msg!, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+        if (_hist.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          Text('Últimos cuadres', style: display(16, color: context.ink)),
+          for (final h in _hist)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('${h['dia']} · cuenta ${_usd(_n(h['saldo_usd']))}'),
+              subtitle: Text('Esperado ${_usd(_n(h['esperado_usd']))}'
+                  '${h['nota'] != null ? ' · ${h['nota']}' : ''}'),
+              trailing: Text(
+                _n(h['diferencia_usd']).abs() < 0.5
+                    ? 'Cuadra'
+                    : '${_n(h['diferencia_usd']) > 0 ? '+' : ''}${_usd(_n(h['diferencia_usd']))}',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: _n(h['diferencia_usd']) < -0.5 ? LP.clayText : LP.ok),
+              ),
+            ),
+        ],
+      ]),
+    );
+  }
+}
+
+/// Pedidos cancelados que ya estaban pagados: hay que devolver el dinero al comprador.
+class _RefundsTab extends StatefulWidget {
+  const _RefundsTab();
+  @override
+  State<_RefundsTab> createState() => _RefundsTabState();
+}
+
+class _RefundsTabState extends State<_RefundsTab> {
+  List<Map<String, dynamic>>? _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db
+          .from('orders')
+          .select(
+              'id, price, fee, bundle_id, pay_ref, cancelled_at, updated_at, delivery, listings(title), buyer:profiles!orders_buyer_id_fkey(username)')
+          .eq('status', 'cancelado')
+          .not('paid_at', 'is', null)
+          .isFilter('refunded_at', null)
+          .order('cancelled_at');
+      // Un lote se devuelve de una vez: se agrupa por lote.
+      final g = <String, Map<String, dynamic>>{};
+      for (final x in r) {
+        final k = (x['bundle_id'] ?? x['id']) as String;
+        final t = _n(x['price']) + _n(x['fee']);
+        if (g.containsKey(k)) {
+          g[k]!['total'] = _n(g[k]!['total']) + t;
+          g[k]!['n'] = (g[k]!['n'] as int) + 1;
+        } else {
+          g[k] = {...x, 'total': t, 'n': 1};
+        }
+      }
+      if (mounted) setState(() => _rows = g.values.toList());
+    } catch (_) {
+      if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    if (rows == null) return const Center(child: CircularProgressIndicator());
+    if (rows.isEmpty) {
+      return Center(
+          child: Text('No hay reembolsos pendientes.',
+              style: TextStyle(color: context.muted)));
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(padding: const EdgeInsets.all(16), children: [
+        for (final r in rows)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(
+                        r['n'] == 1
+                            ? field(r['listings'], 'title', 'Artículo')
+                            : 'Lote de ${r['n']} artículos',
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                  if (_atrasado(r['cancelled_at'] ?? r['updated_at'], 5)) const _Atrasado(),
+                ]),
+                Text('Devolver ${_usd(r['total'])} a @${field(r['buyer'], 'username', '?')}'),
+                Text('Referencia de su pago: ${r['pay_ref'] ?? '—'}',
+                    style: TextStyle(color: context.muted)),
+                if (r['delivery'] is Map && (r['delivery'] as Map)['phone'] != null)
+                  Text('Teléfono: ${(r['delivery'] as Map)['phone']}',
+                      style: TextStyle(color: context.muted)),
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      await _db.rpc('admin_mark_refunded', params: {'p_order': r['id']});
+                    } catch (_) {}
+                    _load();
+                  },
+                  child: const Text('Ya le devolví el dinero'),
+                ),
+              ]),
             ),
           ),
       ]),

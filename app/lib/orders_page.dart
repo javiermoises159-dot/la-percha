@@ -29,6 +29,15 @@ String field(Object? m, String key, String fallback) {
 
 String _money(num v) => '\$${v.toStringAsFixed(2)}';
 
+/// Fecha límite para enviar: 3 días desde que se confirmó el pago.
+String? _limiteEnvio(Map o) {
+  final p = DateTime.tryParse('${o['paid_at'] ?? ''}');
+  if (p == null) return null;
+  final d = p.add(const Duration(days: 3)).toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(d.day)}/${two(d.month)} a las ${two(d.hour)}:${two(d.minute)}';
+}
+
 /// Formas de entrega en Venezuela. La última siempre es en persona.
 const metodosEntrega = [
   'MRW (cobro a destino)',
@@ -232,7 +241,7 @@ class _OrderPageState extends State<OrderPage> {
       final row = await _db
           .from('orders')
           .select(
-              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, paid_at, refunded_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('id', widget.orderId)
           .single();
       // La dirección y el teléfono solo los entrega el servidor a quien puede verlos
@@ -362,6 +371,13 @@ class _OrderPageState extends State<OrderPage> {
     if (!isBuyer && status == 'retenido') {
       actions.addAll([
         Text('Envía la prenda', style: display(20, color: ink)),
+        if (_limiteEnvio(o) != null) ...[
+          const SizedBox(height: 6),
+          Text(
+              'Tienes hasta el ${_limiteEnvio(o)} para enviarla y cargar la guía. '
+              'Si no, el pedido se cancela y el dinero vuelve al comprador.',
+              style: TextStyle(color: context.muted, height: 1.35)),
+        ],
         const SizedBox(height: 8),
         TextField(
             controller: _tracking,
@@ -401,13 +417,19 @@ class _OrderPageState extends State<OrderPage> {
     if (status == 'revision') {
       hint = 'Estamos verificando tu pago. Te avisamos cuando quede retenido.';
     } else if (status == 'retenido' && isBuyer) {
-      hint = 'Pago confirmado. El vendedor ya puede enviarte la prenda.';
+      final l = _limiteEnvio(o);
+      hint = 'Pago confirmado. El vendedor ya puede enviarte la prenda.'
+          '${l == null ? '' : ' Tiene hasta el $l; si no la envía, te devolvemos todo.'}';
     } else if (status == 'enviado' && !isBuyer) {
       hint = 'Esperando que el comprador confirme que la recibió.';
     } else if (status == 'liberado' && !isBuyer) {
       hint = 'Completado. El pago de ${_money(price)} es tuyo.';
     } else if (status == 'disputa') {
       hint = 'Nuestro equipo revisará el caso y te contactará.';
+    } else if (status == 'cancelado' && isBuyer && o['paid_at'] != null) {
+      hint = o['refunded_at'] != null
+          ? 'Ya te devolvimos el dinero a tu Pago Móvil.'
+          : 'Te devolvemos todo lo que pagaste a tu Pago Móvil en un máximo de 5 días hábiles.';
     }
 
     return RefreshIndicator(

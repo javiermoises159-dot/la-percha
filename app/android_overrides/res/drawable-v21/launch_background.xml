@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pantalla de arranque de Pavito (Android 11 o menos): fondo rojo y logo centrado. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/pavito_rojo" />
+    <item android:width="200dp" android:height="175dp" android:gravity="center">
+        <bitmap android:gravity="fill" android:src="@drawable/splash_logo" />
+    </item>
+</layer-list>

@@ -27,6 +27,7 @@ workflows:
           flutter create --platforms=android --org com.pavito --project-name pavito .
           perl -pi -e 's/android:label="[^"]*"/android:label="Pavito"/' android/app/src/main/AndroidManifest.xml
           for d in android_icons/mipmap-*; do cp "$d/ic_launcher.png" "android/app/src/main/res/$(basename $d)/ic_launcher.png"; done
+          cp -r android_overrides/res/. android/app/src/main/res/
       - name: Instalar dependencias
         script: cd app && flutter pub get
       - name: Revisar el código

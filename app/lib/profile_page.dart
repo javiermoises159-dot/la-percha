@@ -8,6 +8,7 @@ import 'auth_sheet.dart';
 import 'explore_page.dart';
 import 'info_pages.dart';
 import 'listing.dart';
+import 'listing_detail.dart';
 import 'admin_page.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
@@ -74,6 +75,8 @@ class ProfilePage extends StatelessWidget {
             _item(context, Icons.admin_panel_settings_outlined,
                 'Panel de administración',
                 page: const AdminPage()),
+          _item(context, Icons.checkroom_outlined, 'Mi armario',
+              page: const MyListingsPage()),
           _item(context, Icons.person_outline, 'Ver mi perfil público',
               page: SellerProfilePage(sellerId: a.id, username: a.username)),
           _item(context, Icons.favorite_border, 'Favoritos',
@@ -161,7 +164,7 @@ class FavoritesPage extends StatelessWidget {
   }
 }
 
-/// Mis anuncios: ocultar, mostrar y eliminar.
+/// Mi armario: todo lo que vendes, con filtros por estado, destacar, ocultar y eliminar.
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
 
@@ -252,60 +255,194 @@ class _MyListingsPageState extends State<MyListingsPage> {
     }
   }
 
+  String _filtro = 'todos';
+
   @override
   Widget build(BuildContext context) {
-    final labels = {
-      'active': 'Visible',
+    const labels = {
+      'active': 'En venta',
       'hidden': 'Oculto',
       'reserved': 'Reservado',
       'sold': 'Vendido',
     };
+    const filtros = {
+      'todos': 'Todo',
+      'active': 'En venta',
+      'reserved': 'Reservados',
+      'sold': 'Vendidos',
+      'hidden': 'Ocultos',
+    };
+    int cuenta(String st) => _status.values.where((v) => v == st).length;
+    final enVenta = _items.where((l) => _status[l.id] == 'active');
+    final valor = enVenta.fold<double>(0, (a, l) => a + l.price);
+    final visibles = _filtro == 'todos'
+        ? _items
+        : _items.where((l) => (_status[l.id] ?? 'active') == _filtro).toList();
+    Widget dato(String n, String t) => Expanded(
+          child: Column(children: [
+            Text(n, style: display(22, color: context.ink)),
+            Text(t, style: TextStyle(color: context.muted, fontSize: 12.5)),
+          ]),
+        );
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis anuncios')),
+      appBar: AppBar(title: const Text('Mi armario')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!))
               : _items.isEmpty
                   ? Center(
-                      child: Text('Todavía no has publicado nada.',
-                          style: TextStyle(color: context.muted)))
-                  : ListView.separated(
-                      itemCount: _items.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final l = _items[i];
-                        final st = _status[l.id] ?? 'active';
-                        return ListTile(
-                          leading: SizedBox(
-                              width: 52,
-                              height: 52,
-                              child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: ListingPhoto(item: l, iconSize: 24))),
-                          title: Text(l.title,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                          subtitle: Text(
-                              '\$${l.price.toStringAsFixed(0)} · ${labels[st] ?? st}'),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (v) {
-                              if (v == 'hide') _setStatus(l, 'hidden');
-                              if (v == 'show') _setStatus(l, 'active');
-                              if (v == 'delete') _delete(l);
-                            },
-                            itemBuilder: (_) => [
-                              if (st == 'active')
-                                const PopupMenuItem(
-                                    value: 'hide', child: Text('Ocultar')),
-                              if (st == 'hidden')
-                                const PopupMenuItem(
-                                    value: 'show', child: Text('Mostrar')),
-                              const PopupMenuItem(
-                                  value: 'delete', child: Text('Eliminar')),
-                            ],
+                      child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text('Tu armario está vacío', style: display(20, color: context.ink)),
+                        const SizedBox(height: 6),
+                        Text('Publica lo que ya no usas y aparecerá aquí.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: context.muted)),
+                      ]),
+                    ))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: CustomScrollView(slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                            child: Row(children: [
+                              dato('${cuenta('active')}', 'en venta'),
+                              dato('${cuenta('sold')}', 'vendidos'),
+                              dato('\$${valor.toStringAsFixed(0)}', 'valor en venta'),
+                            ]),
                           ),
-                        );
-                      },
+                        ),
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: 52,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              children: [
+                                for (final f in filtros.entries)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: ChoiceChip(
+                                      label: Text(f.key == 'todos'
+                                          ? '${f.value} (${_items.length})'
+                                          : '${f.value} (${cuenta(f.key)})'),
+                                      selected: _filtro == f.key,
+                                      onSelected: (_) => setState(() => _filtro = f.key),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (visibles.isEmpty)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Text('Nada por aquí.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: context.muted)),
+                            ),
+                          ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 220,
+                                mainAxisSpacing: 18,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: .62),
+                            delegate: SliverChildBuilderDelegate(
+                              childCount: visibles.length,
+                              (_, i) {
+                                final l = visibles[i];
+                                final st = _status[l.id] ?? 'active';
+                                return InkWell(
+                                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                                      builder: (_) => ListingDetail(item: l))),
+                                  child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Stack(fit: StackFit.expand, children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Opacity(
+                                                opacity: st == 'active' ? 1 : .55,
+                                                child: ListingPhoto(item: l, iconSize: 32),
+                                              ),
+                                            ),
+                                            if (st != 'active')
+                                              Positioned(
+                                                left: 8,
+                                                top: 8,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                      color: st == 'sold' ? LP.ok : LP.ink,
+                                                      borderRadius: BorderRadius.circular(20)),
+                                                  child: Text(labels[st] ?? st,
+                                                      style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w700)),
+                                                ),
+                                              ),
+                                            Positioned(
+                                              right: 2,
+                                              top: 2,
+                                              child: PopupMenuButton<String>(
+                                                icon: Container(
+                                                  decoration: const BoxDecoration(
+                                                      color: Colors.white, shape: BoxShape.circle),
+                                                  padding: const EdgeInsets.all(4),
+                                                  child: const Icon(Icons.more_horiz,
+                                                      size: 18, color: LP.ink),
+                                                ),
+                                                onSelected: (v) {
+                                                  if (v == 'hide') _setStatus(l, 'hidden');
+                                                  if (v == 'show') _setStatus(l, 'active');
+                                                  if (v == 'promo') {
+                                                    Navigator.of(context).push(MaterialPageRoute<void>(
+                                                        builder: (_) => const PromotePage()));
+                                                  }
+                                                  if (v == 'delete') _delete(l);
+                                                },
+                                                itemBuilder: (_) => [
+                                                  if (st == 'active')
+                                                    const PopupMenuItem(
+                                                        value: 'promo', child: Text('Destacar')),
+                                                  if (st == 'active')
+                                                    const PopupMenuItem(
+                                                        value: 'hide', child: Text('Ocultar')),
+                                                  if (st == 'hidden')
+                                                    const PopupMenuItem(
+                                                        value: 'show', child: Text('Volver a poner en venta')),
+                                                  if (st == 'active' || st == 'hidden')
+                                                    const PopupMenuItem(
+                                                        value: 'delete', child: Text('Eliminar')),
+                                                ],
+                                              ),
+                                            ),
+                                          ]),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text('\$${l.price.toStringAsFixed(0)}',
+                                            style: display(16, color: context.ink)),
+                                        Text(l.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(color: context.muted)),
+                                      ]),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ]),
                     ),
     );
   }
@@ -425,8 +562,10 @@ class _SettingsPageState extends State<SettingsPage> {
         TextButton(
             onPressed: _deleteAccount,
             child: Text('Eliminar mi cuenta',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.primary))),
+                style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? LP.clayD
+                        : LP.clayText))),
       ]),
     );
   }
