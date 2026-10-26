@@ -750,3 +750,181 @@ class _PromotePageState extends State<PromotePage> {
     );
   }
 }
+
+// ===================== Avisos (campanita) =====================
+
+class AvisosStore extends ChangeNotifier {
+  int sinLeer = 0;
+  Timer? _timer;
+
+  void start() {
+    _timer ??= Timer.periodic(const Duration(seconds: 30), (_) => load());
+    load();
+  }
+
+  Future<void> load() async {
+    if (appState.account == null) return;
+    try {
+      final r = await _db.from('avisos').select('id').eq('leido', false).limit(100);
+      if (r.length != sinLeer) {
+        sinLeer = r.length;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+}
+
+final avisosStore = AvisosStore();
+
+/// Icono de campana con el número de avisos sin leer.
+class AvisosButton extends StatefulWidget {
+  const AvisosButton({super.key});
+
+  @override
+  State<AvisosButton> createState() => _AvisosButtonState();
+}
+
+class _AvisosButtonState extends State<AvisosButton> {
+  @override
+  void initState() {
+    super.initState();
+    avisosStore.start();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: avisosStore,
+      builder: (context, _) {
+        final n = avisosStore.sinLeer;
+        return IconButton(
+          tooltip: 'Avisos',
+          onPressed: () => Navigator.of(context)
+              .push(MaterialPageRoute<void>(builder: (_) => const AvisosPage()))
+              .then((_) => avisosStore.load()),
+          icon: Badge(
+            isLabelVisible: n > 0,
+            label: Text(n > 99 ? '99+' : '$n'),
+            child: const Icon(Icons.notifications_none),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class AvisosPage extends StatefulWidget {
+  const AvisosPage({super.key});
+
+  @override
+  State<AvisosPage> createState() => _AvisosPageState();
+}
+
+class _AvisosPageState extends State<AvisosPage> {
+  List<Map<String, dynamic>>? _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db
+          .from('avisos')
+          .select()
+          .order('creado', ascending: false)
+          .limit(60);
+      if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
+    } catch (_) {
+      if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  Future<void> _open(Map<String, dynamic> a) async {
+    if (a['leido'] != true) {
+      try {
+        await _db.from('avisos').update({'leido': true}).eq('id', a['id'] as int);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    final ref = a['ref_id'] as String?;
+    Widget? page;
+    if (a['tipo'] == 'pedido' && ref != null) page = OrderPage(orderId: ref);
+    if (a['tipo'] == 'chat' && ref != null) page = ChatPage(threadId: ref, title: 'Conversación');
+    if (a['tipo'] == 'perfil' && appState.account != null) {
+      page = ReviewsPage(userId: appState.account!.id, username: appState.account!.username);
+    }
+    if (page != null) await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page!));
+    _load();
+  }
+
+  Future<void> _allRead() async {
+    try {
+      await _db.from('avisos').update({'leido': true}).eq('leido', false);
+    } catch (_) {}
+    await _load();
+    avisosStore.load();
+  }
+
+  static IconData _icon(String tipo) => switch (tipo) {
+        'pedido' => Icons.receipt_long_outlined,
+        'chat' => Icons.chat_bubble_outline,
+        _ => Icons.star_outline_rounded,
+      };
+
+  String _cuando(String iso) {
+    final t = DateTime.tryParse(iso)?.toLocal();
+    if (t == null) return '';
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 1) return 'ahora';
+    if (d.inHours < 1) return 'hace ${d.inMinutes} min';
+    if (d.inDays < 1) return 'hace ${d.inHours} h';
+    return 'hace ${d.inDays} d';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Avisos'), actions: [
+        if (rows != null && rows.any((a) => a['leido'] != true))
+          TextButton(onPressed: _allRead, child: const Text('Marcar todo leído')),
+      ]),
+      body: rows == null
+          ? const Center(child: CircularProgressIndicator())
+          : rows.isEmpty
+              ? Center(
+                  child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text(
+                      'Aquí verás mensajes nuevos, ofertas, pagos y envíos.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: context.muted)),
+                ))
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView.separated(
+                    itemCount: rows.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final a = rows[i];
+                      final unread = a['leido'] != true;
+                      return ListTile(
+                        tileColor: unread ? scheme.primary.withValues(alpha: 0.06) : null,
+                        leading: Icon(_icon('${a['tipo']}'),
+                            color: unread ? scheme.primary : context.muted),
+                        title: Text('${a['texto']}',
+                            style: TextStyle(
+                                fontWeight: unread ? FontWeight.w600 : FontWeight.w400)),
+                        subtitle: Text(_cuando('${a['creado']}')),
+                        onTap: () => _open(a),
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
+}

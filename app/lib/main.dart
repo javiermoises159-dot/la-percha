@@ -39,6 +39,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       themeMode: ThemeMode.light,
+      builder: (context, child) => _WideFrame(child: child ?? const SizedBox()),
       home: ListenableBuilder(
         listenable: _state,
         builder: (context, _) {
@@ -83,6 +84,24 @@ class _Splash extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// En pantallas muy anchas centra la app para que no se estire de borde a borde.
+class _WideFrame extends StatelessWidget {
+  const _WideFrame({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.sizeOf(context).width < 1500) return child;
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1500), child: child),
       ),
     );
   }

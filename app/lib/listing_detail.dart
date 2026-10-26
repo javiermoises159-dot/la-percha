@@ -33,104 +33,116 @@ class ListingDetail extends StatelessWidget {
               onPressed: () => toggleFavorite(context, item.id),
             ),
           ]),
-          body: ListView(children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: ListingPhoto(item: item, iconSize: 96),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('\$${item.price.toStringAsFixed(0)}',
-                      style: display(32, color: ink)),
-                  if (bsText(item.price).isNotEmpty)
-                    Text(bsText(item.price), style: TextStyle(color: context.muted)),
-                  const SizedBox(height: 4),
-                  Text(item.title,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 12),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    _Tag('Talla ${item.size}'),
-                    _Tag(item.condition),
-                    _Tag(item.city),
-                  ]),
-                  const SizedBox(height: 16),
-                  Text(item.description.isEmpty
-                      ? 'Sin descripción.'
-                      : item.description),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => SellerProfilePage(
-                            sellerId: item.sellerId, username: item.seller))),
-                    child: Row(children: [
-                      CircleAvatar(
-                          backgroundColor: context.chip,
-                          child: Text(item.seller.isEmpty
-                              ? '?'
-                              : item.seller[0].toUpperCase())),
-                      const SizedBox(width: 10),
-                      Text('@${item.seller}',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      const Icon(Icons.chevron_right),
-                    ]),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                        color: context.leafSoft,
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Compra protegida',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: context.leaf)),
-                        const SizedBox(height: 6),
-                        _Row('Prenda', '\$${item.price.toStringAsFixed(2)}'),
-                        _Row('Protección al comprador',
-                            '\$${fee.toStringAsFixed(2)}'),
-                        _Row('Total (sin envío)',
-                            '\$${(item.price + fee).toStringAsFixed(2)}',
-                            bold: true),
-                        const SizedBox(height: 6),
-                        Text(
-                            'Tu dinero queda retenido hasta que confirmes que recibiste la prenda. El vendedor no paga comisión.',
-                            style: TextStyle(color: context.muted, fontSize: 13)),
+          body: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: ListView(children: [
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: ListingPhoto(item: item, iconSize: 96),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('\$${item.price.toStringAsFixed(0)}',
+                          style: display(32, color: ink)),
+                      if (bsText(item.price).isNotEmpty)
+                        Text(bsText(item.price),
+                            style: TextStyle(color: context.muted)),
+                      const SizedBox(height: 4),
+                      Text(item.title,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+                      Wrap(spacing: 8, runSpacing: 8, children: [
+                        _Tag('Talla ${item.size}'),
+                        _Tag(item.condition),
+                        _Tag(item.city),
+                      ]),
+                      const SizedBox(height: 16),
+                      Text(item.description.isEmpty
+                          ? 'Sin descripción.'
+                          : item.description),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => SellerProfilePage(
+                                    sellerId: item.sellerId,
+                                    username: item.seller))),
+                        child: Row(children: [
+                          CircleAvatar(
+                              backgroundColor: context.chip,
+                              child: Text(item.seller.isEmpty
+                                  ? '?'
+                                  : item.seller[0].toUpperCase())),
+                          const SizedBox(width: 10),
+                          Text('@${item.seller}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          const Icon(Icons.chevron_right),
+                        ]),
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                            color: context.leafSoft,
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Compra protegida',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: context.leaf)),
+                            const SizedBox(height: 6),
+                            _Row(
+                                'Prenda', '\$${item.price.toStringAsFixed(2)}'),
+                            _Row('Protección al comprador',
+                                '\$${fee.toStringAsFixed(2)}'),
+                            _Row('Total (sin envío)',
+                                '\$${(item.price + fee).toStringAsFixed(2)}',
+                                bold: true),
+                            const SizedBox(height: 6),
+                            Text(
+                                'Tu dinero queda retenido hasta que confirmes que recibiste la prenda. El vendedor no paga comisión.',
+                                style: TextStyle(
+                                    color: context.muted, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (mine)
+                        Text('Este es tu anuncio.',
+                            style: TextStyle(color: context.muted))
+                      else ...[
+                        FilledButton(
+                          onPressed: () => startCheckout(context, item),
+                          child: const Text('Comprar'),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () => makeOfferFor(context, item),
+                          icon: const Icon(Icons.local_offer_outlined),
+                          label: const Text('Hacer una oferta'),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton(
+                          onPressed: () => openChatFor(context, item),
+                          child: const Text('Escribir al vendedor'),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  if (mine)
-                    Text('Este es tu anuncio.',
-                        style: TextStyle(color: context.muted))
-                  else ...[
-                    FilledButton(
-                      onPressed: () => startCheckout(context, item),
-                      child: const Text('Comprar'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () => makeOfferFor(context, item),
-                      icon: const Icon(Icons.local_offer_outlined),
-                      label: const Text('Hacer una oferta'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton(
-                      onPressed: () => openChatFor(context, item),
-                      child: const Text('Escribir al vendedor'),
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ]),
             ),
-          ]),
+          ),
         );
       },
     );

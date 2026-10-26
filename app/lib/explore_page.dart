@@ -147,8 +147,9 @@ class ListingGrid extends StatelessWidget {
     }
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+      // 2 columnas en móvil; más en pantallas anchas.
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 240,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 0.72),
@@ -204,7 +205,7 @@ class _ExplorePageState extends State<ExplorePage> {
           onChanged: (v) => setState(() => _q = v.trim()),
           decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
-              hintText: 'Buscar prendas',
+              hintText: 'Buscar artículos',
               contentPadding: EdgeInsets.symmetric(vertical: 0)),
         ),
       ),

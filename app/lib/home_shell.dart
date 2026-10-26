@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'auth_sheet.dart';
 import 'explore_page.dart';
+import 'features.dart';
 import 'logo.dart';
 import 'messages_page.dart';
 import 'profile_page.dart';
@@ -33,6 +34,25 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final ink = Theme.of(context).colorScheme.onSurface;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    const items = [
+      (Icons.home_outlined, 'Inicio'),
+      (Icons.grid_view_rounded, 'Explorar'),
+      (Icons.add_circle_outline, 'Vender'),
+      (Icons.mail_outline, 'Mensajes'),
+      (Icons.person_outline, 'Perfil'),
+    ];
+    final pages = IndexedStack(
+      index: _index,
+      children: [
+        const ExplorePage(),
+        const CategoriesPage(),
+        SellPage(
+            state: widget.state, onPublished: () => setState(() => _index = 0)),
+        const MessagesPage(),
+        const ProfilePage(),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(
         title: Row(children: [
@@ -40,34 +60,48 @@ class _HomeShellState extends State<HomeShell> {
           const SizedBox(width: 8),
           Text('La Percha', style: display(22, color: ink)),
         ]),
-      ),
-      body: IndexedStack(
-        index: _index,
-        children: [
-          const ExplorePage(),
-          const CategoriesPage(),
-          SellPage(
-              state: widget.state,
-              onPublished: () => setState(() => _index = 0)),
-          const MessagesPage(),
-          const ProfilePage(),
+        actions: [
+          if (widget.state.account != null) const AvisosButton(),
+          const SizedBox(width: 4),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Inicio'),
-          NavigationDestination(
-              icon: Icon(Icons.grid_view_rounded), label: 'Explorar'),
-          NavigationDestination(
-              icon: Icon(Icons.add_circle_outline), label: 'Vender'),
-          NavigationDestination(
-              icon: Icon(Icons.mail_outline), label: 'Mensajes'),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline), label: 'Perfil'),
-        ],
-      ),
+      // En ordenador: menú lateral y contenido centrado. En móvil: barra inferior.
+      body: wide
+          ? Row(children: [
+              NavigationRail(
+                extended: MediaQuery.sizeOf(context).width >= 1200,
+                selectedIndex: _index,
+                onDestinationSelected: _select,
+                labelType: MediaQuery.sizeOf(context).width >= 1200
+                    ? NavigationRailLabelType.none
+                    : NavigationRailLabelType.all,
+                destinations: [
+                  for (final (icon, label) in items)
+                    NavigationRailDestination(
+                        icon: Icon(icon), label: Text(label)),
+                ],
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: pages),
+                ),
+              ),
+            ])
+          : pages,
+      bottomNavigationBar: wide
+          ? null
+          : NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: _select,
+              destinations: [
+                for (final (icon, label) in items)
+                  NavigationDestination(icon: Icon(icon), label: label),
+              ],
+            ),
     );
   }
 }
