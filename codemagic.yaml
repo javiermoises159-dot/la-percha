@@ -18,6 +18,9 @@ workflows:
       - name: Actualizar base de datos (Supabase)
         ignore_failure: true
         script: python3 tools/migrar.py
+      - name: Subir funciones del servidor (IA)
+        ignore_failure: true
+        script: npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
       - name: Generar la parte Android del proyecto
         script: |
           cd app
@@ -55,3 +58,5 @@ workflows:
     scripts:
       - name: Aplicar las migraciones nuevas
         script: python3 tools/migrar.py
+      - name: Subir funciones del servidor (IA)
+        script: npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api

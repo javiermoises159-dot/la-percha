@@ -73,7 +73,11 @@ class ListingDetail extends StatelessWidget {
                               fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       Wrap(spacing: 8, runSpacing: 8, children: [
-                        _Tag('Talla ${item.size}'),
+                        if (item.fotoIa)
+                          const _Tag(
+                              'Portada creada con IA: desliza para ver las fotos reales'),
+                        if (item.size != 'No aplica')
+                          _Tag('Talla ${item.size}'),
                         _Tag(item.condition),
                         _Tag(item.city),
                       ]),

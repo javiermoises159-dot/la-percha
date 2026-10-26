@@ -17,6 +17,7 @@ class Listing {
     required this.photos,
     required this.color,
     this.featuredUntil,
+    this.fotoIa = false,
   });
 
   final String id;
@@ -32,6 +33,7 @@ class Listing {
   final List<String> photos;
   final Color color;
   final DateTime? featuredUntil;
+  final bool fotoIa;
 
   bool get featured =>
       featuredUntil != null && featuredUntil!.isAfter(DateTime.now());
@@ -53,6 +55,7 @@ class Listing {
       photos: List<String>.from(m['photos'] as List? ?? const []),
       color: _tints[id.hashCode.abs() % _tints.length],
       featuredUntil: DateTime.tryParse('${m['featured_until'] ?? ''}'),
+      fotoIa: m['foto_ia'] == true,
     );
   }
 }
@@ -218,15 +221,19 @@ class ListingsStore extends ChangeNotifier {
     required String condition,
     required String city,
     List<Uint8List> photos = const [],
+    bool fotoIa = false,
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
     try {
       final urls = <String>[];
       for (final photo in photos.take(5)) {
-        final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.jpg';
+        final png = photo.length > 4 && photo[0] == 0x89 && photo[1] == 0x50;
+        final path =
+            '$uid/${DateTime.now().microsecondsSinceEpoch}.${png ? 'png' : 'jpg'}';
         await _db.storage.from('listing-photos').uploadBinary(path, photo,
-            fileOptions: const FileOptions(contentType: 'image/jpeg'));
+            fileOptions:
+                FileOptions(contentType: png ? 'image/png' : 'image/jpeg'));
         urls.add(_db.storage.from('listing-photos').getPublicUrl(path));
       }
       await _db.from('listings').insert({
@@ -238,6 +245,7 @@ class ListingsStore extends ChangeNotifier {
         'condition': condition,
         'city': city,
         'photos': urls,
+        if (fotoIa) 'foto_ia': true,
       });
       await load();
       return null;

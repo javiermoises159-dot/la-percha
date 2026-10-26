@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
 import 'listing.dart';
@@ -41,6 +43,66 @@ class _SellPageState extends State<SellPage> {
   final _price = TextEditingController();
   final _desc = TextEditingController();
   final List<Uint8List> _photos = [];
+  bool _fotoIa = false; // la primera foto es una portada creada por la IA
+  bool _scanning = false;
+
+  /// "Vende con una foto": la IA del servidor rellena el anuncio.
+  Future<void> _scan() async {
+    if (_photos.isEmpty) return _choosePhoto();
+    final foto = _photos[_fotoIa && _photos.length > 1 ? 1 : 0];
+    setState(() {
+      _scanning = true;
+      _error = null;
+    });
+    try {
+      final res =
+          await Supabase.instance.client.functions.invoke('escanear', body: {
+        'imagen': base64Encode(foto),
+        'mime': 'image/jpeg',
+        'limpia': !_fotoIa,
+      });
+      final d = Map<String, dynamic>.from(res.data as Map);
+      setState(() {
+        _title.text = '${d['titulo'] ?? ''}';
+        _desc.text = [
+          '${d['descripcion'] ?? ''}',
+          if (d['marca'] != null) 'Marca: ${d['marca']}.',
+          if (d['color'] != null) 'Color: ${d['color']}.',
+        ].where((x) => x.trim().isNotEmpty).join(' ');
+        if (d['precio_sugerido'] != null)
+          _price.text = '${d['precio_sugerido']}';
+        final cat = '${d['categoria']}';
+        if (categories.contains(cat) && cat != 'Todo') _category = cat;
+        final sizes = sizesFor(_category);
+        final talla = d['talla'] as String?;
+        _size = talla != null && sizes.contains(talla)
+            ? talla
+            : (sizes.contains(_size) ? _size : sizes.first);
+        final estado = '${d['estado']}';
+        if (_conditions.contains(estado)) _condition = estado;
+        final limpia = d['foto_limpia'] as String?;
+        if (limpia != null && !_fotoIa && _photos.length < 5) {
+          _photos.insert(0, base64Decode(limpia));
+          _fotoIa = true;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Listo. Revisa los datos y el precio antes de publicar.')));
+      }
+    } on FunctionException catch (e) {
+      final det = e.details;
+      setState(() => _error = det is Map && det['error'] != null
+          ? '${det['error']}'
+          : 'No se pudo analizar la foto. Intenta de nuevo.');
+    } catch (_) {
+      setState(
+          () => _error = 'No se pudo analizar la foto. Revisa tu conexión.');
+    }
+    if (mounted) setState(() => _scanning = false);
+  }
+
   String _category = 'Mujer';
   String _size = 'M';
   String _condition = 'Muy buen estado';
@@ -97,6 +159,10 @@ class _SellPageState extends State<SellPage> {
     if (acct == null) {
       return setState(() => _error = 'Inicia sesión para vender.');
     }
+    if (_fotoIa && _photos.length < 2) {
+      return setState(() =>
+          _error = 'Añade al menos una foto real además de la portada IA.');
+    }
     if (_title.text.trim().length < 3) {
       return setState(() => _error = 'Escribe un título (mínimo 3 letras).');
     }
@@ -117,6 +183,7 @@ class _SellPageState extends State<SellPage> {
       condition: _condition,
       city: _city ?? acct.city,
       photos: _photos,
+      fotoIa: _fotoIa,
     );
     if (!mounted) return;
     if (err != null) {
@@ -131,6 +198,7 @@ class _SellPageState extends State<SellPage> {
     setState(() {
       _busy = false;
       _photos.clear();
+      _fotoIa = false;
       _error = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -165,6 +233,23 @@ class _SellPageState extends State<SellPage> {
                   if (i == 0)
                     Positioned(
                       left: 6,
+                      top: 6,
+                      child: _fotoIa
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(6)),
+                              child: const Text('IA',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 11)),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  if (i == 0)
+                    Positioned(
+                      left: 6,
                       bottom: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -184,7 +269,10 @@ class _SellPageState extends State<SellPage> {
                       visualDensity: VisualDensity.compact,
                       iconSize: 16,
                       tooltip: 'Quitar foto',
-                      onPressed: () => setState(() => _photos.removeAt(i)),
+                      onPressed: () => setState(() {
+                        if (i == 0 && _fotoIa) _fotoIa = false;
+                        _photos.removeAt(i);
+                      }),
                       icon: const Icon(Icons.close),
                     ),
                   ),
@@ -218,6 +306,29 @@ class _SellPageState extends State<SellPage> {
         Text(
             'Hasta 5 fotos con buena luz: de frente, detalles y etiqueta. Más fotos, más confianza.',
             style: TextStyle(color: context.muted, fontSize: 12)),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _scanning ? null : _scan,
+          icon: _scanning
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.auto_awesome),
+          label: Text(_scanning
+              ? 'Analizando tu foto…'
+              : _photos.isEmpty
+                  ? 'Vende con una foto (IA)'
+                  : 'Rellenar el anuncio con IA'),
+        ),
+        if (_fotoIa)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+                'La portada la creó la IA. Los compradores verán también tus fotos reales; '
+                'debes tener al menos una.',
+                style: TextStyle(color: context.muted, fontSize: 12)),
+          ),
         const SizedBox(height: 12),
         TextField(
           controller: _title,
