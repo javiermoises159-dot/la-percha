@@ -16,6 +16,7 @@ class Listing {
     required this.description,
     required this.photos,
     required this.color,
+    this.featuredUntil,
   });
 
   final String id;
@@ -30,6 +31,10 @@ class Listing {
   final String description;
   final List<String> photos;
   final Color color;
+  final DateTime? featuredUntil;
+
+  bool get featured =>
+      featuredUntil != null && featuredUntil!.isAfter(DateTime.now());
 
   factory Listing.fromMap(Map<String, dynamic> m) {
     final id = m['id'] as String;
@@ -47,8 +52,21 @@ class Listing {
       description: m['description'] as String? ?? '',
       photos: List<String>.from(m['photos'] as List? ?? const []),
       color: _tints[id.hashCode.abs() % _tints.length],
+      featuredUntil: DateTime.tryParse('${m['featured_until'] ?? ''}'),
     );
   }
+}
+
+/// Tasa BCV (Bs por dólar). 0 = desconocida; se carga del servidor.
+double tasaBs = 0;
+
+/// "≈ Bs 6.027,40", o vacío si aún no hay tasa.
+String bsText(double usd) {
+  if (tasaBs <= 0) return '';
+  final v = usd * tasaBs;
+  final parts = v.toStringAsFixed(2).split('.');
+  final ent = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+  return '≈ Bs $ent,${parts[1]}';
 }
 
 const _tints = [
@@ -110,7 +128,13 @@ class ListingsStore extends ChangeNotifier {
           .eq('status', 'active')
           .order('created_at', ascending: false)
           .limit(100);
-      _items = [for (final r in rows) Listing.fromMap(r)];
+      final items = [for (final r in rows) Listing.fromMap(r)];
+      // Los destacados primero; el resto, del más nuevo al más viejo.
+      _items = [...items.where((l) => l.featured), ...items.where((l) => !l.featured)];
+      try {
+        final t = await _db.from('ajustes').select('valor').eq('clave', 'tasa_bs').maybeSingle();
+        tasaBs = (t?['valor'] as num?)?.toDouble() ?? tasaBs;
+      } catch (_) {}
       error = null;
     } catch (_) {
       error = 'No se pudieron cargar las prendas. Revisa tu conexión.';

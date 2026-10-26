@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'listing.dart';
 import 'orders_page.dart';
 import 'theme.dart';
 
@@ -14,7 +15,7 @@ class AdminPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Administración'),
@@ -23,6 +24,7 @@ class AdminPage extends StatelessWidget {
             Tab(text: 'Problemas'),
             Tab(text: 'Denuncias'),
             Tab(text: 'Usuarios'),
+            Tab(text: 'Destacados y tasa'),
           ]),
         ),
         body: const TabBarView(children: [
@@ -30,6 +32,7 @@ class AdminPage extends StatelessWidget {
           _OrdersTab(status: 'disputa'),
           _ReportsTab(),
           _UsersTab(),
+          _PromosTab(),
         ]),
       ),
     );
@@ -282,6 +285,119 @@ class _UsersTabState extends State<_UsersTab> {
                         _block(r['id'] as String, r['blocked'] != true),
                     child: Text(r['blocked'] == true ? 'Desbloquear' : 'Bloquear'),
                   ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Aprobar pagos de anuncios destacados y fijar la tasa BCV a mano.
+class _PromosTab extends StatefulWidget {
+  const _PromosTab();
+  @override
+  State<_PromosTab> createState() => _PromosTabState();
+}
+
+class _PromosTabState extends State<_PromosTab> {
+  List<Map<String, dynamic>> _rows = [];
+  double? _tasa;
+  final _ctrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db
+          .from('promotions')
+          .select('id, days, amount, pay_ref, created_at, listings(title), profiles(username)')
+          .eq('status', 'revision')
+          .order('created_at');
+      final t = await _db.from('ajustes').select('valor, actualizado').eq('clave', 'tasa_bs').single();
+      if (!mounted) return;
+      setState(() {
+        _rows = List<Map<String, dynamic>>.from(r);
+        _tasa = (t['valor'] as num).toDouble();
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _do(Future<void> Function() f) async {
+    try {
+      await f();
+      await _load();
+      listingsStore.load();
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(padding: const EdgeInsets.all(16), children: [
+        Text('Tasa BCV actual: ${_tasa == null ? '…' : 'Bs ${_tasa!.toStringAsFixed(2)}'}',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        const Text('Se actualiza sola cada hora. Cámbiala solo si la fuente falla.',
+            style: TextStyle(fontSize: 12)),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Nueva tasa (Bs por dólar)'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () {
+              final v = double.tryParse(_ctrl.text.trim().replaceAll(',', '.'));
+              if (v == null || v <= 0) return;
+              _do(() => _db.rpc('admin_set_tasa', params: {'v': v}));
+              _ctrl.clear();
+            },
+            child: const Text('Guardar'),
+          ),
+        ]),
+        const Divider(height: 32),
+        Text(_rows.isEmpty ? 'No hay destacados por revisar.' : 'Destacados por revisar',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        for (final r in _rows)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(field(r['listings'], 'title', 'Anuncio'),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('@${field(r['profiles'], 'username', '')} · ${r['days']} días · '
+                    '\$${(r['amount'] as num).toStringAsFixed(2)}'),
+                Text('Referencia: ${r['pay_ref']}'),
+                const SizedBox(height: 8),
+                Row(children: [
+                  OutlinedButton(
+                      onPressed: () => _do(() => _db.rpc('admin_review_promotion',
+                          params: {'p_id': r['id'], 'p_ok': false})),
+                      child: const Text('Rechazar')),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                      onPressed: () => _do(() => _db.rpc('admin_review_promotion',
+                          params: {'p_id': r['id'], 'p_ok': true})),
+                      child: const Text('Pago recibido: activar')),
+                ]),
+              ]),
+            ),
           ),
       ]),
     );

@@ -28,6 +28,8 @@ class AppState extends ChangeNotifier {
 
   Account? account;
   Set<String> favs = {};
+  /// Precio de cada favorito cuando se guardó (para avisar si baja).
+  Map<String, double> favPriceAt = {};
   bool guest = false;
   bool loaded = false;
   StreamSubscription<AuthState>? _sub;
@@ -64,8 +66,13 @@ class AppState extends ChangeNotifier {
           email: user.email ?? '',
           isAdmin: row['is_admin'] == true,
         );
-        final f = await _db.from('favorites').select('listing_id');
+        final f = await _db.from('favorites').select('listing_id, price_at');
         favs = {for (final r in f) r['listing_id'] as String};
+        favPriceAt = {
+          for (final r in f)
+            if (r['price_at'] != null)
+              r['listing_id'] as String: (r['price_at'] as num).toDouble()
+        };
       }
     } catch (_) {
       // Sin conexión: se mantiene lo que ya había.

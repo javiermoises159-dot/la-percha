@@ -92,6 +92,10 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                             ? 'Aún sin valoraciones'
                             : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
                       ])),
+                      if (!isMe) ...[
+                        const SizedBox(height: 8),
+                        FollowButton(sellerId: widget.sellerId),
+                      ],
                       if (since != null)
                         Text('En La Percha desde ${_meses[since.month - 1]} de ${since.year}',
                             style: TextStyle(color: context.muted, fontSize: 13)),

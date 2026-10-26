@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
+import 'features.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
@@ -38,6 +39,33 @@ class ListingCard extends StatelessWidget {
               child: Stack(children: [
                 Positioned.fill(child: ListingPhoto(item: item)),
                 Positioned(
+                  left: 6,
+                  top: 6,
+                  child: ListenableBuilder(
+                    listenable: appState,
+                    builder: (context, _) {
+                      final before = appState.favPriceAt[item.id];
+                      final label = item.featured
+                          ? 'Destacado'
+                          : (before != null && before > item.price)
+                              ? 'Bajó de \$${before.toStringAsFixed(0)}'
+                              : null;
+                      if (label == null) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                            color: item.featured
+                                ? Theme.of(context).colorScheme.primary
+                                : const Color(0xFF2E7D32),
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Text(label,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
                   right: 6,
                   top: 6,
                   child: ListenableBuilder(
@@ -74,6 +102,9 @@ class ListingCard extends StatelessWidget {
                   Text('\$${item.price.toStringAsFixed(0)}',
                       style: display(18,
                           color: Theme.of(context).colorScheme.onSurface)),
+                  if (bsText(item.price).isNotEmpty)
+                    Text(bsText(item.price),
+                        style: TextStyle(color: context.muted, fontSize: 11)),
                   Text(item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -127,6 +158,8 @@ class ListingGrid extends StatelessWidget {
   }
 }
 
+const _siguiendo = 'Siguiendo';
+
 /// Inicio: búsqueda, categorías rápidas y prendas recientes.
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -143,11 +176,13 @@ class _ExplorePageState extends State<ExplorePage> {
   void initState() {
     super.initState();
     listingsStore.addListener(_refresh);
+    followStore.addListener(_refresh);
   }
 
   @override
   void dispose() {
     listingsStore.removeListener(_refresh);
+    followStore.removeListener(_refresh);
     super.dispose();
   }
 
@@ -156,7 +191,8 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     final items = listingsStore.all.where((l) {
-      final okCat = _cat == 'Todo' || l.category == _cat;
+      final okCat = _cat == 'Todo' ||
+          (_cat == _siguiendo ? followStore.ids.contains(l.sellerId) : l.category == _cat);
       final okQ = _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
       return okCat && okQ;
     }).toList();
@@ -178,13 +214,20 @@ class _ExplorePageState extends State<ExplorePage> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           children: [
-            for (final c in categories)
+            for (final c in [
+              categories.first,
+              if (appState.account != null) _siguiendo,
+              ...categories.skip(1),
+            ])
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: ChoiceChip(
                   label: Text(c),
                   selected: _cat == c,
-                  onSelected: (_) => setState(() => _cat = c),
+                  onSelected: (_) {
+                    if (c == _siguiendo) followStore.load();
+                    setState(() => _cat = c);
+                  },
                 ),
               ),
           ],

@@ -85,10 +85,7 @@ class ProfilePage extends StatelessWidget {
           _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
               page: const OrdersPage()),
           _item(context, Icons.rocket_launch_outlined, 'Herramientas de promoción',
-              page: const InfoPage(
-                  title: 'Herramientas de promoción',
-                  body:
-                      'Pronto podrás destacar tus anuncios para que más personas los vean.')),
+              page: const PromotePage()),
           const Divider(height: 1),
           _item(context, Icons.tune, 'Personalización',
               page: const InfoPage(

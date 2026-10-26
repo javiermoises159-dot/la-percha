@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_state.dart';
 import 'auth_sheet.dart';
 import 'chat_page.dart';
+import 'config.dart';
 import 'listing.dart';
 import 'orders_page.dart';
 import 'theme.dart';
@@ -494,6 +495,258 @@ class _VacationPageState extends State<VacationPage> {
             onChanged: _busy ? null : _set,
           ),
       ]),
+    );
+  }
+}
+
+// ===================== Seguir vendedores =====================
+
+/// A quién sigo (ids de vendedores).
+class FollowStore extends ChangeNotifier {
+  Set<String> ids = {};
+
+  Future<void> load() async {
+    if (appState.account == null) {
+      ids = {};
+      notifyListeners();
+      return;
+    }
+    try {
+      final r = await _db.from('follows').select('seller_id');
+      ids = {for (final x in r) x['seller_id'] as String};
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<String?> toggle(String sellerId) async {
+    final me = appState.account?.id;
+    if (me == null) return 'Inicia sesión para seguir vendedores.';
+    try {
+      if (ids.contains(sellerId)) {
+        await _db.from('follows').delete().eq('follower_id', me).eq('seller_id', sellerId);
+        ids.remove(sellerId);
+      } else {
+        await _db.from('follows').insert({'seller_id': sellerId});
+        ids.add(sellerId);
+      }
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return _errorText(e, 'No se pudo. Revisa tu conexión.');
+    }
+  }
+}
+
+final followStore = FollowStore();
+
+/// Botón Seguir / Siguiendo con el número de seguidores.
+class FollowButton extends StatefulWidget {
+  const FollowButton({super.key, required this.sellerId});
+  final String sellerId;
+
+  @override
+  State<FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<FollowButton> {
+  int? _count;
+
+  @override
+  void initState() {
+    super.initState();
+    if (followStore.ids.isEmpty) followStore.load();
+    _loadCount();
+  }
+
+  Future<void> _loadCount() async {
+    try {
+      final n = await _db.rpc('followers_count', params: {'p_user': widget.sellerId});
+      if (mounted) setState(() => _count = (n as num).toInt());
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: followStore,
+      builder: (context, _) {
+        final on = followStore.ids.contains(widget.sellerId);
+        final label = on ? 'Siguiendo' : 'Seguir';
+        return Row(mainAxisSize: MainAxisSize.min, children: [
+          on
+              ? OutlinedButton(onPressed: _tap, child: Text(label))
+              : FilledButton(onPressed: _tap, child: Text(label)),
+          if (_count != null) ...[
+            const SizedBox(width: 10),
+            Text('$_count seguidores', style: TextStyle(color: context.muted, fontSize: 13)),
+          ],
+        ]);
+      },
+    );
+  }
+
+  Future<void> _tap() async {
+    if (appState.account == null) {
+      showAuthSheet(context, appState, message: 'Crea tu cuenta para seguir vendedores.');
+      return;
+    }
+    final err = await followStore.toggle(widget.sellerId);
+    if (!mounted) return;
+    if (err != null) {
+      _snack(context, err);
+    } else {
+      _loadCount();
+    }
+  }
+}
+
+// ===================== Destacar anuncios =====================
+
+const _planes = {3: 1.0, 7: 2.0};
+
+class PromotePage extends StatefulWidget {
+  const PromotePage({super.key});
+
+  @override
+  State<PromotePage> createState() => _PromotePageState();
+}
+
+class _PromotePageState extends State<PromotePage> {
+  List<Listing>? _mine;
+  List<Map<String, dynamic>> _requests = [];
+  String? _listingId;
+  int _days = 7;
+  final _ref = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _ref.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final me = appState.account?.id;
+    if (me == null) return;
+    try {
+      final l = await _db
+          .from('listings')
+          .select('*, profiles(username)')
+          .eq('seller_id', me)
+          .eq('status', 'active')
+          .order('created_at', ascending: false);
+      final p = await _db
+          .from('promotions')
+          .select('days, amount, status, created_at, listings(title)')
+          .order('created_at', ascending: false)
+          .limit(20);
+      if (!mounted) return;
+      setState(() {
+        _mine = [for (final r in l) Listing.fromMap(r)];
+        _requests = List<Map<String, dynamic>>.from(p);
+        _listingId ??= _mine!.isEmpty ? null : _mine!.first.id;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _mine = []);
+    }
+  }
+
+  Future<void> _send() async {
+    final ref = _ref.text.trim();
+    if (_listingId == null || ref.length < 4) {
+      _snack(context, 'Elige el anuncio y escribe la referencia del pago.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _db.rpc('request_promotion',
+          params: {'p_listing': _listingId, 'p_days': _days, 'p_pay_ref': ref});
+      _ref.clear();
+      if (mounted) _snack(context, 'Recibido. Lo activamos cuando confirmemos el pago.');
+      await _load();
+    } catch (e) {
+      if (mounted) _snack(context, _errorText(e, 'No se pudo enviar.'));
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  static const _estado = {
+    'revision': 'Verificando pago',
+    'activa': 'Activo',
+    'rechazada': 'Rechazado',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final mine = _mine;
+    final ink = Theme.of(context).colorScheme.onSurface;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Destacar anuncios')),
+      body: mine == null
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(padding: const EdgeInsets.all(20), children: [
+              Text('Sale primero en Inicio con la etiqueta "Destacado".',
+                  style: TextStyle(color: context.muted)),
+              const SizedBox(height: 16),
+              if (mine.isEmpty)
+                const Text('Necesitas un anuncio activo para destacarlo.')
+              else ...[
+                DropdownButtonFormField<String>(
+                  initialValue: _listingId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Anuncio'),
+                  items: [
+                    for (final l in mine)
+                      DropdownMenuItem(
+                          value: l.id,
+                          child: Text(l.title, overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (v) => setState(() => _listingId = v),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<int>(
+                  segments: [
+                    for (final e in _planes.entries)
+                      ButtonSegment(value: e.key, label: Text('${e.key} días · ${_usd(e.value)}')),
+                  ],
+                  selected: {_days},
+                  onSelectionChanged: (s) => setState(() => _days = s.first),
+                ),
+                const SizedBox(height: 16),
+                Text('1. Paga ${_usd(_planes[_days]!)} por Pago Móvil',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                if (bsText(_planes[_days]!).isNotEmpty) Text(bsText(_planes[_days]!)),
+                const SizedBox(height: 4),
+                Text('$pagoMovilBanco\n$pagoMovilCedula\n$pagoMovilTelefono',
+                    style: TextStyle(color: context.muted)),
+                const SizedBox(height: 12),
+                Text('2. Escribe la referencia', style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                const SizedBox(height: 6),
+                TextField(
+                    controller: _ref,
+                    maxLength: 40,
+                    decoration: const InputDecoration(labelText: 'Referencia del Pago Móvil')),
+                FilledButton(
+                    onPressed: _busy ? null : _send, child: const Text('Enviar para revisión')),
+              ],
+              if (_requests.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text('Mis solicitudes', style: display(18, color: ink)),
+                for (final r in _requests)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(field(r['listings'], 'title', 'Anuncio')),
+                    subtitle: Text('${r['days']} días · ${_usd(r['amount'] as num)}'),
+                    trailing: Text(_estado[r['status']] ?? '${r['status']}'),
+                  ),
+              ],
+            ]),
     );
   }
 }

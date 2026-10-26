@@ -29,6 +29,14 @@ String field(Object? m, String key, String fallback) {
 
 String _money(num v) => '\$${v.toStringAsFixed(2)}';
 
+/// Formas de entrega en Venezuela. La última siempre es en persona.
+const metodosEntrega = [
+  'MRW (cobro a destino)',
+  'Zoom (cobro a destino)',
+  'Tealca (cobro a destino)',
+  'Entrega en persona (punto seguro)',
+];
+
 /// Punto de entrada del botón "Comprar".
 void startCheckout(BuildContext context, Listing item) {
   if (appState.account == null) {
@@ -56,6 +64,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _busy = false;
   String? _error;
   double? _price; // precio acordado (oferta aceptada) o el del anuncio
+  String _metodo = metodosEntrega.first;
 
   @override
   void initState() {
@@ -91,7 +100,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           .insert({
             'listing_id': widget.item.id,
             'price': widget.item.price,
-            'delivery': {'name': name, 'phone': phone, 'address': address},
+            'delivery': {'name': name, 'phone': phone, 'address': address, 'metodo': _metodo},
           })
           .select('id')
           .single();
@@ -124,10 +133,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _Line(price < item.price ? 'Precio acordado' : 'Artículo', _money(price)),
           _Line('Protección al comprador', _money(fee)),
           _Line('Total (sin envío)', _money(price + fee), bold: true),
+          if (bsText(price + fee).isNotEmpty) _Line('', bsText(price + fee)),
         ]),
         const SizedBox(height: 20),
         Text('¿Dónde te la enviamos?',
             style: display(20, color: Theme.of(context).colorScheme.onSurface)),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          initialValue: _metodo,
+          decoration: const InputDecoration(labelText: 'Cómo lo recibes'),
+          items: [
+            for (final m in metodosEntrega) DropdownMenuItem(value: m, child: Text(m)),
+          ],
+          onChanged: (v) => setState(() => _metodo = v ?? _metodo),
+        ),
+        if (_metodo == metodosEntrega.last) ...[
+          const SizedBox(height: 8),
+          Text(
+              'Queden en un lugar público y concurrido (centro comercial, plaza con vigilancia), '
+              'de día. Revisa el artículo ANTES de confirmar en la app. Nunca pagues en efectivo '
+              'aparte: el pago va siempre por La Percha.',
+              style: TextStyle(color: context.muted, fontSize: 13)),
+        ],
         const SizedBox(height: 10),
         TextField(
             controller: _name,
@@ -313,7 +340,7 @@ class _OrderPageState extends State<OrderPage> {
         TextField(
             controller: _tracking,
             decoration: const InputDecoration(
-                labelText: 'Guía o dato de seguimiento (empresa y número)')),
+                labelText: 'Guía (empresa y número) o "Entregado en persona"')),
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy
@@ -387,6 +414,7 @@ class _OrderPageState extends State<OrderPage> {
         if (!isBuyer && delivery.isNotEmpty) ...[
           const SizedBox(height: 14),
           _Box(children: [
+            _Line('Entrega', field(delivery, 'metodo', 'Envío')),
             _Line('Enviar a', field(delivery, 'name', '')),
             _Line('Teléfono', field(delivery, 'phone', '')),
             _Line('Dirección', field(delivery, 'address', '')),

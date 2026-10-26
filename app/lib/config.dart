@@ -11,5 +11,3 @@ const pagoMovilBanco = '0102 - Banco de Venezuela (ejemplo)';
 const pagoMovilCedula = 'J-00000000-0 (ejemplo)';
 const pagoMovilTelefono = '0412-0000000 (ejemplo)';
 
-/// Tasa de referencia Bs por dólar (ejemplo; luego vendrá de una fuente oficial).
-const tasaBsPorUsd = 0.0;

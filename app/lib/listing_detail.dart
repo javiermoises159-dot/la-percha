@@ -45,6 +45,8 @@ class ListingDetail extends StatelessWidget {
                 children: [
                   Text('\$${item.price.toStringAsFixed(0)}',
                       style: display(32, color: ink)),
+                  if (bsText(item.price).isNotEmpty)
+                    Text(bsText(item.price), style: TextStyle(color: context.muted)),
                   const SizedBox(height: 4),
                   Text(item.title,
                       style: const TextStyle(
