@@ -1,1 +1,26 @@
 __pycache__/
+# Nunca subir secretos ni llaves
+.env
+.env.*
+*.pem
+*.key
+*.jks
+*.keystore
+key.properties
+*service-account*.json
+google-services.json
+GoogleService-Info.plist
+# Archivos generados
+build/
+.dart_tool/
+.idea/
+*.iml
+.metadata
+/lib/
+/web/
+/test/
+/pubspec.yaml
+/pubspec.lock
+/analysis_options.yaml
+app/build/
+app/.dart_tool/

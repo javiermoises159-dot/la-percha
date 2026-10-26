@@ -395,7 +395,10 @@ class SaldoPage extends StatefulWidget {
 
 class _SaldoPageState extends State<SaldoPage> {
   List<Map<String, dynamic>>? _rows;
-  final _banco = TextEditingController();
+  String? _bancoSel;
+  Map? _resumen;
+  DateTime? _cambiado;
+  bool _editando = false;
   final _cedula = TextEditingController();
   final _tel = TextEditingController();
   bool _busy = false;
@@ -408,7 +411,6 @@ class _SaldoPageState extends State<SaldoPage> {
 
   @override
   void dispose() {
-    _banco.dispose();
     _cedula.dispose();
     _tel.dispose();
     super.dispose();
@@ -425,17 +427,14 @@ class _SaldoPageState extends State<SaldoPage> {
           .neq('status', 'cancelado')
           .order('updated_at', ascending: false)
           .limit(200);
+      // Los datos de cobro se guardan cifrados: aquí solo llega un resumen enmascarado.
       final p = await _db
           .from('private_profiles')
-          .select('payout')
+          .select('payout_resumen, payout_cambiado')
           .eq('id', me)
           .maybeSingle();
-      final pay = p?['payout'];
-      if (pay is Map) {
-        _banco.text = '${pay['banco'] ?? ''}';
-        _cedula.text = '${pay['cedula'] ?? ''}';
-        _tel.text = '${pay['telefono'] ?? ''}';
-      }
+      _resumen = p?['payout_resumen'] as Map?;
+      _cambiado = DateTime.tryParse('${p?['payout_cambiado'] ?? ''}');
       if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
     } catch (_) {
       if (mounted) setState(() => _rows = []);
@@ -443,23 +442,30 @@ class _SaldoPageState extends State<SaldoPage> {
   }
 
   Future<void> _savePayout() async {
-    if (_banco.text.trim().length < 3 ||
-        _cedula.text.trim().length < 5 ||
-        _tel.text.trim().length < 10) {
-      return _snack(
-          context, 'Completa banco, cédula y teléfono del Pago Móvil.');
+    if (_bancoSel == null ||
+        !RegExp(r'^[VEJPGvejpg]-?\s?[\d.]{5,12}$').hasMatch(_cedula.text.trim()) ||
+        _tel.text.replaceAll(RegExp(r'\D'), '').length < 10) {
+      return _snack(context,
+          'Elige tu banco y escribe tu cédula (V-12345678) y el teléfono del Pago Móvil.');
     }
     setState(() => _busy = true);
     try {
       await _db.from('private_profiles').upsert({
         'id': appState.account!.id,
         'payout': {
-          'banco': _banco.text.trim(),
+          'banco': _bancoSel,
           'cedula': _cedula.text.trim(),
           'telefono': _tel.text.trim(),
         },
       });
-      if (mounted) _snack(context, 'Datos de cobro guardados.');
+      _cedula.clear();
+      _tel.clear();
+      _editando = false;
+      await _load();
+      if (mounted) {
+        _snack(context,
+            'Datos guardados y cifrados. Por seguridad, si los cambias, los pagos esperan 24 h.');
+      }
     } catch (e) {
       if (mounted) _snack(context, _err(e, 'No se pudo guardar.'));
     }
@@ -521,23 +527,73 @@ class _SaldoPageState extends State<SaldoPage> {
                 const SizedBox(height: 20),
                 Text('Dónde cobras', style: display(18, color: ink)),
                 const SizedBox(height: 8),
-                TextField(
-                    controller: _banco,
-                    decoration: const InputDecoration(labelText: 'Banco')),
-                const SizedBox(height: 8),
-                TextField(
-                    controller: _cedula,
-                    decoration: const InputDecoration(labelText: 'Cédula')),
-                const SizedBox(height: 8),
-                TextField(
-                    controller: _tel,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                        labelText: 'Teléfono del Pago Móvil')),
-                const SizedBox(height: 10),
-                FilledButton(
-                    onPressed: _busy ? null : _savePayout,
-                    child: const Text('Guardar datos de cobro')),
+                if (_resumen != null && !_editando) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                        color: context.chip, borderRadius: BorderRadius.circular(12)),
+                    child: Row(children: [
+                      const Icon(Icons.lock_outline, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${_resumen!['banco']}',
+                                  style: const TextStyle(fontWeight: FontWeight.w700)),
+                              Text('${_resumen!['cedula']} · ${_resumen!['telefono']}',
+                                  style: TextStyle(color: context.muted)),
+                            ]),
+                      ),
+                    ]),
+                  ),
+                  if (_cambiado != null &&
+                      DateTime.now().difference(_cambiado!).inHours < 24)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                          'Cambiaste estos datos hace poco: por seguridad, los pagos esperan 24 h desde el cambio.',
+                          style: TextStyle(color: context.muted, fontSize: 13)),
+                    ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                      onPressed: () => setState(() => _editando = true),
+                      child: const Text('Cambiar datos de cobro')),
+                ] else ...[
+                  DropdownButtonFormField<String>(
+                    initialValue: _bancoSel,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Banco'),
+                    items: [
+                      for (final b in bancosVe)
+                        DropdownMenuItem(value: b, child: Text(b, overflow: TextOverflow.ellipsis)),
+                    ],
+                    onChanged: (v) => setState(() => _bancoSel = v),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                      controller: _cedula,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                          labelText: 'Cédula o RIF', hintText: 'V-12345678')),
+                  const SizedBox(height: 8),
+                  TextField(
+                      controller: _tel,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                          labelText: 'Teléfono del Pago Móvil', hintText: '0414 1234567')),
+                  const SizedBox(height: 6),
+                  Text('Se guardan cifrados. Nadie de Pavito te los pedirá por mensaje.',
+                      style: TextStyle(color: context.muted, fontSize: 12.5)),
+                  const SizedBox(height: 10),
+                  FilledButton(
+                      onPressed: _busy ? null : _savePayout,
+                      child: const Text('Guardar datos de cobro')),
+                  if (_editando)
+                    TextButton(
+                        onPressed: () => setState(() => _editando = false),
+                        child: const Text('Cancelar')),
+                ],
                 const SizedBox(height: 24),
                 if (rows.isNotEmpty)
                   Text('Mis ventas', style: display(18, color: ink)),
@@ -946,3 +1002,34 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     );
   }
 }
+
+
+/// Bancos de Venezuela con Pago Móvil (código SUDEBAN y nombre).
+const bancosVe = [
+  '0102 - Banco de Venezuela',
+  '0104 - Venezolano de Crédito',
+  '0105 - Mercantil',
+  '0108 - Provincial',
+  '0114 - Bancaribe',
+  '0115 - Exterior',
+  '0128 - Caroní',
+  '0134 - Banesco',
+  '0137 - Sofitasa',
+  '0138 - Plaza',
+  '0146 - Bangente',
+  '0151 - BFC Banco Fondo Común',
+  '0156 - 100% Banco',
+  '0157 - DelSur',
+  '0163 - Banco del Tesoro',
+  '0166 - Banco Agrícola',
+  '0168 - Bancrecer',
+  '0169 - R4 Banco Microfinanciero',
+  '0171 - Banco Activo',
+  '0172 - Bancamiga',
+  '0173 - Banco Internacional de Desarrollo',
+  '0174 - Banplus',
+  '0175 - Banco Digital de los Trabajadores',
+  '0177 - Banfanb',
+  '0178 - N58 Banco Digital',
+  '0191 - BNC Nacional de Crédito',
+];

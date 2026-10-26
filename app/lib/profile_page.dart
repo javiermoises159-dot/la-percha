@@ -9,7 +9,7 @@ import 'explore_page.dart';
 import 'info_pages.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
-import 'admin_page.dart';
+import 'admin_2fa.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
 import 'theme.dart';
@@ -74,7 +74,7 @@ class ProfilePage extends StatelessWidget {
           if (a.isAdmin)
             _item(context, Icons.admin_panel_settings_outlined,
                 'Panel de administración',
-                page: const AdminPage()),
+                page: const AdminGate()),
           _item(context, Icons.checkroom_outlined, 'Mi armario',
               page: const MyListingsPage()),
           _item(context, Icons.person_outline, 'Ver mi perfil público',

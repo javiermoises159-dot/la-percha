@@ -16,7 +16,8 @@ done
 cp web_overrides/icons/favicon.png web/favicon.png
 python3 web_overrides/patch_web.py web
 flutter pub get >/dev/null
-flutter build web --release --base-href "$BASE"
+flutter build web --release --no-web-resources-cdn --base-href "$BASE"
+python3 "$RAIZ/tools/cabeceras.py" build/web
 touch build/web/.nojekyll
 [ -n "$DOMINIO" ] && echo "$DOMINIO" > build/web/CNAME
 cd build/web

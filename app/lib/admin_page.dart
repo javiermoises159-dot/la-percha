@@ -492,18 +492,59 @@ class _PayoutsTabState extends State<_PayoutsTab> {
           ? <Map<String, dynamic>>[]
           : await _db
               .from('private_profiles')
-              .select('id, payout')
+              .select('id, payout_resumen, payout_cambiado')
               .inFilter('id', ids);
       if (!mounted) return;
       setState(() {
         _rows = List<Map<String, dynamic>>.from(r);
         _payout = {
           for (final x in p)
-            x['id'] as String: (x['payout'] as Map?) ?? const {}
+            x['id'] as String: {
+              ...((x['payout_resumen'] as Map?) ?? const {}),
+              if (x['payout_cambiado'] != null) '_cambiado': x['payout_cambiado'],
+            }
         };
       });
     } catch (_) {
       if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  void _aviso(Object e) {
+    if (!mounted) return;
+    final t = e is PostgrestException ? e.message : 'No se pudo completar.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
+  }
+
+  /// Muestra los datos completos de cobro. Solo funciona para una venta por pagar
+  /// y cada consulta queda registrada en la auditoría.
+  Future<void> _verDatos(String orderId) async {
+    try {
+      final d = Map<String, dynamic>.from(
+          await _db.rpc('admin_datos_cobro', params: {'p_order': orderId}) as Map);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Datos para el Pago Móvil'),
+          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SelectableText('Banco: ${d['banco']}'),
+            SelectableText('Cédula / RIF: ${d['cedula']}'),
+            SelectableText('Teléfono: ${d['telefono']}'),
+            if (d['cambiado_reciente'] == true)
+              const Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: Text('Estos datos cambiaron hace menos de 24 h. Confirma con el vendedor antes de pagar.',
+                    style: TextStyle(color: LP.clayText, fontWeight: FontWeight.w700)),
+              ),
+            const SizedBox(height: 10),
+            Text('Esta consulta quedó registrada.', style: TextStyle(color: ctx.muted, fontSize: 12)),
+          ]),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+        ),
+      );
+    } catch (e) {
+      _aviso(e);
     }
   }
 
@@ -541,21 +582,40 @@ class _PayoutsTabState extends State<_PayoutsTab> {
                     const SizedBox(height: 4),
                     Builder(builder: (_) {
                       final p = _payout[r['seller_id']] ?? const {};
-                      return Text(p.isEmpty
-                          ? 'El vendedor no ha puesto sus datos de cobro (Perfil → Saldo).'
-                          : 'Pago Móvil: ${p['banco']} · ${p['cedula']} · ${p['telefono']}');
+                      final ch = DateTime.tryParse('${p['_cambiado'] ?? ''}');
+                      final reciente = ch != null && DateTime.now().difference(ch).inHours < 24;
+                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(p['banco'] == null
+                            ? 'El vendedor no ha puesto sus datos de cobro (Yo → Saldo).'
+                            : 'Pago Móvil: ${p['banco']} · ${p['cedula']} · ${p['telefono']}'),
+                        if (reciente)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Text('Cambió sus datos hace menos de 24 h: no se puede pagar todavía.',
+                                style: TextStyle(color: LP.clayText, fontWeight: FontWeight.w700)),
+                          ),
+                      ]);
                     }),
                     const SizedBox(height: 8),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.lock_open_outlined, size: 18),
+                      label: const Text('Ver datos para pagar'),
+                      onPressed: () => _verDatos(r['id'] as String),
+                    ),
                     FilledButton(
                       onPressed: () async {
                         try {
                           await _db.rpc('admin_mark_paid',
                               params: {'p_order': r['id']});
-                        } catch (_) {}
+                        } catch (e) {
+                          _aviso(e);
+                        }
                         _load();
                       },
                       child: const Text('Ya le pagué'),
                     ),
+                    ]),
                   ]),
             ),
           ),
@@ -604,6 +664,7 @@ class _MoneyTab extends StatefulWidget {
 class _MoneyTabState extends State<_MoneyTab> {
   Map<String, dynamic>? _c;
   List<Map<String, dynamic>> _hist = [];
+  List<Map<String, dynamic>> _log = [];
   final _saldo = TextEditingController();
   final _nota = TextEditingController();
   String? _msg;
@@ -630,10 +691,12 @@ class _MoneyTabState extends State<_MoneyTab> {
           .select('dia, saldo_bs, saldo_usd, esperado_usd, diferencia_usd, nota')
           .order('creado', ascending: false)
           .limit(14);
+      final lg = await _db.rpc('admin_auditoria', params: {'p_limite': 30});
       if (!mounted) return;
       setState(() {
         _c = Map<String, dynamic>.from(c as Map);
         _hist = List<Map<String, dynamic>>.from(h);
+        _log = List<Map<String, dynamic>>.from(lg as List);
       });
     } catch (_) {
       if (mounted) setState(() => _c = {});
@@ -756,6 +819,20 @@ class _MoneyTabState extends State<_MoneyTab> {
           const SizedBox(height: 8),
           Text(_msg!, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
+        if (_log.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          Text('Registro de acciones', style: display(16, color: context.ink)),
+          Text('Queda guardado para siempre: nadie lo puede borrar.',
+              style: TextStyle(color: context.muted, fontSize: 12.5)),
+          for (final a in _log)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Text('${_accion[a['accion']] ?? a['accion']} · @${a['quien']}'),
+              subtitle: Text('${DateTime.tryParse('${a['creado']}')?.toLocal().toString().substring(0, 16) ?? ''}'
+                  '${a['detalle'] is Map && (a['detalle'] as Map)['usd'] != null ? ' · ${_usd(_n((a['detalle'] as Map)['usd']))}' : ''}'),
+            ),
+        ],
         if (_hist.isNotEmpty) ...[
           const SizedBox(height: 22),
           Text('Últimos cuadres', style: display(16, color: context.ink)),
@@ -875,3 +952,15 @@ class _RefundsTabState extends State<_RefundsTab> {
     );
   }
 }
+
+const _accion = {
+  'estado_pedido': 'Cambio de estado de pedido',
+  'pago_a_vendedor': 'Pago a vendedor',
+  'reembolso': 'Reembolso',
+  'ver_datos_cobro': 'Vio datos bancarios',
+  'cambio_datos_cobro': 'Cambio de datos de cobro',
+  'bloqueo': 'Bloqueó a un usuario',
+  'desbloqueo': 'Desbloqueó a un usuario',
+  'tasa': 'Cambio de tasa',
+  'cuadre': 'Cuadre guardado',
+};
