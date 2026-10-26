@@ -107,8 +107,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final row = await _db
           .from('orders')
           .insert({
+            // El precio y la tarifa los pone el servidor desde la base de datos
+            // (y la oferta aceptada, si la hay); la app no los envía.
             'listing_id': widget.item.id,
-            'price': widget.item.price,
             'delivery': {
               'name': name,
               'phone': phone,
