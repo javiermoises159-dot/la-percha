@@ -75,7 +75,7 @@ class ListingDetail extends StatelessWidget {
                       Wrap(spacing: 8, runSpacing: 8, children: [
                         if (item.fotoIa)
                           const _Tag(
-                              'Portada creada con IA: desliza para ver las fotos reales'),
+                              'Portada de catálogo: desliza para ver las fotos reales'),
                         if (item.size != 'No aplica')
                           _Tag('Talla ${item.size}'),
                         _Tag(item.condition),

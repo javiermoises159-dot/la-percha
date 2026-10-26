@@ -241,7 +241,7 @@ class _SellPageState extends State<SellPage> {
                               decoration: BoxDecoration(
                                   color: Colors.black54,
                                   borderRadius: BorderRadius.circular(6)),
-                              child: const Text('IA',
+                              child: const Text('Catálogo',
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 11)),
                             )
@@ -307,25 +307,16 @@ class _SellPageState extends State<SellPage> {
             'Hasta 5 fotos con buena luz: de frente, detalles y etiqueta. Más fotos, más confianza.',
             style: TextStyle(color: context.muted, fontSize: 12)),
         const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _scanning ? null : _scan,
-          icon: _scanning
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.auto_awesome),
-          label: Text(_scanning
-              ? 'Analizando tu foto…'
-              : _photos.isEmpty
-                  ? 'Vende con una foto (IA)'
-                  : 'Rellenar el anuncio con IA'),
+        _MagicButton(
+          busy: _scanning,
+          hasPhoto: _photos.isNotEmpty,
+          onTap: _scan,
         ),
         if (_fotoIa)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-                'La portada la creó la IA. Los compradores verán también tus fotos reales; '
+                'Te armamos una portada de catálogo. Los compradores verán también tus fotos reales; '
                 'debes tener al menos una.',
                 style: TextStyle(color: context.muted, fontSize: 12)),
           ),
@@ -437,6 +428,69 @@ class _Drop extends StatelessWidget {
       onChanged: (v) {
         if (v != null) onChanged(v);
       },
+    );
+  }
+}
+
+/// Botón destacado: hacer la foto y que la app arme el anuncio.
+class _MagicButton extends StatelessWidget {
+  const _MagicButton(
+      {required this.busy, required this.hasPhoto, required this.onTap});
+  final bool busy;
+  final bool hasPhoto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final title = busy
+        ? 'Armando tu anuncio…'
+        : hasPhoto
+            ? 'Arma el anuncio con esta foto'
+            : 'Foto y listo';
+    final sub = busy
+        ? 'Un momento, estamos mirando tu foto'
+        : 'Toma una foto y te escribimos título, precio y descripción en segundos';
+    return Material(
+      color: scheme.primary,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: busy ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: scheme.onPrimary.withValues(alpha: 0.18),
+                  shape: BoxShape.circle),
+              child: busy
+                  ? Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: scheme.onPrimary))
+                  : Icon(Icons.bolt_rounded, color: scheme.onPrimary, size: 28),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: display(19, color: scheme.onPrimary)),
+                    const SizedBox(height: 2),
+                    Text(sub,
+                        style: TextStyle(
+                            color: scheme.onPrimary.withValues(alpha: 0.9),
+                            fontSize: 13)),
+                  ]),
+            ),
+            if (!busy)
+              Icon(Icons.arrow_forward_rounded, color: scheme.onPrimary),
+          ]),
+        ),
+      ),
     );
   }
 }

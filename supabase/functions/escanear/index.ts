@@ -86,12 +86,12 @@ export async function handle(req: Request, env: Env): Promise<Response> {
   if (req.method !== "POST") return json(405, { error: "Método no permitido" });
 
   if (!env("GEMINI_API_KEY")) {
-    return json(503, { error: "La IA aún no está activada.", codigo: "sin_clave" });
+    return json(503, { error: "Esta función se activa muy pronto.", codigo: "sin_clave" });
   }
 
   // 1. Solo usuarios con sesión, y dentro de su límite diario (lo decide la base de datos).
   const auth = req.headers.get("Authorization") ?? "";
-  if (!auth.startsWith("Bearer ")) return json(401, { error: "Inicia sesión para usar la IA." });
+  if (!auth.startsWith("Bearer ")) return json(401, { error: "Inicia sesión para usar esta función." });
   const rpc = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/ai_scan_permitido`, {
     method: "POST",
     headers: {
@@ -101,7 +101,7 @@ export async function handle(req: Request, env: Env): Promise<Response> {
     },
     body: "{}",
   });
-  if (!rpc.ok) return json(401, { error: "Inicia sesión para usar la IA." });
+  if (!rpc.ok) return json(401, { error: "Inicia sesión para usar esta función." });
   const quedan = Number(await rpc.json());
   if (!(quedan >= 0)) {
     return json(429, { error: "Llegaste al límite de escaneos de hoy. Mañana puedes seguir." });
