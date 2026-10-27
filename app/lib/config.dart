@@ -7,7 +7,7 @@ const supabaseKey = 'sb_publishable_PFt4DdXlWbQEvyEgP58BZQ_CKXaoHGG';
 
 /// Cloudflare Turnstile (anti-bots). Esta "Site Key" es pública. Vacía = desactivado.
 /// Ponerla ANTES de activar CAPTCHA en Supabase (Authentication → Attack Protection).
-const turnstileSiteKey = '';
+const turnstileSiteKey = '0x4AAAAAAFoRRXPnmlkb5ipJ';
 
 /// Interruptor general de pagos. Mientras sea false, la app no deja comprar ni pagar
 /// destacados y muestra "Los pagos abren muy pronto". Ponlo en true SOLO cuando haya
