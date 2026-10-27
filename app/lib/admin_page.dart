@@ -2,46 +2,482 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'listing.dart';
+import 'listing_detail.dart';
 import 'orders_page.dart';
 import 'theme.dart';
 
 SupabaseClient get _db => Supabase.instance.client;
 
-/// Panel del administrador: confirmar pagos, resolver problemas, denuncias y usuarios.
-/// La seguridad real está en el servidor: sin ser admin, estas consultas no devuelven nada.
-class AdminPage extends StatelessWidget {
+/// Panel del administrador, organizado como un back-office:
+/// inicio con lo pendiente y las métricas, y una sección para cada tarea.
+/// La seguridad real está en el servidor: sin ser admin (con verificación en dos pasos),
+/// estas consultas no devuelven nada.
+class _Seccion {
+  const _Seccion(this.titulo, this.icono, this.contador, this.ayuda, this.pagina);
+  final String titulo;
+  final IconData icono;
+  final String? contador; // clave en los contadores (pendientes)
+  final String ayuda;
+  final Widget Function() pagina;
+}
+
+final _secciones = <_Seccion>[
+  _Seccion('Pagos por verificar', Icons.fact_check_outlined, 'revision',
+      'Compradores que dicen haber pagado', () => const _OrdersTab(status: 'revision')),
+  _Seccion('Problemas', Icons.report_problem_outlined, 'disputa',
+      'Pedidos con un reclamo abierto', () => const _OrdersTab(status: 'disputa')),
+  _Seccion('Pagar a vendedores', Icons.payments_outlined, 'por_pagar',
+      'Ventas completadas sin pagar', () => const _PayoutsTab()),
+  _Seccion('Reembolsos', Icons.undo_rounded, 'reembolsos',
+      'Dinero que hay que devolver', () => const _RefundsTab()),
+  _Seccion('Denuncias', Icons.flag_outlined, 'denuncias',
+      'Anuncios o usuarios denunciados', () => const _ReportsTab()),
+  _Seccion('Destacados y tasa', Icons.rocket_launch_outlined, 'destacados',
+      'Destacados por aprobar y tasa del BCV', () => const _PromosTab()),
+  _Seccion('Pedidos', Icons.receipt_long_outlined, null,
+      'Buscar cualquier pedido', () => const _AllOrdersTab()),
+  _Seccion('Anuncios', Icons.checkroom_outlined, null,
+      'Revisar y ocultar anuncios', () => const _ListingsAdminTab()),
+  _Seccion('Usuarios', Icons.people_alt_outlined, null,
+      'Buscar y bloquear usuarios', () => const _UsersTab()),
+  _Seccion('Dinero', Icons.account_balance_outlined, null,
+      'Cuadre, ganancias y registro', () => const _MoneyTab()),
+];
+
+/// Cuenta lo pendiente y las métricas principales.
+class _Contadores {
+  static Future<Map<String, num>> cargar() async {
+    Future<int> c(Future<int> f) async {
+      try {
+        return await f;
+      } catch (_) {
+        return 0;
+      }
+    }
+    final semana = DateTime.now().toUtc().subtract(const Duration(days: 7)).toIso8601String();
+    final mes = DateTime.now().toUtc().subtract(const Duration(days: 30)).toIso8601String();
+    final r = await Future.wait([
+      c(_db.from('orders').count().eq('status', 'revision')),
+      c(_db.from('orders').count().eq('status', 'disputa')),
+      c(_db.from('orders').count().eq('status', 'liberado').isFilter('paid_out_at', null)),
+      c(_db.from('orders').count().eq('status', 'cancelado').not('paid_at', 'is', null).isFilter('refunded_at', null)),
+      c(_db.from('reports').count().eq('status', 'abierta')),
+      c(_db.from('promotions').count().eq('status', 'revision')),
+      c(_db.from('listings').count().eq('status', 'active')),
+      c(_db.from('profiles').count()),
+      c(_db.from('orders').count().gte('created_at', semana)),
+      c(_db.from('profiles').count().gte('created_at', semana)),
+    ]);
+    num gmv = 0, ganancia = 0;
+    int ventas = 0;
+    try {
+      final v = await _db.from('orders').select('price, fee').eq('status', 'liberado').gte('released_at', mes).limit(2000);
+      for (final x in v) {
+        gmv += _n(x['price']);
+        ganancia += _n(x['fee']);
+        ventas++;
+      }
+    } catch (_) {}
+    return {
+      'revision': r[0], 'disputa': r[1], 'por_pagar': r[2], 'reembolsos': r[3], 'denuncias': r[4],
+      'destacados': r[5], 'anuncios': r[6], 'usuarios': r[7], 'pedidos_semana': r[8], 'nuevos_semana': r[9],
+      'gmv': gmv, 'ganancia': ganancia, 'ventas': ventas,
+    };
+  }
+}
+
+class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  int _sel = -1; // -1 = inicio
+  Map<String, num> _c = {};
+  bool _cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _recargar();
+  }
+
+  Future<void> _recargar() async {
+    setState(() => _cargando = true);
+    final c = await _Contadores.cargar();
+    if (mounted) setState(() {
+      _c = c;
+      _cargando = false;
+    });
+  }
+
+  void _abrir(int i, bool ancho) {
+    if (ancho) {
+      setState(() => _sel = i);
+    } else {
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(
+              builder: (_) => Scaffold(appBar: AppBar(title: Text(_secciones[i].titulo)), body: _secciones[i].pagina())))
+          .then((_) => _recargar());
+    }
+  }
+
+  Widget _badge(String? k) {
+    final n = k == null ? 0 : (_c[k] ?? 0);
+    if (n == 0) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: LP.clay, borderRadius: BorderRadius.circular(20)),
+      child: Text('$n', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 8,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Administración'),
-          bottom: const TabBar(isScrollable: true, tabs: [
-            Tab(text: 'Dinero'),
-            Tab(text: 'Pagos'),
-            Tab(text: 'Problemas'),
-            Tab(text: 'Pagar a vendedores'),
-            Tab(text: 'Reembolsos'),
-            Tab(text: 'Denuncias'),
-            Tab(text: 'Usuarios'),
-            Tab(text: 'Destacados y tasa'),
+    final ancho = MediaQuery.sizeOf(context).width >= 900;
+    final inicio = _Inicio(c: _c, cargando: _cargando, onRecargar: _recargar, onAbrir: (i) => _abrir(i, ancho), badge: _badge);
+    if (!ancho) {
+      return Scaffold(appBar: AppBar(title: const Text('Administración')), body: inicio);
+    }
+    return Scaffold(
+      appBar: AppBar(title: Text(_sel < 0 ? 'Administración' : _secciones[_sel].titulo)),
+      body: Row(children: [
+        SizedBox(
+          width: 260,
+          child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
+            _ItemMenu(icono: Icons.space_dashboard_outlined, titulo: 'Inicio', activo: _sel < 0, onTap: () {
+              setState(() => _sel = -1);
+              _recargar();
+            }),
+            const Divider(height: 16),
+            for (var i = 0; i < _secciones.length; i++)
+              _ItemMenu(icono: _secciones[i].icono, titulo: _secciones[i].titulo, activo: _sel == i,
+                  trailing: _badge(_secciones[i].contador), onTap: () => _abrir(i, true)),
           ]),
         ),
-        body: const TabBarView(children: [
-          _MoneyTab(),
-          _OrdersTab(status: 'revision'),
-          _OrdersTab(status: 'disputa'),
-          _PayoutsTab(),
-          _RefundsTab(),
-          _ReportsTab(),
-          _UsersTab(),
-          _PromosTab(),
+        const VerticalDivider(width: 1),
+        Expanded(child: _sel < 0 ? inicio : KeyedSubtree(key: ValueKey(_sel), child: _secciones[_sel].pagina())),
+      ]),
+    );
+  }
+}
+
+class _ItemMenu extends StatelessWidget {
+  const _ItemMenu({required this.icono, required this.titulo, required this.activo, required this.onTap, this.trailing});
+  final IconData icono;
+  final String titulo;
+  final bool activo;
+  final VoidCallback onTap;
+  final Widget? trailing;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        child: Material(
+          color: activo ? context.chip : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: ListTile(
+            dense: true,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            leading: Icon(icono, size: 21),
+            title: Text(titulo, style: TextStyle(fontWeight: activo ? FontWeight.w800 : FontWeight.w600)),
+            trailing: trailing,
+            onTap: onTap,
+          ),
+        ),
+      );
+}
+
+/// Inicio del panel: lo pendiente primero, después las métricas y el resto de secciones.
+class _Inicio extends StatelessWidget {
+  const _Inicio({required this.c, required this.cargando, required this.onRecargar, required this.onAbrir, required this.badge});
+  final Map<String, num> c;
+  final bool cargando;
+  final Future<void> Function() onRecargar;
+  final void Function(int) onAbrir;
+  final Widget Function(String?) badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final pendientes = [for (var i = 0; i < _secciones.length; i++) if (_secciones[i].contador != null) i];
+    final otras = [for (var i = 0; i < _secciones.length; i++) if (_secciones[i].contador == null) i];
+    final totalPend = pendientes.fold<num>(0, (a, i) => a + (c[_secciones[i].contador] ?? 0));
+    Widget metrica(String t, String v, {String? sub}) => Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: context.chip, borderRadius: BorderRadius.circular(14)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t, style: TextStyle(color: context.muted, fontSize: 12.5)),
+            const SizedBox(height: 4),
+            Text(v, style: display(24, color: context.ink)),
+            if (sub != null) Text(sub, style: TextStyle(color: context.muted, fontSize: 12)),
+          ]),
+        );
+    return RefreshIndicator(
+      onRefresh: onRecargar,
+      child: ListView(padding: const EdgeInsets.all(16), children: [
+        Row(children: [
+          Expanded(
+            child: Text(totalPend == 0 ? 'Todo al día' : 'Tienes $totalPend cosas pendientes',
+                style: display(22, color: context.ink)),
+          ),
+          if (cargando) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+          else IconButton(tooltip: 'Actualizar', onPressed: onRecargar, icon: const Icon(Icons.refresh_rounded)),
+        ]),
+        const SizedBox(height: 10),
+        LayoutBuilder(builder: (context, k) {
+          final cols = k.maxWidth > 700 ? 3 : 2;
+          final w = (k.maxWidth - 10 * (cols - 1)) / cols;
+          return Wrap(spacing: 10, runSpacing: 10, children: [
+            for (final i in pendientes)
+              SizedBox(
+                width: w,
+                child: Material(
+                  color: (c[_secciones[i].contador] ?? 0) > 0 ? const Color(0xFFFDE8E4) : context.chip,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => onAbrir(i),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Icon(_secciones[i].icono, size: 20),
+                          const Spacer(),
+                          Text('${c[_secciones[i].contador] ?? 0}', style: display(26, color: context.ink)),
+                        ]),
+                        const SizedBox(height: 6),
+                        Text(_secciones[i].titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Text(_secciones[i].ayuda, style: TextStyle(color: context.muted, fontSize: 12)),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
+          ]);
+        }),
+        const SizedBox(height: 22),
+        Text('Cómo va Pavito', style: display(18, color: context.ink)),
+        const SizedBox(height: 10),
+        LayoutBuilder(builder: (context, k) {
+          final cols = k.maxWidth > 700 ? 4 : 2;
+          final w = (k.maxWidth - 10 * (cols - 1)) / cols;
+          return Wrap(spacing: 10, runSpacing: 10, children: [
+            SizedBox(width: w, child: metrica('Anuncios activos', '${c['anuncios'] ?? 0}')),
+            SizedBox(width: w, child: metrica('Usuarios', '${c['usuarios'] ?? 0}', sub: '+${c['nuevos_semana'] ?? 0} esta semana')),
+            SizedBox(width: w, child: metrica('Pedidos (7 días)', '${c['pedidos_semana'] ?? 0}')),
+            SizedBox(width: w, child: metrica('Ventas (30 días)', '${c['ventas'] ?? 0}', sub: 'Vendido ${_usd(c['gmv'] ?? 0)}')),
+            SizedBox(width: w, child: metrica('Ganancia (30 días)', _usd(c['ganancia'] ?? 0), sub: 'Tarifas de protección')),
+          ]);
+        }),
+        const SizedBox(height: 22),
+        Text('Herramientas', style: display(18, color: context.ink)),
+        const SizedBox(height: 6),
+        for (final i in otras)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(backgroundColor: context.chip, child: Icon(_secciones[i].icono, color: context.ink, size: 20)),
+            title: Text(_secciones[i].titulo, style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(_secciones[i].ayuda),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => onAbrir(i),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Todos los pedidos: buscar por referencia, guía o número de pedido y filtrar por estado.
+class _AllOrdersTab extends StatefulWidget {
+  const _AllOrdersTab();
+  @override
+  State<_AllOrdersTab> createState() => _AllOrdersTabState();
+}
+
+class _AllOrdersTabState extends State<_AllOrdersTab> {
+  final _q = TextEditingController();
+  String? _estado;
+  List<Map<String, dynamic>>? _rows;
+  static const _estados = {
+    'esperando_pago': 'Sin pagar', 'revision': 'Verificando', 'retenido': 'Retenido', 'enviado': 'Enviado',
+    'liberado': 'Completado', 'disputa': 'Problema', 'cancelado': 'Cancelado',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _q.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      var f = _db.from('orders').select(
+          'id, price, fee, status, pay_ref, tracking, created_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)');
+      if (_estado != null) f = f.eq('status', _estado!);
+      final q = _q.text.trim().replaceAll(RegExp(r'[,()*%]'), '');
+      if (q.isNotEmpty) {
+        f = RegExp(r'^[0-9a-f-]{36}$').hasMatch(q) ? f.eq('id', q) : f.or('pay_ref.ilike.*$q*,tracking.ilike.*$q*');
+      }
+      final r = await f.order('created_at', ascending: false).limit(100);
+      if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
+    } catch (_) {
+      if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: TextField(
+          controller: _q,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _load(),
+          decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search), hintText: 'Referencia de pago, guía o número de pedido',
+              suffixIcon: IconButton(icon: const Icon(Icons.arrow_forward), onPressed: _load)),
+        ),
+      ),
+      SizedBox(
+        height: 48,
+        child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), children: [
+          Padding(padding: const EdgeInsets.only(right: 6), child: ChoiceChip(label: const Text('Todos'), selected: _estado == null, onSelected: (_) { setState(() => _estado = null); _load(); })),
+          for (final e in _estados.entries)
+            Padding(padding: const EdgeInsets.only(right: 6), child: ChoiceChip(label: Text(e.value), selected: _estado == e.key, onSelected: (_) { setState(() => _estado = e.key); _load(); })),
         ]),
       ),
-    );
+      Expanded(
+        child: rows == null
+            ? const Center(child: CircularProgressIndicator())
+            : rows.isEmpty
+                ? Center(child: Text('No hay pedidos con ese filtro.', style: TextStyle(color: context.muted)))
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView.separated(
+                      itemCount: rows.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final r = rows[i];
+                        final f = DateTime.tryParse('${r['created_at']}')?.toLocal();
+                        return ListTile(
+                          title: Text(field(r['listings'], 'title', 'Artículo'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          subtitle: Text('@${field(r['buyer'], 'username', '?')} compra a @${field(r['seller'], 'username', '?')}'
+                              '${f != null ? ' · ${f.day}/${f.month}' : ''}${r['pay_ref'] != null ? ' · Ref ${r['pay_ref']}' : ''}'),
+                          trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            Text(_usd(_n(r['price']) + _n(r['fee'])), style: const TextStyle(fontWeight: FontWeight.w800)),
+                            Text(_estados[r['status']] ?? '${r['status']}', style: TextStyle(color: context.muted, fontSize: 12)),
+                          ]),
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OrderPage(orderId: r['id'] as String))),
+                        );
+                      },
+                    ),
+                  ),
+      ),
+    ]);
+  }
+}
+
+/// Moderación de anuncios: buscar, ver y ocultar los que incumplen las reglas.
+class _ListingsAdminTab extends StatefulWidget {
+  const _ListingsAdminTab();
+  @override
+  State<_ListingsAdminTab> createState() => _ListingsAdminTabState();
+}
+
+class _ListingsAdminTabState extends State<_ListingsAdminTab> {
+  final _q = TextEditingController();
+  List<Map<String, dynamic>>? _rows;
+  static const _est = {'active': 'Visible', 'hidden': 'Oculto', 'reserved': 'Reservado', 'sold': 'Vendido'};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _q.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      var f = _db.from('listings').select('*, profiles!listings_seller_id_fkey(username)');
+      final q = _q.text.trim().replaceAll(RegExp(r'[,()*%]'), '');
+      if (q.isNotEmpty) f = f.ilike('title', '%$q%');
+      final r = await f.order('created_at', ascending: false).limit(100);
+      if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
+    } catch (_) {
+      if (mounted) setState(() => _rows = []);
+    }
+  }
+
+  Future<void> _estado(String id, String st) async {
+    try {
+      await _db.from('listings').update({'status': st}).eq('id', id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e is PostgrestException ? e.message : 'No se pudo cambiar.')));
+      }
+    }
+    _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: TextField(
+          controller: _q,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _load(),
+          decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Buscar por título',
+              suffixIcon: IconButton(icon: const Icon(Icons.arrow_forward), onPressed: _load)),
+        ),
+      ),
+      Expanded(
+        child: rows == null
+            ? const Center(child: CircularProgressIndicator())
+            : rows.isEmpty
+                ? Center(child: Text('No hay anuncios.', style: TextStyle(color: context.muted)))
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView.separated(
+                      itemCount: rows.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final r = rows[i];
+                        final l = Listing.fromMap(r);
+                        final st = '${r['status']}';
+                        return ListTile(
+                          leading: SizedBox(width: 52, height: 52,
+                              child: ClipRRect(borderRadius: BorderRadius.circular(8), child: ListingPhoto(item: l, iconSize: 22))),
+                          title: Text(l.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          subtitle: Text('${_usd(l.price)} · @${l.seller} · ${l.category} · ${_est[st] ?? st}'),
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingDetail(item: l))),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (v) => _estado(l.id, v),
+                            itemBuilder: (_) => [
+                              if (st == 'active') const PopupMenuItem(value: 'hidden', child: Text('Ocultar anuncio')),
+                              if (st == 'hidden') const PopupMenuItem(value: 'active', child: Text('Volver a mostrar')),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+      ),
+    ]);
   }
 }
 
