@@ -17,31 +17,49 @@ ANDROID = RAIZ / "app/android_icons"
 
 # (archivo, tamaño, % del lado que ocupa la guacamaya, esquinas redondeadas)
 SALIDAS = [
-    (WEB / "Icon-192.png", 192, 0.84, True),
-    (WEB / "Icon-512.png", 512, 0.84, True),
-    (WEB / "Icon-maskable-192.png", 192, 0.64, False),
-    (WEB / "Icon-maskable-512.png", 512, 0.64, False),
-    (WEB / "apple-touch-icon.png", 180, 0.80, False),
-    (WEB / "favicon.png", 64, 0.92, True),
-    (ANDROID / "play-store-512.png", 512, 0.80, False),
+    (WEB / "Icon-192.png", 192, 0.70, True),
+    (WEB / "Icon-512.png", 512, 0.70, True),
+    (WEB / "Icon-maskable-192.png", 192, 0.56, False),
+    (WEB / "Icon-maskable-512.png", 512, 0.56, False),
+    (WEB / "apple-touch-icon.png", 180, 0.68, False),
+    (WEB / "favicon.png", 64, 0.82, True),
+    (ANDROID / "play-store-512.png", 512, 0.66, False),
 ]
 for carpeta, lado in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
-    SALIDAS.append((ANDROID / f"mipmap-{carpeta}/ic_launcher.png", lado, 0.80, True))
+    SALIDAS.append((ANDROID / f"mipmap-{carpeta}/ic_launcher.png", lado, 0.66, True))
+
+
+VISTA = "0 0 120 120"  # se recalcula con la caja real del dibujo (centrado óptico)
 
 
 def html(lado, escala, redondo):
     radio = f"{int(lado * 0.22)}px" if redondo else "0"
     m = int(lado * escala)
+    svg = re.sub(r'viewBox="[^"]*"', f'viewBox="{VISTA}"', SVG, count=1)
     return (f"<html><body style='margin:0;background:transparent'>"
             f"<div style='width:{lado}px;height:{lado}px;background:{AMARILLO};border-radius:{radio};"
             f"display:grid;place-items:center'>"
-            f"<div style='width:{m}px;height:{m}px'>{SVG.replace('<svg ', f'<svg width=\"{m}\" height=\"{m}\" ', 1)}</div>"
+            f"<div style='width:{m}px;height:{m}px'>{svg.replace('<svg ', f'<svg width=\"{m}\" height=\"{m}\" ', 1)}</div>"
             f"</div></body></html>")
+
+
+async def medir(b):
+    """Caja real del dibujo (incluye el contorno) para centrarlo de verdad."""
+    global VISTA
+    pg = await b.new_page()
+    await pg.set_content(f"<html><body>{SVG}</body></html>")
+    x, y, w, h = await pg.evaluate("""() => { const g = document.querySelector('svg');
+        const r = g.getBBox(); return [r.x - 2, r.y - 2, r.width + 4, r.height + 4]; }""")
+    lado = max(w, h)
+    VISTA = f"{x - (lado - w) / 2:.1f} {y - (lado - h) / 2:.1f} {lado:.1f} {lado:.1f}"
+    print("caja del dibujo:", VISTA)
+    await pg.close()
 
 
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
+        await medir(b)
         for ruta, lado, escala, redondo in SALIDAS:
             ruta.parent.mkdir(parents=True, exist_ok=True)
             pg = await b.new_page(viewport={"width": lado, "height": lado})
