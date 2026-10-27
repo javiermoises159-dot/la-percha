@@ -113,12 +113,15 @@ class ListingDetail extends StatelessWidget {
                       child: Row(children: [
                         SizedBox(
                           width: 50,
-                          child: OutlinedButton(
+                          child: Tooltip(
+                           message: 'Escribir al vendedor',
+                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                                 padding: EdgeInsets.zero),
                             onPressed: () => openChatFor(context, item),
                             child: const Icon(Icons.chat_bubble_outline_rounded,
-                                size: 20),
+                                size: 20, semanticLabel: 'Escribir al vendedor'),
+                          ),
                           ),
                         ),
                         const SizedBox(width: 10),

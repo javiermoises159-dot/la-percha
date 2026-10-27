@@ -81,7 +81,7 @@ class _ChatPageState extends State<ChatPage> {
           .from('messages')
           .select()
           .eq('thread_id', widget.threadId)
-          .order('created_at');
+          .order('created_at', ascending: true);
       if (!mounted) return;
       final grew = rows.length != _msgs.length;
       setState(() => _msgs = List<Map<String, dynamic>>.from(rows));

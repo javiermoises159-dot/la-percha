@@ -346,7 +346,7 @@ class _OrderPageState extends State<OrderPage> {
             .from('orders')
             .select('id, price, fee, listings(title)')
             .eq('bundle_id', row['bundle_id'] as String)
-            .order('created_at'));
+            .order('created_at', ascending: true));
       }
       if (!mounted) return;
       setState(() {
@@ -451,7 +451,11 @@ class _OrderPageState extends State<OrderPage> {
             _Line('Correo Zinli', zinliCorreo),
             _Line('Nombre', zinliNombre),
           ],
-          _Line(m == pagoBinance ? 'Monto en USDT' : 'Monto en dólares', _money(price + fee), bold: true),
+          if (m == pagoPagoMovil && tasaBs > 0) ...[
+            _Line('Monto en bolívares', _bsExacto(price + fee), bold: true),
+            _Line('Equivale a', '${_money(price + fee)} (tasa BCV)'),
+          ] else
+            _Line(m == pagoBinance ? 'Monto en USDT' : 'Monto en dólares', _money(price + fee), bold: true),
         ]),
         const SizedBox(height: 10),
         Text(instruccionPago(m), style: TextStyle(color: context.muted, fontSize: 13, height: 1.35)),
@@ -481,7 +485,14 @@ class _OrderPageState extends State<OrderPage> {
       actions.addAll([
         const SizedBox(height: 8),
         OutlinedButton(
-          onPressed: _busy ? null : () => _update({'status': 'cancelado'}),
+          onPressed: _busy
+              ? null
+              : () async {
+                  if (await _confirmar(context, '¿Cancelar el pedido?',
+                      'La prenda vuelve a estar a la venta. No lo canceles si ya pagaste.', 'Sí, cancelar')) {
+                    _update({'status': 'cancelado'});
+                  }
+                },
           child: const Text('Cancelar pedido'),
         ),
       ]);
@@ -520,12 +531,28 @@ class _OrderPageState extends State<OrderPage> {
     if (isBuyer && status == 'enviado') {
       actions.addAll([
         FilledButton(
-          onPressed: _busy ? null : () => _update({'status': 'liberado'}),
+          onPressed: _busy
+              ? null
+              : () async {
+                  if (await _confirmar(context, '¿Ya tienes la prenda?',
+                      'Al confirmar, le pagamos al vendedor y ya no podrás reclamar. Hazlo solo si la recibiste y está como en las fotos.',
+                      'Sí, la recibí')) {
+                    _update({'status': 'liberado'});
+                  }
+                },
           child: const Text('Ya la recibí, liberar el pago'),
         ),
         const SizedBox(height: 10),
         OutlinedButton(
-          onPressed: _busy ? null : () => _update({'status': 'disputa'}),
+          onPressed: _busy
+              ? null
+              : () async {
+                  if (await _confirmar(context, '¿Tuviste un problema?',
+                      'Congelamos el pago y nuestro equipo revisa el caso. Cuéntale al vendedor por el chat qué pasó y guarda fotos.',
+                      'Abrir reclamo')) {
+                    _update({'status': 'disputa'});
+                  }
+                },
           child: const Text('Tuve un problema'),
         ),
       ]);
@@ -735,4 +762,30 @@ class _Line extends StatelessWidget {
           ]),
     );
   }
+}
+
+
+/// Monto exacto en bolívares para el Pago Móvil (2 decimales, formato venezolano).
+String _bsExacto(double usd) {
+  final v = (usd * tasaBs * 100).round() / 100;
+  final parts = v.toStringAsFixed(2).split('.');
+  final ent = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
+  return 'Bs $ent,${parts[1]}';
+}
+
+
+/// Confirmación antes de acciones que no se pueden deshacer.
+Future<bool> _confirmar(BuildContext context, String titulo, String texto, String boton) async {
+  final r = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text(titulo),
+      content: Text(texto),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Volver')),
+        TextButton(onPressed: () => Navigator.pop(c, true), child: Text(boton)),
+      ],
+    ),
+  );
+  return r == true;
 }

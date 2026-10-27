@@ -73,9 +73,10 @@ class _AuthFlowState extends State<AuthFlow> {
     if (!isValidEmail(email)) {
       return setState(() => _error = 'Escribe un correo válido.');
     }
-    if (pass.length < 6) {
-      return setState(
-          () => _error = 'La contraseña debe tener al menos 6 caracteres.');
+    if (pass.length < 6 || (!_login && pass.length < 8)) {
+      return setState(() => _error = _login
+          ? 'La contraseña debe tener al menos 6 caracteres.'
+          : 'Usa una contraseña de al menos 8 caracteres.');
     }
     if (!_login) {
       final u = _user.text.trim();
@@ -153,8 +154,8 @@ class _AuthFlowState extends State<AuthFlow> {
           TextField(
             controller: _pass,
             obscureText: true,
-            decoration: const InputDecoration(
-                labelText: 'Contraseña', hintText: 'Mínimo 6 caracteres'),
+            decoration: InputDecoration(
+                labelText: 'Contraseña', hintText: _login ? null : 'Mínimo 8 caracteres'),
           ),
           const SizedBox(height: 12),
           if (!_login) ...[

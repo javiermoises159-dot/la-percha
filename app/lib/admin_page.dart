@@ -47,9 +47,11 @@ final _secciones = <_Seccion>[
 /// Cuenta lo pendiente y las métricas principales.
 class _Contadores {
   static Future<Map<String, num>> cargar() async {
-    Future<int> c(Future<int> f) async {
+    // Cuenta pidiendo solo la columna id: los pedidos tienen permisos por columna y un
+    // conteo "de todo" (select=*) sería rechazado por el servidor.
+    Future<int> c(Future<PostgrestResponse<PostgrestList>> f) async {
       try {
-        return await f;
+        return (await f).count;
       } catch (_) {
         return 0;
       }
@@ -57,16 +59,16 @@ class _Contadores {
     final semana = DateTime.now().toUtc().subtract(const Duration(days: 7)).toIso8601String();
     final mes = DateTime.now().toUtc().subtract(const Duration(days: 30)).toIso8601String();
     final r = await Future.wait([
-      c(_db.from('orders').count().eq('status', 'revision')),
-      c(_db.from('orders').count().eq('status', 'disputa')),
-      c(_db.from('orders').count().eq('status', 'liberado').isFilter('paid_out_at', null)),
-      c(_db.from('orders').count().eq('status', 'cancelado').not('paid_at', 'is', null).isFilter('refunded_at', null)),
-      c(_db.from('reports').count().eq('status', 'abierta')),
-      c(_db.from('promotions').count().eq('status', 'revision')),
-      c(_db.from('listings').count().eq('status', 'active')),
-      c(_db.from('profiles').count()),
-      c(_db.from('orders').count().gte('created_at', semana)),
-      c(_db.from('profiles').count().gte('created_at', semana)),
+      c(_db.from('orders').select('id').eq('status', 'revision').limit(1).count(CountOption.exact)),
+      c(_db.from('orders').select('id').eq('status', 'disputa').limit(1).count(CountOption.exact)),
+      c(_db.from('orders').select('id').eq('status', 'liberado').isFilter('paid_out_at', null).limit(1).count(CountOption.exact)),
+      c(_db.from('orders').select('id').eq('status', 'cancelado').not('paid_at', 'is', null).isFilter('refunded_at', null).limit(1).count(CountOption.exact)),
+      c(_db.from('reports').select('id').eq('status', 'abierta').limit(1).count(CountOption.exact)),
+      c(_db.from('promotions').select('id').eq('status', 'revision').limit(1).count(CountOption.exact)),
+      c(_db.from('listings').select('id').eq('status', 'active').limit(1).count(CountOption.exact)),
+      c(_db.from('profiles').select('id').limit(1).count(CountOption.exact)),
+      c(_db.from('orders').select('id').gte('created_at', semana).limit(1).count(CountOption.exact)),
+      c(_db.from('profiles').select('id').gte('created_at', semana).limit(1).count(CountOption.exact)),
     ]);
     num gmv = 0, ganancia = 0;
     int ventas = 0;
@@ -507,7 +509,7 @@ class _OrdersTabState extends State<_OrdersTab> {
           .select(
               'id, price, fee, status, pay_ref, tracking, bundle_id, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('status', widget.status)
-          .order('created_at');
+          .order('created_at', ascending: true);
       if (!mounted) return;
       setState(() {
         _rows = List<Map<String, dynamic>>.from(r);
@@ -525,6 +527,12 @@ class _OrdersTabState extends State<_OrdersTab> {
   }
 
   Future<void> _set(String id, String status) async {
+    const q = {
+      'retenido': '¿Confirmas que el pago llegó a la cuenta? El vendedor recibirá el aviso para enviar.',
+      'cancelado': '¿Cancelar este pedido? La prenda vuelve a la venta.',
+      'liberado': '¿Cerrar el reclamo a favor del vendedor? Quedará listo para pagarle.',
+    };
+    if (!await _seguro(context, q[status] ?? '¿Confirmas el cambio?')) return;
     try {
       // En un lote se cambian todos los artículos a la vez.
       final r = _rows.firstWhere((x) => x['id'] == id, orElse: () => const {});
@@ -798,7 +806,7 @@ class _PromosTabState extends State<_PromosTab> {
           .select(
               'id, days, amount, pay_ref, created_at, listings(title), profiles!promotions_seller_id_fkey(username)')
           .eq('status', 'revision')
-          .order('created_at');
+          .order('created_at', ascending: true);
       final t = await _db
           .from('ajustes')
           .select('valor, actualizado')
@@ -847,7 +855,7 @@ class _PromosTabState extends State<_PromosTab> {
             ),
           ),
           const SizedBox(width: 8),
-          FilledButton(
+          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44)), 
             onPressed: () {
               final v = double.tryParse(_ctrl.text.trim().replaceAll(',', '.'));
               if (v == null || v <= 0) return;
@@ -878,13 +886,13 @@ class _PromosTabState extends State<_PromosTab> {
                     Text('Referencia: ${r['pay_ref']}'),
                     const SizedBox(height: 8),
                     Row(children: [
-                      OutlinedButton(
+                      OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)), 
                           onPressed: () => _do(() => _db.rpc(
                               'admin_review_promotion',
                               params: {'p_id': r['id'], 'p_ok': false})),
                           child: const Text('Rechazar')),
                       const SizedBox(width: 8),
-                      FilledButton(
+                      FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44)), 
                           onPressed: () => _do(() => _db.rpc(
                               'admin_review_promotion',
                               params: {'p_id': r['id'], 'p_ok': true})),
@@ -923,7 +931,7 @@ class _PayoutsTabState extends State<_PayoutsTab> {
               'id, price, seller_id, bundle_id, updated_at, released_at, listings(title), seller:profiles!orders_seller_id_fkey(username)')
           .eq('status', 'liberado')
           .isFilter('paid_out_at', null)
-          .order('updated_at');
+          .order('updated_at', ascending: true);
       final ids = {for (final x in r) x['seller_id'] as String}.toList();
       final p = ids.isEmpty
           ? <Map<String, dynamic>>[]
@@ -1042,6 +1050,7 @@ class _PayoutsTabState extends State<_PayoutsTab> {
                     ),
                     FilledButton(
                       onPressed: () async {
+                        if (!await _seguro(context, '¿Ya le transferiste a este vendedor? Se marca como pagado y no se puede deshacer.')) return;
                         try {
                           await _db.rpc('admin_mark_paid',
                               params: {'p_order': r['id']});
@@ -1315,11 +1324,11 @@ class _RefundsTabState extends State<_RefundsTab> {
       final r = await _db
           .from('orders')
           .select(
-              'id, price, fee, bundle_id, pay_ref, cancelled_at, updated_at, delivery, listings(title), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, price, fee, bundle_id, pay_ref, cancelled_at, updated_at, listings(title), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('status', 'cancelado')
           .not('paid_at', 'is', null)
           .isFilter('refunded_at', null)
-          .order('cancelled_at');
+          .order('cancelled_at', ascending: true);
       // Un lote se devuelve de una vez: se agrupa por lote.
       final g = <String, Map<String, dynamic>>{};
       for (final x in r) {
@@ -1331,6 +1340,12 @@ class _RefundsTabState extends State<_RefundsTab> {
         } else {
           g[k] = {...x, 'total': t, 'n': 1};
         }
+      }
+      // Teléfono del comprador para devolverle el dinero (los datos de entrega van por función segura).
+      for (final x in g.values) {
+        try {
+          x['delivery'] = await _db.rpc('order_delivery', params: {'oid': x['id']});
+        } catch (_) {}
       }
       if (mounted) setState(() => _rows = g.values.toList());
     } catch (_) {
@@ -1375,9 +1390,15 @@ class _RefundsTabState extends State<_RefundsTab> {
                 const SizedBox(height: 8),
                 FilledButton(
                   onPressed: () async {
+                    if (!await _seguro(context, '¿Ya le devolviste el dinero al comprador? Se marca como reembolsado.')) return;
                     try {
                       await _db.rpc('admin_mark_refunded', params: {'p_order': r['id']});
-                    } catch (_) {}
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(e is PostgrestException ? e.message : 'No se pudo marcar.')));
+                      }
+                    }
                     _load();
                   },
                   child: const Text('Ya le devolví el dinero'),
@@ -1401,3 +1422,20 @@ const _accion = {
   'tasa': 'Cambio de tasa',
   'cuadre': 'Cuadre guardado',
 };
+
+
+/// Confirmación del administrador antes de mover dinero o estados.
+Future<bool> _seguro(BuildContext context, String texto) async {
+  final r = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const Text('Confirmar'),
+      content: Text(texto),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Volver')),
+        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, confirmar')),
+      ],
+    ),
+  );
+  return r == true;
+}

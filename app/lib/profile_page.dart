@@ -521,6 +521,8 @@ class _SettingsPageState extends State<SettingsPage> {
       await Supabase.instance.client.rpc('delete_my_account');
       await appState.signOut();
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+    } on PostgrestException catch (e) {
+      if (mounted) setState(() => _msg = e.message);
     } catch (_) {
       if (mounted) {
         setState(() => _msg =

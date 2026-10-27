@@ -208,7 +208,7 @@ class _OfferBarState extends State<OfferBar> {
                           params: {'p_offer': o['id'], 'p_accept': false}),
                       'No se pudo responder.'),
               child: const Text('Rechazar')),
-          FilledButton(
+          FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44)), 
               onPressed: _busy
                   ? null
                   : () => _run(
@@ -223,7 +223,7 @@ class _OfferBarState extends State<OfferBar> {
       content = iAmBuyer
           ? Row(children: [
               Expanded(child: Text('Oferta aceptada: ${_usd(amount)} (48 h).')),
-              FilledButton(
+              FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44)), 
                   onPressed: () => startCheckout(context, l),
                   child: Text('Comprar a ${_usd(amount)}')),
             ])
@@ -610,8 +610,8 @@ class _FollowButtonState extends State<FollowButton> {
         final label = on ? 'Siguiendo' : 'Seguir';
         return Row(mainAxisSize: MainAxisSize.min, children: [
           on
-              ? OutlinedButton(onPressed: _tap, child: Text(label))
-              : FilledButton(onPressed: _tap, child: Text(label)),
+              ? OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)), onPressed: _tap, child: Text(label))
+              : FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 44)), onPressed: _tap, child: Text(label)),
           if (_count != null) ...[
             const SizedBox(width: 10),
             Text('$_count seguidores',
@@ -938,6 +938,7 @@ class _AvisosPageState extends State<AvisosPage> {
             .from('avisos')
             .update({'leido': true}).eq('id', a['id'] as int);
       } catch (_) {}
+      avisosStore.load();
     }
     if (!mounted) return;
     final ref = a['ref_id'] as String?;

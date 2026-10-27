@@ -115,6 +115,11 @@ class AppState extends ChangeNotifier {
       required String password,
       required String username,
       required String city}) async {
+    // Si ya se creó la cuenta pero falló el perfil (por ejemplo, usuario reservado),
+    // el reintento solo crea el perfil: no vuelve a registrar el correo.
+    if (_db.auth.currentUser != null && account == null) {
+      return completarPerfil(username, city);
+    }
     try {
       final taken = await _db
           .from('profiles')

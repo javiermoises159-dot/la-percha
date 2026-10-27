@@ -158,7 +158,7 @@ Future<void> celebrarSiFundador(BuildContext context) async {
   try {
     final n = await fundadorDe(me, fresco: true);
     if (n == null) return;
-    final mios = await _db.from('listings').count().eq('seller_id', me);
+    final mios = (await _db.from('listings').select('id').eq('seller_id', me).limit(2).count(CountOption.exact)).count;
     if (mios != 1 || !context.mounted) return;
     await showDialog<void>(
       context: context,
