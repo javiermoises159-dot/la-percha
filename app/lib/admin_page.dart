@@ -115,6 +115,7 @@ class _AdminPageState extends State<AdminPage> {
   void _abrir(int i, bool ancho) {
     if (ancho) {
       setState(() => _sel = i);
+      _recargar();
     } else {
       Navigator.of(context)
           .push(MaterialPageRoute<void>(
@@ -259,7 +260,7 @@ class _Inicio extends StatelessWidget {
         Text('Cómo va Pavito', style: display(18, color: context.ink)),
         const SizedBox(height: 10),
         LayoutBuilder(builder: (context, k) {
-          final cols = k.maxWidth > 700 ? 4 : 2;
+          final cols = k.maxWidth > 860 ? 5 : k.maxWidth > 560 ? 3 : 2;
           final w = (k.maxWidth - 10 * (cols - 1)) / cols;
           return Wrap(spacing: 10, runSpacing: 10, children: [
             SizedBox(width: w, child: metrica('Anuncios activos', '${c['anuncios'] ?? 0}')),
