@@ -1,0 +1,44 @@
+# Copia de seguridad diaria de la base de datos de Pavito.
+# Guarda la copia CIFRADA como archivo del workflow (se conserva 30 días).
+# Secretos necesarios (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL    → cadena "Session pooler" de Supabase (con la contraseña)
+#   COPIA_CLAVE        → una frase larga inventada por ti para cifrar la copia
+name: Copia de seguridad
+on:
+  schedule:
+    - cron: '17 6 * * *'   # todos los días, 2:17 a. m. hora de Venezuela
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  copia:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Instalar pg_dump 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17 >/dev/null
+      - name: Copiar y cifrar
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          CLAVE: ${{ secrets.COPIA_CLAVE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DB" ] || [ -z "$CLAVE" ]; then echo "Faltan los secretos SUPABASE_DB_URL o COPIA_CLAVE"; exit 1; fi
+          F=pavito-$(date -u +%Y-%m-%d)
+          /usr/lib/postgresql/17/bin/pg_dump "$DB" -Fc --no-owner --no-privileges \
+            -n public -n interno -n auth -n storage -f "$F.dump"
+          ls -lh "$F.dump"
+          /usr/lib/postgresql/17/bin/pg_restore -l "$F.dump" | grep -c "TABLE DATA" | xargs echo "Tablas con datos:"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$CLAVE" --symmetric --cipher-algo AES256 -o "$F.dump.gpg" "$F.dump"
+          rm -f "$F.dump"
+          echo "F=$F" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.F }}
+          path: ${{ env.F }}.dump.gpg
+          retention-days: 30
+          if-no-files-found: error
