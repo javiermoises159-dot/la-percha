@@ -192,7 +192,7 @@ class ListingsStore extends ChangeNotifier {
     try {
       final rows = await _db
           .from('listings')
-          .select('*, profiles(username)')
+          .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('status', 'active')
           .order('created_at', ascending: false)
           .limit(300);

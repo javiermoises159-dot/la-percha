@@ -757,7 +757,7 @@ class _BundlePageState extends State<BundlePage> {
     try {
       final l = await _db
           .from('listings')
-          .select('*, profiles(username)')
+          .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('seller_id', widget.sellerId)
           .eq('status', 'active')
           .order('created_at', ascending: false);

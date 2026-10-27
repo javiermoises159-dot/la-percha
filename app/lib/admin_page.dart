@@ -359,7 +359,7 @@ class _PromosTabState extends State<_PromosTab> {
       final r = await _db
           .from('promotions')
           .select(
-              'id, days, amount, pay_ref, created_at, listings(title), profiles(username)')
+              'id, days, amount, pay_ref, created_at, listings(title), profiles!promotions_seller_id_fkey(username)')
           .eq('status', 'revision')
           .order('created_at');
       final t = await _db

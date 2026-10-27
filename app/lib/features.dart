@@ -130,7 +130,7 @@ class _OfferBarState extends State<OfferBar> {
           .single();
       final l = await _db
           .from('listings')
-          .select('*, profiles(username)')
+          .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('id', t['listing_id'] as String)
           .maybeSingle();
       final offers = await _db
@@ -675,7 +675,7 @@ class _PromotePageState extends State<PromotePage> {
     try {
       final l = await _db
           .from('listings')
-          .select('*, profiles(username)')
+          .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('seller_id', me)
           .eq('status', 'active')
           .order('created_at', ascending: false);

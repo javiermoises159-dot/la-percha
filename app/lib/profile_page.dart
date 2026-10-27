@@ -192,7 +192,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     try {
       final rows = await _db
           .from('listings')
-          .select('*, profiles(username)')
+          .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('seller_id', uid)
           .order('created_at', ascending: false);
       if (!mounted) return;
