@@ -656,6 +656,7 @@ class _PromotePageState extends State<PromotePage> {
   int _days = 7;
   final _ref = TextEditingController();
   bool _busy = false;
+  int _gratis = 0;
 
   @override
   void initState() {
@@ -684,8 +685,13 @@ class _PromotePageState extends State<PromotePage> {
           .select('days, amount, status, created_at, listings(title)')
           .order('created_at', ascending: false)
           .limit(20);
+      Map<String, dynamic>? g;
+      try {
+        g = await _db.from('profiles').select('destacados_gratis').eq('id', me).maybeSingle();
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
+        _gratis = ((g?['destacados_gratis'] as num?) ?? 0).toInt();
         _mine = [for (final r in l) Listing.fromMap(r)];
         _requests = List<Map<String, dynamic>>.from(p);
         _listingId ??= _mine!.isEmpty ? null : _mine!.first.id;
@@ -712,6 +718,19 @@ class _PromotePageState extends State<PromotePage> {
       await _load();
     } catch (e) {
       if (mounted) _snack(context, _errorText(e, 'No se pudo enviar.'));
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _usarGratis() async {
+    if (_listingId == null) return;
+    setState(() => _busy = true);
+    try {
+      await _db.rpc('usar_destacado_gratis', params: {'p_listing': _listingId});
+      if (mounted) _snack(context, '¡Listo! Tu anuncio sale destacado los próximos 7 días.');
+      await _load();
+    } catch (e) {
+      if (mounted) _snack(context, _errorText(e, 'No se pudo destacar.'));
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -750,6 +769,25 @@ class _PromotePageState extends State<PromotePage> {
                   ],
                   onChanged: (v) => setState(() => _listingId = v),
                 ),
+                if (_gratis > 0) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: const Color(0xFFFFF1C7), borderRadius: BorderRadius.circular(14)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(_gratis == 1 ? 'Te queda 1 destacado gratis de fundador' : 'Tienes $_gratis destacados gratis de fundador',
+                          style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF3D2800))),
+                      const Text('7 días arriba en Inicio, sin pagar nada.', style: TextStyle(color: Color(0xFF6B4500))),
+                      const SizedBox(height: 10),
+                      FilledButton.icon(
+                          onPressed: _busy ? null : _usarGratis,
+                          icon: const Icon(Icons.workspace_premium_rounded),
+                          label: const Text('Destacar gratis este anuncio')),
+                    ]),
+                  ),
+                  const SizedBox(height: 18),
+                  Text('O paga un destacado', style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+                ],
                 const SizedBox(height: 12),
                 SegmentedButton<int>(
                   segments: [

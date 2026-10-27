@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_state.dart';
 import 'extras.dart';
 import 'features.dart';
+import 'fundador.dart';
 import 'explore_page.dart';
 import 'listing.dart';
 import 'theme.dart';
@@ -98,6 +99,7 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(widget.username, style: display(22, color: ink)),
+                      FundadorChip(sellerId: widget.sellerId, grande: true),
                       if (p != null)
                         Text('${p['city']}',
                             style: TextStyle(color: context.muted)),

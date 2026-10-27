@@ -9,6 +9,10 @@ const supabaseKey = 'sb_publishable_PFt4DdXlWbQEvyEgP58BZQ_CKXaoHGG';
 /// Ponerla ANTES de activar CAPTCHA en Supabase (Authentication → Attack Protection).
 const turnstileSiteKey = '0x4AAAAAAFoRRXPnmlkb5ipJ';
 
+/// Dirección pública de la web (la usa Android para la comprobación anti-bots).
+/// Su dominio debe estar en la lista de "Hostnames" del widget de Turnstile.
+const webBase = 'https://la-percha.pages.dev';
+
 /// Interruptor general de pagos. Mientras sea false, la app no deja comprar ni pagar
 /// destacados y muestra "Los pagos abren muy pronto". Ponlo en true SOLO cuando haya
 /// al menos un método de pago con datos REALES abajo.

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'fundador.dart';
 import 'listing.dart';
 import 'theme.dart';
 
@@ -212,6 +213,7 @@ class _SellPageState extends State<SellPage> {
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('¡Publicado! Ya está a la venta.')));
     widget.onPublished();
+    celebrarSiFundador(context);
   }
 
   @override

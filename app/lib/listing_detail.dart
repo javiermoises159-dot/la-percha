@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'app_state.dart';
 import 'features.dart';
+import 'fundador.dart';
 import 'chat_page.dart';
 import 'explore_page.dart';
 import 'extras.dart';
@@ -222,6 +223,7 @@ class ListingDetail extends StatelessWidget {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w700,
                                             fontSize: 15)),
+                                    FundadorChip(sellerId: item.sellerId),
                                     Text('Ver perfil y valoraciones',
                                         style: TextStyle(
                                             color: context.muted,

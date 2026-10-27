@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
+import 'auth_sheet.dart';
 import 'config.dart';
 import 'home_shell.dart';
 import 'listing.dart';
+import 'nav.dart';
 import 'theme.dart';
 import 'welcome_screen.dart';
 
@@ -36,6 +38,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pavito',
+      navigatorKey: navKey,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       themeMode: ThemeMode.light,
@@ -44,6 +47,9 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
         listenable: _state,
         builder: (context, _) {
           if (!_state.loaded) return const _Splash();
+          if (_state.account == null && _state.sinPerfil) {
+            return CompletarPerfilPage(state: _state);
+          }
           if (_state.account == null && !_state.guest) {
             return WelcomeScreen(state: _state);
           }

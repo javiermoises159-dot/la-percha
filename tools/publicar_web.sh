@@ -19,6 +19,7 @@ flutter pub get >/dev/null
 flutter build web --release --no-web-resources-cdn --base-href "$BASE"
 python3 "$RAIZ/tools/cabeceras.py" build/web
 cp -r web_overrides/functions build/web/functions
+cp -r web_overrides/static/. build/web/
 touch build/web/.nojekyll
 [ -n "$DOMINIO" ] && echo "$DOMINIO" > build/web/CNAME
 cd build/web

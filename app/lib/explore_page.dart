@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'extras.dart';
 import 'features.dart';
+import 'fundador.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
@@ -269,6 +270,7 @@ class _ExplorePageState extends State<ExplorePage> {
           ],
         ),
       ),
+      if (_cat == 'Todo') const FundadorBanner(),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         child: Row(children: [

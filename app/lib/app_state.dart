@@ -1,8 +1,10 @@
 import 'captcha.dart';
 import 'config.dart';
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Account {
@@ -34,11 +36,18 @@ class AppState extends ChangeNotifier {
   /// Precio de cada favorito cuando se guardó (para avisar si baja).
   Map<String, double> favPriceAt = {};
   bool guest = false;
+
+  /// Entró (por ejemplo con Google) pero aún no eligió usuario y ciudad.
+  bool sinPerfil = false;
+
+  /// "Entrar con Google" solo aparece si está activado en Supabase.
+  bool googleDisponible = false;
   bool loaded = false;
   StreamSubscription<AuthState>? _sub;
 
   Future<void> load() async {
     _sub = _db.auth.onAuthStateChange.listen((_) => refresh());
+    _verGoogle();
     await refresh();
     loaded = true;
     notifyListeners();
@@ -54,6 +63,7 @@ class AppState extends ChangeNotifier {
     final user = _db.auth.currentUser;
     if (user == null) {
       account = null;
+      sinPerfil = false;
       favs = {};
       notifyListeners();
       return;
@@ -61,6 +71,7 @@ class AppState extends ChangeNotifier {
     try {
       final row =
           await _db.from('profiles').select().eq('id', user.id).maybeSingle();
+      sinPerfil = row == null;
       if (row != null) {
         account = Account(
           id: user.id,
@@ -129,6 +140,46 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> _verGoogle() async {
+    try {
+      final r = await http.get(Uri.parse('$supabaseUrl/auth/v1/settings'), headers: {'apikey': supabaseKey});
+      final j = jsonDecode(r.body) as Map<String, dynamic>;
+      googleDisponible = (j['external'] as Map?)?['google'] == true;
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  /// Entrar o registrarse con Google. En la web la página va a Google y vuelve;
+  /// en Android se abre el navegador y vuelve a la app.
+  Future<String?> signInGoogle() async {
+    try {
+      await _db.auth.signInWithOAuth(OAuthProvider.google,
+          redirectTo: kIsWeb ? Uri.base.origin : 'com.pavito.pavito://login-callback');
+      return null;
+    } on AuthException catch (e) {
+      return _authMessage(e.message);
+    } catch (_) {
+      return 'No se pudo abrir Google. Revisa tu conexión.';
+    }
+  }
+
+  /// Tras entrar con Google: crea el perfil con el usuario y la ciudad elegidos.
+  Future<String?> completarPerfil(String username, String city) async {
+    final user = _db.auth.currentUser;
+    if (user == null) return 'Vuelve a entrar.';
+    try {
+      final taken = await _db.from('profiles').select('id').eq('username', username).maybeSingle();
+      if (taken != null) return 'Ese nombre de usuario ya está en uso.';
+      await _db.from('profiles').insert({'id': user.id, 'username': username, 'city': city});
+      await refresh();
+      return null;
+    } on PostgrestException catch (e) {
+      return e.code == '23505' ? 'Ese nombre de usuario ya está en uso.' : e.message;
+    } catch (_) {
+      return 'No se pudo guardar. Revisa tu conexión.';
+    }
+  }
+
   Future<String?> signIn(String email, String password) async {
     try {
       final captcha = await _captcha();
@@ -136,7 +187,7 @@ class AppState extends ChangeNotifier {
       await _db.auth.signInWithPassword(
           email: email, password: password, captchaToken: captcha is String ? captcha : null);
       await refresh();
-      if (account == null) {
+      if (account == null && !sinPerfil) {
         return 'Tu cuenta no tiene perfil. Escríbenos para ayudarte.';
       }
       return null;

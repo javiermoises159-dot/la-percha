@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /captcha-app.html
+Sitemap: https://la-percha.pages.dev/sitemap.xml
