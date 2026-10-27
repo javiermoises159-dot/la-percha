@@ -1,12 +1,19 @@
-<div id="cf-captcha" style="position:fixed;left:0;bottom:0;z-index:10000"></div>
+<div id="cf-captcha" style="position:fixed;left:0;bottom:0;z-index:10000;display:none"></div>
 <script>
   // Anti-bots: Cloudflare Turnstile en modo invisible. La app pide un token al entrar o registrarse.
   window.pavitoCaptcha = function (key) {
     return new Promise(function (resolve) {
-      var listo = false; function fin(t) { if (!listo) { listo = true; resolve(t || null); } }
+      var listo = false;
+      var caja = document.getElementById('cf-captcha');
+      function quitar() {
+        try { if (window._pvTid !== undefined) turnstile.remove(window._pvTid); } catch (e) {}
+        window._pvTid = undefined; if (caja) caja.style.display = 'none';
+      }
+      function fin(t) { if (!listo) { listo = true; resolve(t || null); setTimeout(quitar, t ? 900 : 0); } }
       function pintar() {
         try {
           if (window._pvTid !== undefined) { try { turnstile.remove(window._pvTid); } catch (e) {} }
+          if (caja) caja.style.display = 'block';
           window._pvTid = turnstile.render('#cf-captcha', { sitekey: key, callback: fin,
             'error-callback': function () { fin(null); }, 'timeout-callback': function () { fin(null); } });
         } catch (e) { fin(null); }
