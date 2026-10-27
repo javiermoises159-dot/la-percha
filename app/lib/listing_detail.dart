@@ -1,3 +1,4 @@
+import 'config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -140,7 +141,7 @@ class ListingDetail extends StatelessWidget {
                         Expanded(
                           flex: 3,
                           child: FilledButton(
-                              onPressed: () => startCheckout(context, item),
+                              onPressed: () => modoDirecto ? comprarDirecto(context, item) : startCheckout(context, item),
                               child: const Text('Comprar')),
                         ),
                       ]),
@@ -189,12 +190,14 @@ class ListingDetail extends StatelessWidget {
                       ],
                       const SizedBox(height: 12),
                       Row(children: [
-                        Icon(Icons.verified_user_outlined,
+                        Icon(modoDirecto ? Icons.handshake_outlined : Icons.verified_user_outlined,
                             size: 18, color: context.leaf),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                              'Compra protegida: pagas \$${(item.price + fee).toStringAsFixed(2)} y el dinero queda guardado hasta que lo recibes',
+                              modoDirecto
+                                  ? 'Trato directo con el vendedor: acuerdan el pago y la entrega por el chat'
+                                  : 'Compra protegida: pagas \$${(item.price + fee).toStringAsFixed(2)} y el dinero queda guardado hasta que lo recibes',
                               style: TextStyle(
                                   color: context.leaf,
                                   fontWeight: FontWeight.w600,
@@ -259,7 +262,9 @@ class ListingDetail extends StatelessWidget {
                           style: const TextStyle(height: 1.45)),
                       const SizedBox(height: 16),
                       Text(
-                          'Protección al comprador: \$${fee.toStringAsFixed(2)}. Quien vende no paga comisión.',
+                          modoDirecto
+                              ? 'Pavito no cobra comisión ni al comprador ni al vendedor.'
+                              : 'Protección al comprador: \$${fee.toStringAsFixed(2)}. Quien vende no paga comisión.',
                           style: TextStyle(color: context.muted, fontSize: 12)),
                       if (mine) ...[
                         const SizedBox(height: 16),
@@ -292,7 +297,7 @@ String enlaceAnuncio(Listing l) => '${Uri.base.origin}/a/${l.id}';
 void compartirAnuncio(BuildContext context, Listing l) {
   final url = enlaceAnuncio(l);
   final precio = l.price % 1 == 0 ? l.price.toStringAsFixed(0) : l.price.toStringAsFixed(2);
-  final texto = 'Mira esto en Pavito: ${l.title} a \$$precio. Compra protegida: tu pago queda guardado hasta que lo recibes. $url';
+  final texto = 'Mira esto en Pavito: ${l.title} a \$$precio. ${modoDirecto ? 'Escríbele al vendedor por la app.' : 'Compra protegida: tu pago queda guardado hasta que lo recibes.'} $url';
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
