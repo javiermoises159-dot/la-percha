@@ -5,6 +5,11 @@
 const supabaseUrl = 'https://udhyuyokrxggdnnepbmr.supabase.co';
 const supabaseKey = 'sb_publishable_PFt4DdXlWbQEvyEgP58BZQ_CKXaoHGG';
 
+/// Interruptor general de pagos. Mientras sea false, la app no deja comprar ni pagar
+/// destacados y muestra "Los pagos abren muy pronto". Ponlo en true SOLO cuando haya
+/// al menos un método de pago con datos REALES abajo.
+const pagosAbiertos = false;
+
 /// Datos de Pago Móvil de Pavito, donde pagan los compradores.
 /// OJO: son datos de EJEMPLO. Cámbialos por los reales antes de recibir pagos.
 const pagoMovilBanco = '0102 - Banco de Venezuela (ejemplo)';

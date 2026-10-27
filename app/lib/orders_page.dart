@@ -106,7 +106,37 @@ String refConMetodo(String m, String r) =>
     m == pagoBinance ? 'Binance: $r' : m == pagoZinli ? 'Zinli: $r' : r;
 
 /// Punto de entrada del botón "Comprar".
+/// Si los pagos aún no están abiertos, lo explica y devuelve true.
+bool pagosCerrados(BuildContext context) {
+  if (pagosAbiertos) return false;
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Los pagos abren muy pronto', style: display(22, color: ctx.ink)),
+          const SizedBox(height: 8),
+          Text(
+              'Estamos terminando de preparar la compra protegida. Mientras tanto puedes guardar en '
+              'favoritos lo que te guste, escribirle al vendedor y hacerle una oferta. Te avisaremos '
+              'apenas puedas comprar.',
+              style: TextStyle(color: ctx.muted, height: 1.4)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
+          ),
+        ]),
+      ),
+    ),
+  );
+  return true;
+}
+
 void startCheckout(BuildContext context, Listing item) {
+  if (pagosCerrados(context)) return;
   if (appState.account == null) {
     showAuthSheet(context, appState,
         message: 'Crea tu cuenta para comprar con protección.');
@@ -400,6 +430,12 @@ class _OrderPageState extends State<OrderPage> {
             ),
         ]),
         const SizedBox(height: 10),
+        if (!pagosAbiertos)
+          _Box(children: [
+            Text('Los pagos abren muy pronto. No pagues todavía: te avisaremos cuando la compra protegida esté lista.',
+                style: TextStyle(color: context.muted, height: 1.4)),
+          ])
+        else
         _Box(children: [
           if (m == pagoPagoMovil) ...[
             _Line('Banco', pagoMovilBanco),

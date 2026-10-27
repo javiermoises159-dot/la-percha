@@ -696,6 +696,7 @@ class _PromotePageState extends State<PromotePage> {
   }
 
   Future<void> _send() async {
+    if (pagosCerrados(context)) return;
     final ref = _ref.text.trim();
     if (_listingId == null || ref.length < 4) {
       _snack(context, 'Elige el anuncio y escribe la referencia del pago.');
@@ -766,7 +767,9 @@ class _PromotePageState extends State<PromotePage> {
                 if (bsText(_planes[_days]!).isNotEmpty)
                   Text(bsText(_planes[_days]!)),
                 const SizedBox(height: 4),
-                Text('$pagoMovilBanco\n$pagoMovilCedula\n$pagoMovilTelefono',
+                Text(pagosAbiertos
+                        ? '$pagoMovilBanco\n$pagoMovilCedula\n$pagoMovilTelefono'
+                        : 'Los pagos abren muy pronto. No pagues todavía.',
                     style: TextStyle(color: context.muted)),
                 const SizedBox(height: 12),
                 Text('2. Escribe la referencia',

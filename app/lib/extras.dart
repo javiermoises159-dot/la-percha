@@ -785,6 +785,7 @@ class _BundlePageState extends State<BundlePage> {
   }
 
   Future<void> _buy() async {
+    if (pagosCerrados(context)) return;
     final name = _name.text.trim(),
         phone = _phone.text.trim(),
         address = _address.text.trim();
