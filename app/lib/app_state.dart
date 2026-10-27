@@ -154,7 +154,7 @@ class AppState extends ChangeNotifier {
   Future<String?> signInGoogle() async {
     try {
       await _db.auth.signInWithOAuth(OAuthProvider.google,
-          redirectTo: kIsWeb ? Uri.base.origin : 'com.pavito.pavito://login-callback');
+          redirectTo: kIsWeb ? '${Uri.base.origin}/' : 'com.pavito.pavito://login-callback');
       return null;
     } on AuthException catch (e) {
       return _authMessage(e.message);

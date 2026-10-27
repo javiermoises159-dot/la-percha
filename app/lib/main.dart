@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,7 +13,13 @@ import 'welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+  await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseKey,
+      // En la web, la vuelta de Google trae la sesión en la dirección: así funciona aunque
+      // el teléfono abra Google en otra ventana (iPhone, apps instaladas en la pantalla).
+      authOptions: const FlutterAuthClientOptions(
+          authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce));
   runApp(const LaPerchaApp());
 }
 
