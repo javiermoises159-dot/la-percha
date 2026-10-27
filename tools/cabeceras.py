@@ -15,11 +15,12 @@ for m in re.finditer(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S):
 SUPA = "udhyuyokrxggdnnepbmr.supabase.co"
 csp = "; ".join([
     "default-src 'self'",
-    "script-src 'self' 'wasm-unsafe-eval' " + " ".join(hashes),
+    "script-src 'self' 'wasm-unsafe-eval' https://challenges.cloudflare.com " + " ".join(hashes),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     f"img-src 'self' data: blob: https://{SUPA}",
-    f"connect-src 'self' https://{SUPA} wss://{SUPA} https://fonts.gstatic.com https://fonts.googleapis.com",
+    f"connect-src 'self' https://{SUPA} wss://{SUPA} https://fonts.gstatic.com https://fonts.googleapis.com https://challenges.cloudflare.com",
+    "frame-src https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "frame-ancestors 'none'",

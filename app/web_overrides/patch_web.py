@@ -26,6 +26,8 @@ splash = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "splash.h
 s = re.sub(r"(<body[^>]*>)", r"\1\n" + splash.replace("\\", "\\\\"), s, count=1)
 instalar = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instalar.html"), encoding="utf-8").read()
 s = s.replace("</body>", instalar + "\n</body>", 1)
+captcha = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "captcha.html"), encoding="utf-8").read()
+s = s.replace("</body>", captcha + "\n</body>", 1)
 open(p, "w", encoding="utf-8").write(s)
 
 # ---- manifest.json: nombre, colores e iconos ----

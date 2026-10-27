@@ -1,3 +1,5 @@
+import 'captcha.dart';
+import 'config.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -82,6 +84,16 @@ class AppState extends ChangeNotifier {
   }
 
   /// Devuelve null si todo salió bien, o el mensaje de error.
+  static const _sinCaptcha =
+      'No pudimos comprobar que no eres un robot. Revisa tu conexión e intenta de nuevo.';
+
+  /// Token anti-bots: String si hay, null si está desactivado, false si falló.
+  Future<Object?> _captcha() async {
+    if (turnstileSiteKey.isEmpty) return null;
+    final t = await obtenerCaptcha(turnstileSiteKey);
+    return t ?? false;
+  }
+
   Future<String?> signUp(
       {required String email,
       required String password,
@@ -94,7 +106,10 @@ class AppState extends ChangeNotifier {
           .eq('username', username)
           .maybeSingle();
       if (taken != null) return 'Ese nombre de usuario ya está en uso.';
-      final res = await _db.auth.signUp(email: email, password: password);
+      final captcha = await _captcha();
+      if (captcha == false) return _sinCaptcha;
+      final res = await _db.auth.signUp(
+          email: email, password: password, captchaToken: captcha is String ? captcha : null);
       if (res.session == null || res.user == null) {
         return 'Revisa tu correo para confirmar la cuenta y luego inicia sesión.';
       }
@@ -116,7 +131,10 @@ class AppState extends ChangeNotifier {
 
   Future<String?> signIn(String email, String password) async {
     try {
-      await _db.auth.signInWithPassword(email: email, password: password);
+      final captcha = await _captcha();
+      if (captcha == false) return _sinCaptcha;
+      await _db.auth.signInWithPassword(
+          email: email, password: password, captchaToken: captcha is String ? captcha : null);
       await refresh();
       if (account == null) {
         return 'Tu cuenta no tiene perfil. Escríbenos para ayudarte.';
