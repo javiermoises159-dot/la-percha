@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
@@ -182,7 +184,7 @@ class ExplorePage extends StatefulWidget {
   State<ExplorePage> createState() => _ExplorePageState();
 }
 
-class _ExplorePageState extends State<ExplorePage> {
+class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
   String _q = '';
   String _cat = 'Todo';
   Filtros _f = const Filtros();
@@ -205,15 +207,16 @@ class _ExplorePageState extends State<ExplorePage> {
 
   @override
   Widget build(BuildContext context) {
-    final items = listingsStore.all.where((l) {
-      final okCat = _cat == 'Todo' ||
-          (_cat == _siguiendo
-              ? followStore.ids.contains(l.sellerId)
-              : l.category == _cat);
+    bool okCat(Listing l) => _cat == 'Todo' ||
+        (_cat == _siguiendo
+            ? followStore.ids.contains(l.sellerId)
+            : l.category == _cat);
+    final locales = listingsStore.all.where((l) {
       final okQ =
           _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
-      return okCat && okQ && _f.ok(l);
+      return okCat(l) && okQ && _f.ok(l);
     }).toList();
+    final items = resultados(_q, locales, (l) => okCat(l) && _f.ok(l));
 
     return Column(children: [
       Padding(
@@ -221,7 +224,10 @@ class _ExplorePageState extends State<ExplorePage> {
         child: Row(children: [
           Expanded(
             child: TextField(
-              onChanged: (v) => setState(() => _q = v.trim()),
+              onChanged: (v) {
+                setState(() => _q = v.trim());
+                buscarEnServidor(_q);
+              },
               decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.search),
                   hintText: 'Buscar en Pavito',
@@ -303,6 +309,42 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
+/// Búsqueda en el servidor (toda la base de datos) con una pequeña espera mientras se escribe.
+mixin _BusquedaServidor<T extends StatefulWidget> on State<T> {
+  Timer? _espera;
+  List<Listing>? _remoto;
+  String _buscado = '';
+
+  void buscarEnServidor(String q, {String? categoria}) {
+    _espera?.cancel();
+    if (q.length < 2) {
+      if (_remoto != null) setState(() => _remoto = null);
+      return;
+    }
+    _espera = Timer(const Duration(milliseconds: 400), () async {
+      final r = await listingsStore.buscar(q, categoria: categoria);
+      if (!mounted) return;
+      setState(() {
+        _remoto = r;
+        _buscado = q;
+      });
+    });
+  }
+
+  /// Resultados del servidor si ya llegaron para esta búsqueda; si no, los locales.
+  List<Listing> resultados(String q, List<Listing> locales, bool Function(Listing) filtro) {
+    final r = _remoto;
+    if (q.length >= 2 && r != null && _buscado == q) return r.where(filtro).toList();
+    return locales;
+  }
+
+  @override
+  void dispose() {
+    _espera?.cancel();
+    super.dispose();
+  }
+}
+
 /// Explorar: búsqueda y categorías en cuadrícula.
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -311,7 +353,7 @@ class CategoriesPage extends StatefulWidget {
   State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
+class _CategoriesPageState extends State<CategoriesPage> with _BusquedaServidor {
   String _q = '';
 
   @override
@@ -331,11 +373,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
   @override
   Widget build(BuildContext context) {
     if (_q.isNotEmpty) {
-      final items = listingsStore.all
+      final locales = listingsStore.all
           .where((l) =>
               l.title.toLowerCase().contains(_q.toLowerCase()) ||
               l.seller.toLowerCase().contains(_q.toLowerCase()))
           .toList();
+      final items = resultados(_q, locales, (_) => true);
       return Column(children: [
         _search(),
         Expanded(child: ListingGrid(items: items)),
@@ -392,7 +435,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Widget _search() => Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: TextField(
-          onChanged: (v) => setState(() => _q = v.trim()),
+          onChanged: (v) {
+            setState(() => _q = v.trim());
+            buscarEnServidor(_q);
+          },
           decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
               hintText: 'Buscar prendas o usuarios',
@@ -401,25 +447,41 @@ class _CategoriesPageState extends State<CategoriesPage> {
       );
 }
 
-class CategoryResults extends StatelessWidget {
+class CategoryResults extends StatefulWidget {
   const CategoryResults({super.key, required this.category});
   final String category;
+  @override
+  State<CategoryResults> createState() => _CategoryResultsState();
+}
+
+class _CategoryResultsState extends State<CategoryResults> {
+  List<Listing>? _remoto;
+
+  @override
+  void initState() {
+    super.initState();
+    // Toda la categoría desde el servidor, no solo lo que ya estaba cargado.
+    listingsStore.buscar('', categoria: widget.category, limite: 200).then((r) {
+      if (mounted && r != null) setState(() => _remoto = r);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(category)),
+      appBar: AppBar(title: Text(widget.category)),
       body: ListenableBuilder(
         listenable: listingsStore,
         builder: (context, _) => ListingGrid(
-          items:
-              listingsStore.all.where((l) => l.category == category).toList(),
+          items: _remoto ??
+              listingsStore.all.where((l) => l.category == widget.category).toList(),
           emptyText: 'Todavía no hay prendas en esta categoría.',
         ),
       ),
     );
   }
 }
+
 
 /// Categoría como cuadro con icono (la seleccionada va en tinta).
 class _CatTile extends StatelessWidget {

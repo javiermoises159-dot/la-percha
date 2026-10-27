@@ -197,6 +197,17 @@ class ListingsStore extends ChangeNotifier {
           .order('created_at', ascending: false)
           .limit(300);
       _raw = [for (final r in rows) Listing.fromMap(r)];
+      // Los destacados siempre salen, aunque sean más viejos que los últimos 300.
+      try {
+        final dest = await _db
+            .from('listings')
+            .select('*, profiles!listings_seller_id_fkey(username)')
+            .eq('status', 'active')
+            .gt('featured_until', DateTime.now().toUtc().toIso8601String())
+            .limit(100);
+        final ids = {for (final l in _raw) l.id};
+        _raw.addAll([for (final r in dest) if (!ids.contains(r['id'])) Listing.fromMap(r)]);
+      } catch (_) {}
       _sort();
       try {
         final t = await _db
@@ -212,6 +223,19 @@ class ListingsStore extends ChangeNotifier {
     }
     loading = false;
     notifyListeners();
+  }
+
+  /// Busca en toda la base de datos (título, descripción, categoría o vendedor),
+  /// no solo en lo que ya está cargado. Devuelve null si no hay conexión.
+  Future<List<Listing>?> buscar(String q, {String? categoria, int limite = 100}) async {
+    try {
+      final rows = await _db
+          .rpc('buscar_anuncios', params: {'p_q': q, 'p_cat': categoria, 'p_lim': limite})
+          .select('*, profiles!listings_seller_id_fkey(username)');
+      return [for (final r in rows) Listing.fromMap(r)];
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Devuelve null si salió bien, o el mensaje de error.
