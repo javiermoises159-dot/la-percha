@@ -1,5 +1,6 @@
 import 'captcha.dart';
 import 'config.dart';
+import 'nav.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -46,7 +47,11 @@ class AppState extends ChangeNotifier {
   StreamSubscription<AuthState>? _sub;
 
   Future<void> load() async {
-    _sub = _db.auth.onAuthStateChange.listen((_) => refresh());
+    _sub = _db.auth.onAuthStateChange.listen((_) => refresh(), onError: (Object e) {
+      final m = e is AuthException ? e.message : '$e';
+      Future<void>.delayed(const Duration(seconds: 2), () => avisoGlobal('No se pudo entrar con Google: $m'));
+    });
+    _avisarErrorEnDireccion();
     _verGoogle();
     await refresh();
     loaded = true;
@@ -137,6 +142,19 @@ class AppState extends ChangeNotifier {
           : e.message;
     } catch (_) {
       return 'No se pudo crear la cuenta. Revisa tu conexión.';
+    }
+  }
+
+  /// Si Google o el servidor devolvieron un error en la dirección, se muestra.
+  void _avisarErrorEnDireccion() {
+    final u = Uri.base;
+    Map<String, String> f = {};
+    try {
+      f = Uri.splitQueryString(u.fragment);
+    } catch (_) {}
+    final d = u.queryParameters['error_description'] ?? f['error_description'];
+    if (d != null && d.isNotEmpty) {
+      Future<void>.delayed(const Duration(seconds: 2), () => avisoGlobal('No se pudo entrar con Google: $d'));
     }
   }
 

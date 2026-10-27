@@ -46,6 +46,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
     return MaterialApp(
       title: 'Pavito',
       navigatorKey: navKey,
+      scaffoldMessengerKey: mensajeroKey,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       themeMode: ThemeMode.light,
