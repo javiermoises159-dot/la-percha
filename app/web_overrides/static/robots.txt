@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /captcha-app.html
-Sitemap: https://la-percha.pages.dev/sitemap.xml
+Sitemap: https://pavito.pages.dev/sitemap.xml
