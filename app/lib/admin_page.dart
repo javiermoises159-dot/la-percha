@@ -301,7 +301,7 @@ class _AllOrdersTabState extends State<_AllOrdersTab> {
   List<Map<String, dynamic>>? _rows;
   static const _estados = {
     'esperando_pago': 'Sin pagar', 'revision': 'Verificando', 'retenido': 'Retenido', 'enviado': 'Enviado',
-    'liberado': 'Completado', 'disputa': 'Problema', 'cancelado': 'Cancelado',
+    'liberado': 'Completado', 'disputa': 'Problema', 'devolucion': 'Devolución', 'cancelado': 'Cancelado',
   };
 
   @override
@@ -530,6 +530,7 @@ class _OrdersTabState extends State<_OrdersTab> {
       'retenido': '¿Confirmas que el pago llegó a la cuenta? El vendedor recibirá el aviso para enviar.',
       'cancelado': '¿Cancelar este pedido? Si ya estaba pagado, el dinero vuelve al instante al Saldo Pavito del comprador.',
       'liberado': '¿Cerrar el reclamo a favor del vendedor? El dinero pasa a su Saldo Pavito.',
+      'devolucion': '¿Pedir la devolución? El comprador tendrá 3 días hábiles para enviar la prenda; cuando el vendedor la reciba, el dinero vuelve al comprador.',
     };
     if (!await _seguro(context, q[status] ?? '¿Confirmas el cambio?')) return;
     try {
@@ -606,10 +607,18 @@ class _OrdersTabState extends State<_OrdersTab> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _set(r['id'] as String, 'cancelado'),
-                        child: Text(pagos ? 'No llegó' : 'Devolver'),
+                        child: Text(pagos ? 'No llegó' : 'Reembolsar sin devolución'),
                       ),
                     ),
                   ]),
+                  if (!pagos) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                      onPressed: () => _set(r['id'] as String, 'devolucion'),
+                      label: const Text('Pedir devolución de la prenda'),
+                    ),
+                  ],
                   TextButton(
                     onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(

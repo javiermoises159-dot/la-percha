@@ -18,6 +18,7 @@ const _statusLabel = {
   'enviado': 'Enviado: confirma cuando lo recibas',
   'liberado': 'Completado',
   'disputa': 'En revisión por un problema',
+  'devolucion': 'Devolución en curso',
   'cancelado': 'Cancelado',
 };
 
@@ -313,6 +314,7 @@ class _OrderPageState extends State<OrderPage> {
   final _ref = TextEditingController();
   String _pago = pagoPagoMovil;
   final _tracking = TextEditingController();
+  final _guiaDev = TextEditingController();
   double _saldo = 0;
 
   @override
@@ -325,6 +327,7 @@ class _OrderPageState extends State<OrderPage> {
   void dispose() {
     _ref.dispose();
     _tracking.dispose();
+    _guiaDev.dispose();
     super.dispose();
   }
 
@@ -333,7 +336,7 @@ class _OrderPageState extends State<OrderPage> {
       final row = await _db
           .from('orders')
           .select(
-              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, paid_at, refunded_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, paid_at, refunded_at, devolucion_at, guia_devolucion, devuelta_enviada_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('id', widget.orderId)
           .single();
       // La dirección y el teléfono solo los entrega el servidor a quien puede verlos
@@ -600,8 +603,77 @@ class _OrderPageState extends State<OrderPage> {
       ]);
     }
 
+    if (status == 'devolucion') {
+      final guia = o['guia_devolucion'] as String?;
+      if (isBuyer && guia == null) {
+        actions.addAll([
+          Text('Devuelve la prenda', style: display(20, color: ink)),
+          const SizedBox(height: 6),
+          Text('Envíala al vendedor en 3 días hábiles (coordinen la dirección por el chat) y escribe aquí la guía. '
+              'Cuando el vendedor la reciba, te devolvemos ${_money(price + fee)} a tu Saldo Pavito. '
+              'Si no la envías a tiempo, el pedido se cierra a favor del vendedor.',
+              style: TextStyle(color: context.muted, height: 1.35)),
+          const SizedBox(height: 8),
+          TextField(
+              controller: _guiaDev,
+              decoration: const InputDecoration(labelText: 'Guía de la devolución (empresa y número)')),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: _busy
+                ? null
+                : () {
+                    final t = _guiaDev.text.trim();
+                    if (t.length < 3) {
+                      setState(() => _error = 'Escribe la empresa y el número de guía.');
+                      return;
+                    }
+                    _update({'guia_devolucion': t});
+                  },
+            child: const Text('Ya envié la devolución'),
+          ),
+        ]);
+      } else if (!isBuyer && guia != null) {
+        actions.addAll([
+          Text('Te devolvieron la prenda', style: display(20, color: ink)),
+          const SizedBox(height: 6),
+          Text('Guía: $guia. Cuando la recibas y esté igual que como la enviaste, confírmalo. '
+              'Si no confirmas en 7 días, el reembolso se hace solo.',
+              style: TextStyle(color: context.muted, height: 1.35)),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: _busy
+                ? null
+                : () async {
+                    if (await _confirmar(context, '¿Ya recibiste la devolución?',
+                        'Le devolvemos el dinero al comprador y tu prenda vuelve a estar a la venta.', 'Sí, la recibí')) {
+                      _update({'status': 'cancelado'});
+                    }
+                  },
+            child: const Text('Recibí la devolución'),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: _busy
+                ? null
+                : () async {
+                    if (await _confirmar(context, '¿La devolución llegó con problemas?',
+                        'Congelamos el caso y nuestro equipo lo revisa. Guarda fotos del paquete y de la prenda.', 'Abrir reclamo')) {
+                      _update({'status': 'disputa'});
+                    }
+                  },
+            child: const Text('Llegó con problemas'),
+          ),
+        ]);
+      }
+    }
+
     String hint = '';
-    if (status == 'revision') {
+    if (status == 'devolucion') {
+      final guia = o['guia_devolucion'] as String?;
+      hint = isBuyer
+          ? (guia == null ? '' : 'Enviaste la devolución (guía $guia). Te avisamos cuando el vendedor la reciba.')
+          : (guia == null ? 'El comprador te enviará la prenda de vuelta. Coordinen la dirección por el chat.' : '');
+    } else if (status == 'revision') {
       hint = 'Estamos verificando tu pago. Te avisamos cuando quede retenido.';
     } else if (status == 'retenido' && isBuyer) {
       final l = _limiteEnvio(o);
