@@ -71,6 +71,13 @@ class Listing {
 /// Tasa BCV (Bs por dólar). 0 = desconocida; se carga del servidor.
 double tasaBs = 0;
 
+/// Cuándo se actualizó la tasa por última vez (la pone el servidor cada hora).
+DateTime? tasaActualizada;
+
+/// La tasa tiene más de 24 h sin actualizarse: no se debe cobrar en Bs con ella.
+bool get tasaVieja =>
+    tasaBs <= 0 || tasaActualizada == null || DateTime.now().difference(tasaActualizada!).inHours >= 24;
+
 /// "≈ Bs 6.027,40", o vacío si aún no hay tasa.
 String bsText(double usd) {
   if (tasaBs <= 0) return '';
@@ -228,10 +235,11 @@ class ListingsStore extends ChangeNotifier {
       try {
         final t = await _db
             .from('ajustes')
-            .select('valor')
+            .select('valor, actualizado')
             .eq('clave', 'tasa_bs')
             .maybeSingle();
         tasaBs = (t?['valor'] as num?)?.toDouble() ?? tasaBs;
+        tasaActualizada = DateTime.tryParse('${t?['actualizado'] ?? ''}')?.toLocal() ?? tasaActualizada;
       } catch (_) {}
       error = null;
     } catch (_) {

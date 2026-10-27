@@ -41,6 +41,8 @@ final _secciones = <_Seccion>[
       'Buscar y bloquear usuarios', () => const _UsersTab()),
   _Seccion('Dinero', Icons.account_balance_outlined, null,
       'Cuadre, ganancias y registro', () => const _MoneyTab()),
+  _Seccion('Errores de la app', Icons.bug_report_outlined, 'errores_24h',
+      'Fallos que vieron los usuarios (últimas 24 h)', () => const _ErroresTab()),
 ];
 
 /// Cuenta lo pendiente y las métricas principales.
@@ -71,6 +73,16 @@ class _Contadores {
     ]);
     num gmv = 0, ganancia = 0;
     int ventas = 0;
+    final alertas = <String, num>{};
+    try {
+      final a = await _db.rpc('admin_alertas');
+      if (a is Map) {
+        for (final k in ['errores_24h', 'tasa_horas', 'pagos_atascados', 'retiros_atrasados']) {
+          final v = a[k];
+          if (v is num) alertas[k] = v;
+        }
+      }
+    } catch (_) {}
     try {
       final v = await _db.from('orders').select('price, fee').eq('status', 'liberado').gte('released_at', mes).limit(2000);
       for (final x in v) {
@@ -83,6 +95,7 @@ class _Contadores {
       'revision': r[0], 'disputa': r[1], 'por_pagar': r[2], 'reembolsos': r[3], 'denuncias': r[4],
       'destacados': r[5], 'anuncios': r[6], 'usuarios': r[7], 'pedidos_semana': r[8], 'nuevos_semana': r[9],
       'gmv': gmv, 'ganancia': ganancia, 'ventas': ventas,
+      ...alertas,
     };
   }
 }
@@ -225,6 +238,7 @@ class _Inicio extends StatelessWidget {
           if (cargando) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
           else IconButton(tooltip: 'Actualizar', onPressed: onRecargar, icon: const Icon(Icons.refresh_rounded)),
         ]),
+        _Atencion(c: c, onAbrir: onAbrir),
         const SizedBox(height: 10),
         LayoutBuilder(builder: (context, k) {
           final cols = k.maxWidth > 700 ? 3 : 2;
@@ -289,6 +303,140 @@ class _Inicio extends StatelessWidget {
 }
 
 /// Todos los pedidos: buscar por referencia, guía o número de pedido y filtrar por estado.
+/// Caja roja con lo que puede romper el negocio si nadie lo mira.
+class _Atencion extends StatelessWidget {
+  const _Atencion({required this.c, required this.onAbrir});
+  final Map<String, num> c;
+  final void Function(int) onAbrir;
+
+  int _idx(String contador) => _secciones.indexWhere((s) => s.contador == contador);
+
+  @override
+  Widget build(BuildContext context) {
+    final avisos = <(String, int)>[];
+    final tasaH = c['tasa_horas'];
+    if (tasaH == null || tasaH < 0) {
+      if (c.containsKey('errores_24h')) avisos.add(('No hay tasa del BCV guardada: fíjala en Destacados y tasa.', _idx('destacados')));
+    } else if (tasaH > 6) {
+      avisos.add(('La tasa del BCV no se actualiza hace ${tasaH.round()} h: fíjala en Destacados y tasa.'
+          '${tasaH > 24 ? ' Pago Móvil está oculto para los compradores hasta que la actualices.' : ''}', _idx('destacados')));
+    }
+    final atascados = c['pagos_atascados'] ?? 0;
+    if (atascados > 0) {
+      avisos.add(('$atascados ${atascados == 1 ? 'pago espera' : 'pagos esperan'} verificación hace más de 12 h.', _idx('revision')));
+    }
+    final retiros = c['retiros_atrasados'] ?? 0;
+    if (retiros > 0) {
+      avisos.add(('$retiros ${retiros == 1 ? 'retiro lleva' : 'retiros llevan'} más de 2 días hábiles sin pagarse.', _idx('por_pagar')));
+    }
+    final errores = c['errores_24h'] ?? 0;
+    if (errores > 0) {
+      avisos.add(('La app falló $errores ${errores == 1 ? 'vez' : 'veces'} en las últimas 24 h.', _idx('errores_24h')));
+    }
+    if (avisos.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDE8E4),
+        border: Border.all(color: const Color(0xFFD9534F)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: Color(0xFFB3261E)),
+          SizedBox(width: 8),
+          Text('Atención', style: TextStyle(color: Color(0xFFB3261E), fontWeight: FontWeight.w800, fontSize: 16)),
+        ]),
+        for (final a in avisos)
+          InkWell(
+            onTap: a.$2 < 0 ? null : () => onAbrir(a.$2),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(children: [
+                Expanded(child: Text(a.$1, style: const TextStyle(color: Color(0xFF5C1A15), fontWeight: FontWeight.w600))),
+                const Icon(Icons.chevron_right_rounded, color: Color(0xFF5C1A15)),
+              ]),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Errores que la app reportó desde los teléfonos de los usuarios.
+class _ErroresTab extends StatefulWidget {
+  const _ErroresTab();
+  @override
+  State<_ErroresTab> createState() => _ErroresTabState();
+}
+
+class _ErroresTabState extends State<_ErroresTab> {
+  List<Map<String, dynamic>> _rows = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db
+          .from('errores_app')
+          .select('id, mensaje, pila, plataforma, version, url, creado')
+          .order('creado', ascending: false)
+          .limit(100);
+      if (!mounted) return;
+      setState(() {
+        _rows = List<Map<String, dynamic>>.from(r);
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_rows.isEmpty) {
+      return Center(child: Text('Sin errores. Todo funciona.', style: TextStyle(color: context.muted)));
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(children: [
+        for (final r in _rows)
+          ExpansionTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: Text('${r['mensaje']}', maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text([
+              _fecha(r['creado']),
+              if ((r['plataforma'] ?? '') != '') '${r['plataforma']}',
+              if ((r['version'] ?? '') != '') 'v${r['version']}',
+            ].join(' · ')),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if ((r['url'] ?? '') != '') Text('Pantalla: ${r['url']}', style: TextStyle(color: context.muted)),
+              const SizedBox(height: 6),
+              SelectableText('${r['mensaje']}\n\n${r['pila'] ?? ''}',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            ],
+          ),
+      ]),
+    );
+  }
+}
+
+String _fecha(dynamic v) {
+  final d = DateTime.tryParse('${v ?? ''}')?.toLocal();
+  if (d == null) return '';
+  String dos(int n) => n.toString().padLeft(2, '0');
+  return '${dos(d.day)}/${dos(d.month)} ${dos(d.hour)}:${dos(d.minute)}';
+}
+
 class _AllOrdersTab extends StatefulWidget {
   const _AllOrdersTab();
   @override

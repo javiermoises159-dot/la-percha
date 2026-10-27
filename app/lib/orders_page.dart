@@ -80,11 +80,15 @@ String? notaEntrega(String m) {
 const pagoPagoMovil = 'Pago Móvil';
 const pagoBinance = 'Binance Pay';
 const pagoZinli = 'Zinli';
-List<String> metodosPago() => [
-      pagoPagoMovil,
-      if (binancePayId.isNotEmpty) pagoBinance,
-      if (zinliCorreo.isNotEmpty) pagoZinli,
-    ];
+/// Pago Móvil se ofrece solo con una tasa BCV al día (si no, el monto en Bs saldría mal).
+List<String> metodosPago() {
+  final dolares = [
+    if (binancePayId.isNotEmpty) pagoBinance,
+    if (zinliCorreo.isNotEmpty) pagoZinli,
+  ];
+  if (tasaVieja && dolares.isNotEmpty) return dolares;
+  return [pagoPagoMovil, ...dolares];
+}
 String instruccionPago(String m) {
   if (m == pagoBinance) {
     return 'En Binance ve a Pay → Enviar, pega el Pay ID y envía el monto exacto en USDT. '
