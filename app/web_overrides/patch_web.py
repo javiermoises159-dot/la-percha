@@ -23,6 +23,7 @@ s = re.sub(r'\s*<meta name="description"[^>]*>', '', s)
 s = re.sub(r'\s*<meta name="apple-mobile-web-app-title"[^>]*>', '', s)
 # Vista previa al compartir el link (WhatsApp, Instagram, Telegram, Facebook, X).
 head_extra += '''
+  <script src="push.js" defer></script>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pavito">
   <meta property="og:title" content="Pavito · Compra y vende en toda Venezuela">

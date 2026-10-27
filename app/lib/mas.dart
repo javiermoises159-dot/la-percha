@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'app_state.dart';
 import 'extras.dart';
 import 'listing.dart';
+import 'push.dart';
 import 'theme.dart';
 
 /// Funciones para estar a la altura de Vinted: editar anuncio, alertas de búsqueda,
@@ -425,6 +426,79 @@ class _InvitarPageState extends State<InvitarPage> {
         if (_n != null)
           Text(_n == 1 ? '1 persona se registró con tu enlace.' : '$_n personas se registraron con tu enlace.',
               textAlign: TextAlign.center, style: TextStyle(color: context.muted)),
+      ]),
+    );
+  }
+}
+
+// ===================== Notificaciones al teléfono =====================
+
+/// Cartel para activar las notificaciones (solo aparece si hace falta).
+class PushBanner extends StatefulWidget {
+  const PushBanner({super.key});
+  @override
+  State<PushBanner> createState() => _PushBannerState();
+}
+
+class _PushBannerState extends State<PushBanner> {
+  String? _estado;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    pushEstado().then((e) {
+      if (mounted) setState(() => _estado = e);
+    });
+  }
+
+  Future<void> _activar() async {
+    setState(() => _busy = true);
+    final e = await activarPush();
+    if (!mounted) return;
+    if (e != null) _snack(context, e);
+    final st = await pushEstado();
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _estado = st;
+      });
+      if (e == null) _snack(context, 'Listo. Te avisaremos al teléfono de ventas, mensajes y pagos.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final e = _estado;
+    if (e == null || e == 'activo' || e == 'no_soportado' || appState.account == null) return const SizedBox.shrink();
+    final ios = e == 'instalar_ios';
+    final bloqueado = e == 'bloqueado';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: context.chip, borderRadius: BorderRadius.circular(14)),
+      child: Row(children: [
+        const Icon(Icons.notifications_active_outlined, color: LP.clay),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Notificaciones al teléfono', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text(
+                ios
+                    ? 'En iPhone: toca Compartir → "Agregar a inicio", abre Pavito desde ese ícono y actívalas aquí.'
+                    : bloqueado
+                        ? 'Las bloqueaste en este navegador. Actívalas en los ajustes del sitio para Pavito.'
+                        : 'Entérate al instante cuando te compren, te escriban o te paguen.',
+                style: TextStyle(color: context.muted, fontSize: 13, height: 1.3)),
+          ]),
+        ),
+        if (!ios && !bloqueado) ...[
+          const SizedBox(width: 8),
+          FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+              onPressed: _busy ? null : _activar,
+              child: const Text('Activar')),
+        ],
       ]),
     );
   }

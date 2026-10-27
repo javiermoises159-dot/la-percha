@@ -13,6 +13,9 @@ const turnstileSiteKey = '0x4AAAAAAFoRRXPnmlkb5ipJ';
 /// Su dominio debe estar en la lista de "Hostnames" del widget de Turnstile.
 const webBase = 'https://la-percha.pages.dev';
 
+/// Clave PÚBLICA de las notificaciones (Web Push). La privada vive solo en Supabase.
+const vapidPublica = 'BHtmdF5vFPfoNDVd9Q3ZZd_BpDSiPX3Ucq5POaaPnue6QFOtQKx7qfpuf1gkpc9ddRBGasF0I3LO2U9AQSrWw40';
+
 /// Interruptor general de pagos. Mientras sea false, la app no deja comprar ni pagar
 /// destacados y muestra "Los pagos abren muy pronto". Ponlo en true SOLO cuando haya
 /// al menos un método de pago con datos REALES abajo.

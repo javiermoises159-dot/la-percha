@@ -35,6 +35,11 @@ class _HomeShellState extends State<HomeShell> {
 
   /// Si se entró desde un enlace compartido (/a/ID → /?a=ID), abre ese anuncio.
   Future<void> _abrirCompartido() async {
+    // Al tocar una notificación se abre la lista de avisos.
+    if (Uri.base.queryParameters['abrir'] == 'avisos' && widget.state.account != null) {
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AvisosPage()));
+      return;
+    }
     final id = Uri.base.queryParameters['a'];
     if (id == null || !RegExp(r'^[0-9a-f-]{36}$').hasMatch(id)) return;
     try {

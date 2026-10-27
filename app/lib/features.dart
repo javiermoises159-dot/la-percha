@@ -9,6 +9,7 @@ import 'chat_page.dart';
 import 'config.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
+import 'mas.dart';
 import 'orders_page.dart';
 import 'theme.dart';
 
@@ -1004,7 +1005,10 @@ class _AvisosPageState extends State<AvisosPage> {
           TextButton(
               onPressed: _allRead, child: const Text('Marcar todo leído')),
       ]),
-      body: rows == null
+      body: Column(children: [
+        const PushBanner(),
+        Expanded(
+          child: rows == null
           ? const Center(child: CircularProgressIndicator())
           : rows.isEmpty
               ? Center(
@@ -1040,6 +1044,8 @@ class _AvisosPageState extends State<AvisosPage> {
                     },
                   ),
                 ),
+        ),
+      ]),
     );
   }
 }

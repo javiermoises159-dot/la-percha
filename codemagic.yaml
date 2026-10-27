@@ -20,7 +20,9 @@ workflows:
         script: python3 tools/migrar.py
       - name: Subir funciones del servidor (IA)
         ignore_failure: true
-        script: npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
+        script: |
+          npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
+          npx -y supabase@2 functions deploy push --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
       - name: Generar la parte Android del proyecto
         script: |
           cd app
@@ -62,4 +64,6 @@ workflows:
       - name: Aplicar las migraciones nuevas
         script: python3 tools/migrar.py
       - name: Subir funciones del servidor (IA)
-        script: npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
+        script: |
+          npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
+          npx -y supabase@2 functions deploy push --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
