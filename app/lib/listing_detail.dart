@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_state.dart';
 import 'features.dart';
@@ -63,6 +65,7 @@ class ListingDetail extends StatelessWidget {
             leading: circle(Icons.arrow_back_rounded,
                 () => Navigator.of(context).maybePop()),
             actions: [
+              circle(Icons.ios_share_rounded, () => compartirAnuncio(context, item)),
               circle(fav ? Icons.favorite : Icons.favorite_border,
                   () => toggleFavorite(context, item.id),
                   color: fav ? Theme.of(context).colorScheme.primary : null),
@@ -260,4 +263,48 @@ class ListingDetail extends StatelessWidget {
       },
     );
   }
+}
+
+
+/// Enlace para compartir: muestra foto, título y precio en WhatsApp y abre el anuncio.
+String enlaceAnuncio(Listing l) => '${Uri.base.origin}/a/${l.id}';
+
+void compartirAnuncio(BuildContext context, Listing l) {
+  final url = enlaceAnuncio(l);
+  final precio = l.price % 1 == 0 ? l.price.toStringAsFixed(0) : l.price.toStringAsFixed(2);
+  final texto = 'Mira esto en Pavito: ${l.title} a \$$precio. Compra protegida: tu pago queda guardado hasta que lo recibes. $url';
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Compartir', style: display(22, color: ctx.ink)),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1FA855)),
+            icon: const Icon(Icons.chat_rounded),
+            label: const Text('Enviar por WhatsApp'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texto)}'),
+                  mode: LaunchMode.externalApplication);
+            },
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.link_rounded),
+            label: const Text('Copiar enlace'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Enlace copiado. Pégalo en tus estados o grupos.')));
+            },
+          ),
+        ]),
+      ),
+    ),
+  );
 }

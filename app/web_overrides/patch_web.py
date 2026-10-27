@@ -24,6 +24,8 @@ s = re.sub(r"<title>.*?</title>", "<title>Pavito</title>", s, flags=re.S)
 import os
 splash = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "splash.html"), encoding="utf-8").read()
 s = re.sub(r"(<body[^>]*>)", r"\1\n" + splash.replace("\\", "\\\\"), s, count=1)
+instalar = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instalar.html"), encoding="utf-8").read()
+s = s.replace("</body>", instalar + "\n</body>", 1)
 open(p, "w", encoding="utf-8").write(s)
 
 # ---- manifest.json: nombre, colores e iconos ----

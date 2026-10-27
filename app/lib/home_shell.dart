@@ -6,6 +6,8 @@ import 'explore_page.dart';
 import 'extras.dart';
 import 'features.dart';
 import 'listing.dart';
+import 'listing_detail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'messages_page.dart';
 import 'profile_page.dart';
 import 'sell_page.dart';
@@ -28,6 +30,22 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     ListingsStore.prefScore = prefsStore.score;
     prefsStore.load().then((_) => listingsStore.resort());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _abrirCompartido());
+  }
+
+  /// Si se entró desde un enlace compartido (/a/ID → /?a=ID), abre ese anuncio.
+  Future<void> _abrirCompartido() async {
+    final id = Uri.base.queryParameters['a'];
+    if (id == null || !RegExp(r'^[0-9a-f-]{36}$').hasMatch(id)) return;
+    try {
+      final r = await Supabase.instance.client
+          .from('listings')
+          .select('*, profiles!listings_seller_id_fkey(username)')
+          .eq('id', id)
+          .maybeSingle();
+      if (r == null || !mounted) return;
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingDetail(item: Listing.fromMap(r))));
+    } catch (_) {}
   }
 
   void _select(int i) {

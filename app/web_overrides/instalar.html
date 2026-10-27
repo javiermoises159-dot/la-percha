@@ -1,0 +1,51 @@
+<style>
+#instalar{position:fixed;left:12px;right:12px;bottom:86px;z-index:9998;display:none;align-items:center;gap:12px;
+  background:#fff;color:#161412;border:2px solid #161412;border-radius:18px;padding:12px 12px 12px 14px;
+  box-shadow:0 14px 30px rgba(22,20,18,.2);font-family:'Onest',system-ui,sans-serif;max-width:460px;margin:0 auto}
+#instalar img{width:44px;height:44px;border-radius:11px}
+#instalar b{display:block;font-size:16px;font-weight:800}
+#instalar span{display:block;font-size:13px;color:#77716B}
+#instalar .si{margin-left:auto;background:#E0452C;color:#fff;border:0;border-radius:12px;padding:10px 14px;font:800 15px 'Onest',system-ui;cursor:pointer}
+#instalar .no{background:none;border:0;color:#77716B;font-size:22px;padding:0 4px;cursor:pointer}
+#ios-pasos{position:fixed;inset:0;z-index:9999;display:none;background:rgba(22,20,18,.55);align-items:flex-end}
+#ios-pasos div{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:22px 22px 34px;font-family:'Onest',system-ui,sans-serif;color:#161412}
+#ios-pasos h3{margin:0 0 10px;font-size:21px;font-weight:800}
+#ios-pasos ol{margin:0 0 16px;padding-left:22px;line-height:1.7;font-size:16px}
+#ios-pasos button{width:100%;background:#E0452C;color:#fff;border:0;border-radius:12px;padding:13px;font:800 16px 'Onest',system-ui}
+</style>
+<div id="instalar" role="dialog" aria-label="Instalar Pavito">
+  <img src="icons/Icon-192.png" alt="">
+  <div><b>Instala Pavito</b><span>Ábrela como una app, sin tienda</span></div>
+  <button class="si" id="instalar-si">Instalar</button>
+  <button class="no" id="instalar-no" aria-label="Ahora no">×</button>
+</div>
+<div id="ios-pasos"><div>
+  <h3>Añade Pavito a tu inicio</h3>
+  <ol><li>Toca el botón <b>Compartir</b> de Safari (el cuadro con la flecha hacia arriba).</li>
+      <li>Elige <b>Añadir a pantalla de inicio</b>.</li>
+      <li>Toca <b>Añadir</b>. ¡Listo, ya tienes la guacamaya en tu inicio!</li></ol>
+  <button id="ios-ok">Entendido</button>
+</div></div>
+<script>
+  (function () {
+    var yaInstalada = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    var hoy = Date.now(), k = 'pv_instalar_no';
+    var descartado = false;
+    try { descartado = hoy - (+localStorage.getItem(k) || 0) < 7 * 864e5; } catch (e) {}
+    if (yaInstalada || descartado) return;
+    var ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua) && !/crios|fxios/i.test(ua);
+    var aviso = document.getElementById('instalar'), pasos = document.getElementById('ios-pasos'), pedido = null;
+    function mostrar() { if (!document.getElementById('splash')) aviso.style.display = 'flex'; else setTimeout(mostrar, 1500); }
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; setTimeout(mostrar, 6000); });
+    if (ios) setTimeout(mostrar, 8000);
+    document.getElementById('instalar-no').onclick = function () {
+      aviso.style.display = 'none'; try { localStorage.setItem(k, String(hoy)); } catch (e) {}
+    };
+    document.getElementById('instalar-si').onclick = function () {
+      if (pedido) { pedido.prompt(); pedido.userChoice.then(function () { aviso.style.display = 'none'; }); pedido = null; }
+      else if (ios) { pasos.style.display = 'flex'; }
+    };
+    document.getElementById('ios-ok').onclick = function () { pasos.style.display = 'none'; aviso.style.display = 'none'; };
+    window.addEventListener('appinstalled', function () { aviso.style.display = 'none'; });
+  })();
+</script>

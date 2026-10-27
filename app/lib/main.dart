@@ -27,6 +27,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   @override
   void initState() {
     super.initState();
+    if (Uri.base.queryParameters.containsKey('a')) _state.guest = true;
     _state.load();
     listingsStore.load();
   }
