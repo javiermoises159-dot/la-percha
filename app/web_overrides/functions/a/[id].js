@@ -14,7 +14,7 @@ export async function onRequest({ params, request }) {
   const destino = `${origin}/?a=${id}`;
   let titulo = 'Pavito · Vende lo que ya no usas';
   let texto = 'Compra y vende en toda Venezuela con pago protegido. Vender es gratis.';
-  let imagen = `${origin}/icons/Icon-512.png`;
+  let imagen = `${origin}/compartir.jpg`;
   let cuerpo = '<h1>Pavito</h1><p>Este anuncio ya no está disponible. Mira otras prendas en Pavito.</p>';
   let ld = '';
   let estado = 404;

@@ -18,6 +18,22 @@ head_extra = """
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <style>html,body{margin:0;height:100%;background:#E0452C}</style>
 """
+# Quita las etiquetas de fábrica de Flutter ("A new Flutter project.") antes de poner las nuestras.
+s = re.sub(r'\s*<meta name="description"[^>]*>', '', s)
+s = re.sub(r'\s*<meta name="apple-mobile-web-app-title"[^>]*>', '', s)
+# Vista previa al compartir el link (WhatsApp, Instagram, Telegram, Facebook, X).
+head_extra += '''
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pavito">
+  <meta property="og:title" content="Pavito · Compra y vende en toda Venezuela">
+  <meta property="og:description" content="Lo que ya no usas, otra persona lo quiere. Tu pago queda protegido hasta que lo recibes. Vender es gratis.">
+  <meta property="og:image" content="https://pavito.pages.dev/compartir.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pavito.pages.dev/">
+  <meta property="og:locale" content="es_VE">
+  <meta name="twitter:card" content="summary_large_image">
+'''
 s = s.replace("</head>", head_extra + "</head>", 1)
 s = re.sub(r"<title>.*?</title>", "<title>Pavito</title>", s, flags=re.S)
 
