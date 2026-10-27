@@ -1,5 +1,6 @@
 import 'captcha.dart';
 import 'config.dart';
+import 'mas.dart';
 import 'nav.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -137,6 +138,7 @@ class AppState extends ChangeNotifier {
       await _db
           .from('profiles')
           .insert({'id': res.user!.id, 'username': username, 'city': city});
+      await aplicarInvitacion();
       await refresh();
       return null;
     } on AuthException catch (e) {
@@ -194,6 +196,7 @@ class AppState extends ChangeNotifier {
       final taken = await _db.from('profiles').select('id').eq('username', username).maybeSingle();
       if (taken != null) return 'Ese nombre de usuario ya está en uso.';
       await _db.from('profiles').insert({'id': user.id, 'username': username, 'city': city});
+      await aplicarInvitacion();
       await refresh();
       return null;
     } on PostgrestException catch (e) {

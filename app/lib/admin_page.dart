@@ -719,13 +719,20 @@ class _UsersTabState extends State<_UsersTab> {
     _load();
   }
 
+  final _q = TextEditingController();
+
+  @override
+  void dispose() {
+    _q.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     try {
-      final r = await _db
-          .from('profiles')
-          .select('id, username, city, blocked, is_admin')
-          .order('created_at', ascending: false)
-          .limit(100);
+      var f = _db.from('profiles').select('id, username, city, blocked, is_admin, verificado, fundador_n, created_at');
+      final q = _q.text.trim().replaceAll(RegExp(r'[^A-Za-z0-9_.]'), '');
+      if (q.isNotEmpty) f = f.ilike('username', '%$q%');
+      final r = await f.order('created_at', ascending: false).limit(100);
       if (!mounted) return;
       setState(() {
         _rows = List<Map<String, dynamic>>.from(r);
@@ -737,6 +744,9 @@ class _UsersTabState extends State<_UsersTab> {
   }
 
   Future<void> _block(String id, bool flag) async {
+    if (!await _seguro(context, flag
+        ? '¿Bloquear a esta persona? No podrá publicar, comprar ni escribir.'
+        : '¿Desbloquear a esta persona?')) return;
     try {
       await _db.rpc('admin_set_blocked', params: {'uid': id, 'flag': flag});
     } on PostgrestException catch (e) {
@@ -748,29 +758,70 @@ class _UsersTabState extends State<_UsersTab> {
     _load();
   }
 
+  Future<void> _verificar(String id, bool si) async {
+    if (!await _seguro(context, si
+        ? '¿Marcar como vendedor verificado? Hazlo solo si comprobaste su identidad (cédula y teléfono).'
+        : '¿Quitar la insignia de verificado?')) return;
+    try {
+      await _db.rpc('admin_set_verificado', params: {'p_user': id, 'p_si': si});
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(children: [
-        for (final r in _rows)
-          ListTile(
-            title: Text(
-                '@${r['username']}${r['is_admin'] == true ? '  (admin)' : ''}'),
-            subtitle: Text(
-                '${r['city']}${r['blocked'] == true ? ' · BLOQUEADO' : ''}'),
-            trailing: r['is_admin'] == true
-                ? null
-                : TextButton(
-                    onPressed: () =>
-                        _block(r['id'] as String, r['blocked'] != true),
-                    child:
-                        Text(r['blocked'] == true ? 'Desbloquear' : 'Bloquear'),
-                  ),
-          ),
-      ]),
-    );
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: TextField(
+          controller: _q,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _load(),
+          decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search), hintText: 'Buscar por nombre de usuario',
+              suffixIcon: IconButton(icon: const Icon(Icons.arrow_forward), onPressed: _load)),
+        ),
+      ),
+      Expanded(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(children: [
+                  for (final r in _rows)
+                    ListTile(
+                      title: Text('@${r['username']}${r['is_admin'] == true ? '  (admin)' : ''}'
+                          '${r['verificado'] == true ? '  ✔ verificado' : ''}'),
+                      subtitle: Text('${r['city']}'
+                          '${r['fundador_n'] != null ? ' · Fundador #${r['fundador_n']}' : ''}'
+                          '${r['blocked'] == true ? ' · BLOQUEADO' : ''}'),
+                      trailing: r['is_admin'] == true
+                          ? null
+                          : PopupMenuButton<String>(
+                              onSelected: (v) {
+                                if (v == 'ver') _verificar(r['id'] as String, true);
+                                if (v == 'nover') _verificar(r['id'] as String, false);
+                                if (v == 'bloq') _block(r['id'] as String, true);
+                                if (v == 'desbloq') _block(r['id'] as String, false);
+                              },
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                    value: r['verificado'] == true ? 'nover' : 'ver',
+                                    child: Text(r['verificado'] == true ? 'Quitar verificado' : 'Marcar como verificado')),
+                                PopupMenuItem(
+                                    value: r['blocked'] == true ? 'desbloq' : 'bloq',
+                                    child: Text(r['blocked'] == true ? 'Desbloquear' : 'Bloquear')),
+                              ],
+                            ),
+                    ),
+                ]),
+              ),
+      ),
+    ]);
   }
 }
 
@@ -1350,6 +1401,8 @@ const _accion = {
   'rechazar_retiro': 'Rechazó un retiro',
   'pago_con_saldo': 'Pagó con su saldo',
   'bloqueo': 'Bloqueó a un usuario',
+  'verificar': 'Verificó a un vendedor',
+  'quitar_verificado': 'Quitó la verificación',
   'desbloqueo': 'Desbloqueó a un usuario',
   'tasa': 'Cambio de tasa',
   'cuadre': 'Cuadre guardado',

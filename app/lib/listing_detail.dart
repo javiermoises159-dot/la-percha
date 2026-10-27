@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'app_state.dart';
 import 'features.dart';
 import 'fundador.dart';
+import 'mas.dart';
 import 'chat_page.dart';
 import 'explore_page.dart';
 import 'extras.dart';
@@ -15,6 +16,8 @@ import 'theme.dart';
 
 /// Comisión de protección al comprador (la paga quien compra).
 double buyerFee(double price) => 0.25 + price * 0.05;
+
+final _vistosEnSesion = <String>{};
 
 class ListingDetail extends StatelessWidget {
   const ListingDetail({super.key, required this.item});
@@ -32,12 +35,14 @@ class ListingDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fee = buyerFee(item.price);
+    if (_vistosEnSesion.add(item.id)) registrarVista(item);
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
         final fav = appState.favs.contains(item.id);
         final mine = appState.account?.id == item.sellerId;
         final meta = [
+          if (item.brand != null) item.brand!,
           if (item.size != 'No aplica') 'Talla ${item.size}',
           item.condition,
           item.city,
@@ -226,7 +231,10 @@ class ListingDetail extends StatelessWidget {
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w700,
                                             fontSize: 15)),
-                                    FundadorChip(sellerId: item.sellerId),
+                                    Wrap(children: [
+                                      FundadorChip(sellerId: item.sellerId),
+                                      VerificadoChip(userId: item.sellerId),
+                                    ]),
                                     Text('Ver perfil y valoraciones',
                                         style: TextStyle(
                                             color: context.muted,
@@ -257,6 +265,13 @@ class ListingDetail extends StatelessWidget {
                         const SizedBox(height: 16),
                         Text('Este es tu anuncio.',
                             style: TextStyle(color: context.muted)),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Editar anuncio'),
+                          onPressed: () => Navigator.of(context).pushReplacement(
+                              MaterialPageRoute<void>(builder: (_) => EditarAnuncioPage(item: item))),
+                        ),
                       ],
                     ],
                   ),

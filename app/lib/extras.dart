@@ -259,7 +259,8 @@ class _PrefsPageState extends State<PrefsPage> {
 // ===================== Filtros de búsqueda =====================
 
 class Filtros {
-  const Filtros({this.min, this.max, this.city, this.condition, this.size});
+  const Filtros({this.min, this.max, this.city, this.condition, this.size, this.marca});
+  final String? marca;
   final double? min;
   final double? max;
   final String? city;
@@ -271,16 +272,18 @@ class Filtros {
       max != null ||
       city != null ||
       condition != null ||
-      size != null;
+      size != null ||
+      marca != null;
   int get cuantos =>
-      [min, max, city, condition, size].where((x) => x != null).length;
+      [min, max, city, condition, size, marca].where((x) => x != null).length;
 
   bool ok(Listing l) =>
       (min == null || l.price >= min!) &&
       (max == null || l.price <= max!) &&
       (city == null || l.city == city) &&
       (condition == null || l.condition == condition) &&
-      (size == null || l.size == size);
+      (size == null || l.size == size) &&
+      (marca == null || (l.brand ?? '').toLowerCase().contains(marca!.toLowerCase()));
 }
 
 /// Abre la hoja de filtros y devuelve los nuevos (o null si se cancela).
@@ -288,6 +291,7 @@ Future<Filtros?> showFiltros(BuildContext context, Filtros actual) {
   final min = TextEditingController(text: actual.min?.toStringAsFixed(0) ?? '');
   final max = TextEditingController(text: actual.max?.toStringAsFixed(0) ?? '');
   String? city = actual.city, cond = actual.condition, size = actual.size;
+  final marca = TextEditingController(text: actual.marca ?? '');
   final sizes = {
     for (final c in categories.skip(1)) ...sizesFor(c),
   }.where((s) => s != 'No aplica').toList();
@@ -320,6 +324,11 @@ Future<Filtros?> showFiltros(BuildContext context, Filtros actual) {
                         decoration: const InputDecoration(
                             labelText: 'Precio máx. \$'))),
               ]),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: marca,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(labelText: 'Marca', hintText: 'Cualquiera')),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
                 initialValue: city,
@@ -373,7 +382,8 @@ Future<Filtros?> showFiltros(BuildContext context, Filtros actual) {
                               max: num(max.text),
                               city: city,
                               condition: cond,
-                              size: size)),
+                              size: size,
+                              marca: marca.text.trim().isEmpty ? null : marca.text.trim())),
                       child: const Text('Ver resultados')),
                 ),
               ]),

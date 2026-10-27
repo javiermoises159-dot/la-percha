@@ -19,7 +19,11 @@ class Listing {
     this.featuredUntil,
     this.fotoIa = false,
     this.createdAt,
+    this.brand,
   });
+
+  /// Marca (opcional).
+  final String? brand;
 
   final String id;
   final String title;
@@ -59,6 +63,7 @@ class Listing {
       featuredUntil: DateTime.tryParse('${m['featured_until'] ?? ''}'),
       fotoIa: m['foto_ia'] == true,
       createdAt: DateTime.tryParse('${m['created_at'] ?? ''}')?.toLocal(),
+      brand: (m['brand'] as String?)?.trim().isEmpty == true ? null : m['brand'] as String?,
     );
   }
 }
@@ -190,12 +195,23 @@ class ListingsStore extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final rows = await _db
-          .from('listings')
-          .select('*, profiles!listings_seller_id_fkey(username)')
-          .eq('status', 'active')
-          .order('created_at', ascending: false)
-          .limit(300);
+      PostgrestList rows;
+      try {
+        rows = await _db
+            .from('listings')
+            .select('*, profiles!listings_seller_id_fkey(username)')
+            .eq('status', 'active')
+            .order('orden', ascending: false, nullsFirst: false)
+            .limit(300);
+      } on PostgrestException {
+        // Servidor sin la columna "orden" todavía: orden por fecha de publicación.
+        rows = await _db
+            .from('listings')
+            .select('*, profiles!listings_seller_id_fkey(username)')
+            .eq('status', 'active')
+            .order('created_at', ascending: false)
+            .limit(300);
+      }
       _raw = [for (final r in rows) Listing.fromMap(r)];
       // Los destacados siempre salen, aunque sean más viejos que los últimos 300.
       try {
@@ -225,6 +241,19 @@ class ListingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cambia los datos de un anuncio propio (no las fotos). Devuelve null si salió bien.
+  Future<String?> editar(String id, Map<String, dynamic> cambios) async {
+    try {
+      await _db.from('listings').update(cambios).eq('id', id);
+      await load();
+      return null;
+    } on PostgrestException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'No se pudo guardar. Revisa tu conexión.';
+    }
+  }
+
   /// Busca en toda la base de datos (título, descripción, categoría o vendedor),
   /// no solo en lo que ya está cargado. Devuelve null si no hay conexión.
   Future<List<Listing>?> buscar(String q, {String? categoria, int limite = 100}) async {
@@ -249,6 +278,7 @@ class ListingsStore extends ChangeNotifier {
     required String city,
     List<Uint8List> photos = const [],
     bool fotoIa = false,
+    String? brand,
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
@@ -273,6 +303,7 @@ class ListingsStore extends ChangeNotifier {
         'city': city,
         'photos': urls,
         if (fotoIa) 'foto_ia': true,
+        if (brand != null && brand.trim().isNotEmpty) 'brand': brand.trim(),
       });
       await load();
       return null;

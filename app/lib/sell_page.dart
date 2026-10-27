@@ -43,6 +43,7 @@ class _SellPageState extends State<SellPage> {
   final _title = TextEditingController();
   final _price = TextEditingController();
   final _desc = TextEditingController();
+  final _brand = TextEditingController();
   final List<Uint8List> _photos = [];
   bool _fotoIa = false; // la primera foto es una portada creada por la IA
   bool _scanning = false;
@@ -69,9 +70,9 @@ class _SellPageState extends State<SellPage> {
       final d = Map<String, dynamic>.from(res.data as Map);
       setState(() {
         _title.text = '${d['titulo'] ?? ''}';
+        if (d['marca'] != null && '${d['marca']}'.trim().isNotEmpty) _brand.text = '${d['marca']}';
         _desc.text = [
           '${d['descripcion'] ?? ''}',
-          if (d['marca'] != null) 'Marca: ${d['marca']}.',
           if (d['color'] != null) 'Color: ${d['color']}.',
         ].where((x) => x.trim().isNotEmpty).join(' ');
         if (d['precio_sugerido'] != null)
@@ -119,6 +120,7 @@ class _SellPageState extends State<SellPage> {
     _title.dispose();
     _price.dispose();
     _desc.dispose();
+    _brand.dispose();
     super.dispose();
   }
 
@@ -193,6 +195,7 @@ class _SellPageState extends State<SellPage> {
       city: _city ?? acct.city,
       photos: _photos,
       fotoIa: _fotoIa,
+      brand: _brand.text,
     );
     if (!mounted) return;
     if (err != null) {
@@ -204,6 +207,7 @@ class _SellPageState extends State<SellPage> {
     _title.clear();
     _price.clear();
     _desc.clear();
+    _brand.clear();
     setState(() {
       _busy = false;
       _photos.clear();
@@ -340,13 +344,20 @@ class _SellPageState extends State<SellPage> {
           decoration: const InputDecoration(
               labelText: 'Título', hintText: 'Chaqueta de jean azul'),
         ),
+        TextField(
+          controller: _brand,
+          maxLength: 40,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+              labelText: 'Marca (opcional)', hintText: 'Zara, Nike, Bershka…'),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: _desc,
           maxLines: 3,
           maxLength: 300,
           decoration: const InputDecoration(
-              labelText: 'Descripción', hintText: 'Estado, medidas, marca…'),
+              labelText: 'Descripción', hintText: 'Estado, medidas, color…'),
         ),
         const SizedBox(height: 8),
         _Drop(

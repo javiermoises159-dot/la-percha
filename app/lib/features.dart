@@ -8,6 +8,7 @@ import 'auth_sheet.dart';
 import 'chat_page.dart';
 import 'config.dart';
 import 'listing.dart';
+import 'listing_detail.dart';
 import 'orders_page.dart';
 import 'theme.dart';
 
@@ -946,6 +947,18 @@ class _AvisosPageState extends State<AvisosPage> {
     if (a['tipo'] == 'pedido' && ref != null) page = OrderPage(orderId: ref);
     if (a['tipo'] == 'chat' && ref != null)
       page = ChatPage(threadId: ref, title: 'Conversación');
+    if (a['tipo'] == 'anuncio' && ref != null) {
+      try {
+        final r = await _db
+            .from('listings')
+            .select('*, profiles!listings_seller_id_fkey(username)')
+            .eq('id', ref)
+            .maybeSingle();
+        if (r != null) page = ListingDetail(item: Listing.fromMap(r));
+      } catch (_) {}
+      if (!mounted) return;
+      if (page == null) _snack(context, 'Ese anuncio ya no está disponible.');
+    }
     if (a['tipo'] == 'perfil' && appState.account != null) {
       page = ReviewsPage(
           userId: appState.account!.id, username: appState.account!.username);
@@ -967,6 +980,7 @@ class _AvisosPageState extends State<AvisosPage> {
   static IconData _icon(String tipo) => switch (tipo) {
         'pedido' => Icons.receipt_long_outlined,
         'chat' => Icons.chat_bubble_outline,
+        'anuncio' => Icons.local_offer_outlined,
         _ => Icons.star_outline_rounded,
       };
 

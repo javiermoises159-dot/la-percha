@@ -9,6 +9,7 @@ import 'explore_page.dart';
 import 'info_pages.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
+import 'mas.dart';
 import 'admin_2fa.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
@@ -81,6 +82,8 @@ class ProfilePage extends StatelessWidget {
               page: SellerProfilePage(sellerId: a.id, username: a.username)),
           _item(context, Icons.favorite_border, 'Favoritos',
               page: const FavoritesPage()),
+          _item(context, Icons.notifications_active_outlined, 'Mis alertas de búsqueda',
+              page: const AlertasPage()),
           _item(context, Icons.account_balance_wallet_outlined, 'Saldo Pavito',
               page: const SaldoPage()),
           _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
@@ -88,6 +91,8 @@ class ProfilePage extends StatelessWidget {
           _item(context, Icons.rocket_launch_outlined,
               'Herramientas de promoción',
               page: const PromotePage()),
+          _item(context, Icons.card_giftcard_outlined, 'Invita y gana',
+              page: const InvitarPage()),
           const Divider(height: 1),
           _item(context, Icons.tune, 'Personalización',
               page: const PrefsPage()),
@@ -175,6 +180,7 @@ class MyListingsPage extends StatefulWidget {
 class _MyListingsPageState extends State<MyListingsPage> {
   List<Listing> _items = [];
   Map<String, String> _status = {};
+  Map<String, (int, int)> _stats = {};
   bool _loading = true;
   String? _error;
 
@@ -195,8 +201,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
           .select('*, profiles!listings_seller_id_fkey(username)')
           .eq('seller_id', uid)
           .order('created_at', ascending: false);
+      final stats = await misEstadisticas();
       if (!mounted) return;
       setState(() {
+        _stats = stats;
         _items = [for (final r in rows) Listing.fromMap(r)];
         _status = {
           for (final r in rows) r['id'] as String: r['status'] as String
@@ -220,6 +228,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
       listingsStore.load();
     } catch (_) {
       _snack('No se pudo cambiar el anuncio.');
+    }
+  }
+
+  Future<void> _subir(Listing l) async {
+    try {
+      await _db.rpc('subir_anuncio', params: {'p_listing': l.id});
+      listingsStore.load();
+      _snack('Listo: tu anuncio vuelve a salir entre los primeros.');
+    } on PostgrestException catch (e) {
+      _snack(e.message);
+    } catch (_) {
+      _snack('No se pudo subir el anuncio.');
     }
   }
 
@@ -410,8 +430,23 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                                         builder: (_) => const PromotePage()));
                                                   }
                                                   if (v == 'delete') _delete(l);
+                                                  if (v == 'edit') {
+                                                    Navigator.of(context)
+                                                        .push(MaterialPageRoute<bool>(
+                                                            builder: (_) => EditarAnuncioPage(item: l)))
+                                                        .then((ok) {
+                                                      if (ok == true) _load();
+                                                    });
+                                                  }
+                                                  if (v == 'bump') _subir(l);
                                                 },
                                                 itemBuilder: (_) => [
+                                                  if (st == 'active' || st == 'hidden')
+                                                    const PopupMenuItem(
+                                                        value: 'edit', child: Text('Editar')),
+                                                  if (st == 'active')
+                                                    const PopupMenuItem(
+                                                        value: 'bump', child: Text('Subir arriba (gratis)')),
                                                   if (st == 'active')
                                                     const PopupMenuItem(
                                                         value: 'promo', child: Text('Destacar')),
@@ -436,6 +471,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(color: context.muted)),
+                                        if (_stats[l.id] != null)
+                                          Text('${_stats[l.id]!.$1} vistas · ${_stats[l.id]!.$2} ♥',
+                                              style: TextStyle(color: context.muted, fontSize: 12)),
                                       ]),
                                 );
                               },

@@ -7,6 +7,7 @@ import 'auth_sheet.dart';
 import 'config.dart';
 import 'home_shell.dart';
 import 'listing.dart';
+import 'mas.dart';
 import 'nav.dart';
 import 'theme.dart';
 import 'welcome_screen.dart';
@@ -37,6 +38,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   void initState() {
     super.initState();
     if (Uri.base.queryParameters.containsKey('a')) _state.guest = true;
+    guardarInvitacion();
     _state.load();
     listingsStore.load();
   }
@@ -49,7 +51,8 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
       scaffoldMessengerKey: mensajeroKey,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
-      themeMode: ThemeMode.light,
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
       builder: (context, child) => _WideFrame(child: child ?? const SizedBox()),
       home: ListenableBuilder(
         listenable: _state,

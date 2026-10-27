@@ -6,6 +6,7 @@ import 'app_state.dart';
 import 'extras.dart';
 import 'features.dart';
 import 'fundador.dart';
+import 'mas.dart';
 import 'auth_sheet.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
@@ -276,7 +277,20 @@ class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
           ],
         ),
       ),
-      if (_cat == 'Todo') const FundadorBanner(),
+      if (_cat == 'Todo' && _q.length < 2) const FundadorBanner(),
+      if (_q.length >= 2)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2),
+            child: TextButton.icon(
+              icon: const Icon(Icons.notifications_active_outlined, size: 18),
+              label: Text('Avísame cuando publiquen "$_q"'),
+              onPressed: () => crearAlerta(context,
+                  q: _q, categoria: _cat == 'Todo' || _cat == _siguiendo ? null : _cat),
+            ),
+          ),
+        ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         child: Row(children: [
@@ -381,6 +395,18 @@ class _CategoriesPageState extends State<CategoriesPage> with _BusquedaServidor 
       final items = resultados(_q, locales, (_) => true);
       return Column(children: [
         _search(),
+        if (_q.length >= 2)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: TextButton.icon(
+                icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                label: Text('Avísame cuando publiquen "$_q"'),
+                onPressed: () => crearAlerta(context, q: _q),
+              ),
+            ),
+          ),
         Expanded(child: ListingGrid(items: items)),
       ]);
     }
