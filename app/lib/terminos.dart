@@ -61,10 +61,18 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 4. El dinero se **libera al vendedor** cuando:
    - el comprador confirma que recibió el artículo, o
    - pasan **7 días** desde que el vendedor marcó el envío sin que el comprador reporte un problema.
-5. Pavito paga al vendedor el precio completo por Pago Móvil, a los datos de cobro que tenga en Yo → Saldo, en un plazo de [2 días hábiles] desde la liberación. Si sus datos están incompletos, el pago espera hasta que los complete.
-6. Si el pedido se cancela antes del envío, o se resuelve una disputa a favor del comprador, Pavito **devuelve el importe** por el mismo medio con que se pagó en [5 días hábiles].
+5. Al liberarse, el precio completo pasa al **Saldo Pavito** del vendedor (Yo → Saldo Pavito).
+6. Si el pedido se cancela antes del envío, o se resuelve una disputa a favor del comprador, Pavito **devuelve el importe al Saldo Pavito** del comprador de inmediato.
 7. La tarifa de protección no se devuelve si el pedido se completó; sí se devuelve si se cancela por causa del vendedor o se resuelve a favor del comprador.
-8. El dinero retenido se guarda en una cuenta de Pavito separada de sus gastos y no genera intereses para nadie.
+8. El dinero retenido y los saldos se guardan en una cuenta de Pavito separada de sus gastos y no generan intereses para nadie.
+
+### Saldo Pavito
+1. El Saldo Pavito es el dinero de tus ventas completadas y de tus devoluciones. Está en dólares y no vence.
+2. Puedes usarlo para pagar compras en Pavito al instante, o **retirarlo** a la cuenta de Pago Móvil que tengas registrada, desde **5 USD**. Pavito envía el retiro en bolívares a la tasa oficial del BCV del día del pago, en un plazo de [1 a 2 días hábiles].
+3. Por seguridad, si cambias tus datos de cobro, podrás retirar 24 horas después del cambio. Si cambias los datos mientras un retiro está pendiente, ese retiro se devuelve a tu saldo y debes pedirlo de nuevo.
+4. Si un retiro no se puede enviar (por ejemplo, por datos incorrectos), el monto vuelve a tu saldo.
+5. Para eliminar tu cuenta primero debes retirar tu saldo.
+6. El saldo no es un depósito bancario ni genera intereses; solo sirve para comprar en Pavito o para retirarlo.
 
 ## 6. Envíos y entrega en persona
 
@@ -116,7 +124,7 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 | Usuario, ciudad, anuncios, reseñas | Tu perfil público | Todos | Mientras tengas cuenta |
 | Correo y teléfono | Acceso y verificación | Solo tú y Pavito | Mientras tengas cuenta |
 | Dirección y teléfono de entrega | Enviar tu pedido | El vendedor, solo tras confirmar el pago | Se borra 30 días después del pedido |
-| Datos de cobro (Pago Móvil) | Pagarte tus ventas | Solo Pavito | Mientras tengas cuenta |
+| Datos de cobro (Pago Móvil) | Enviarte tus retiros | Solo Pavito | Mientras tengas cuenta |
 | Mensajes del chat | Comunicarte y resolver disputas | Las dos partes y Pavito si hay disputa o denuncia | Mientras tengas cuenta |
 | Fotos que subes a "Foto y listo" | Armar el anuncio con un servicio de análisis de imágenes | Pavito y ese proveedor, solo para analizarla | No se guarda fuera del anuncio |
 

@@ -395,6 +395,9 @@ class SaldoPage extends StatefulWidget {
 
 class _SaldoPageState extends State<SaldoPage> {
   List<Map<String, dynamic>>? _rows;
+  Map<String, dynamic> _saldo = const {};
+  List<Map<String, dynamic>> _movs = [];
+  List<Map<String, dynamic>> _retiros = [];
   String? _bancoSel;
   Map? _resumen;
   DateTime? _cambiado;
@@ -435,6 +438,19 @@ class _SaldoPageState extends State<SaldoPage> {
           .maybeSingle();
       _resumen = p?['payout_resumen'] as Map?;
       _cambiado = DateTime.tryParse('${p?['payout_cambiado'] ?? ''}');
+      try {
+        _saldo = Map<String, dynamic>.from((await _db.rpc('mi_saldo')) as Map);
+        _movs = List<Map<String, dynamic>>.from(await _db
+            .from('movimientos')
+            .select('monto, tipo, creado, nota')
+            .order('creado', ascending: false)
+            .limit(40));
+        _retiros = List<Map<String, dynamic>>.from(await _db
+            .from('retiros')
+            .select('monto, estado, creado, motivo')
+            .order('creado', ascending: false)
+            .limit(10));
+      } catch (_) {}
       if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
     } catch (_) {
       if (mounted) setState(() => _rows = []);
@@ -464,10 +480,72 @@ class _SaldoPageState extends State<SaldoPage> {
       await _load();
       if (mounted) {
         _snack(context,
-            'Datos guardados y cifrados. Por seguridad, si los cambias, los pagos esperan 24 h.');
+            'Datos guardados y cifrados. Por seguridad, si los cambias, los retiros esperan 24 h.');
       }
     } catch (e) {
       if (mounted) _snack(context, _err(e, 'No se pudo guardar.'));
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Widget _mini(String label, double v, String hint) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: context.chip, borderRadius: BorderRadius.circular(12)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: context.muted, fontSize: 12)),
+          Text(_usd(v), style: display(18, color: context.ink)),
+          Text(hint, style: TextStyle(color: context.muted, fontSize: 11)),
+        ]),
+      );
+
+  static String _fecha(String iso) {
+    final t = DateTime.tryParse(iso)?.toLocal();
+    if (t == null) return '';
+    return '${t.day}/${t.month}/${t.year}';
+  }
+
+  Future<void> _retirar() async {
+    final disponible = ((_saldo['disponible'] as num?) ?? 0).toDouble();
+    if (_resumen == null) {
+      return _snack(context, 'Primero pon abajo tus datos de Pago Móvil para cobrar.');
+    }
+    final ctrl = TextEditingController(text: disponible.toStringAsFixed(2));
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (c) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.of(c).viewInsets.bottom),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Retirar saldo', style: display(22, color: c.ink)),
+          const SizedBox(height: 6),
+          Text('Disponible: ${_usd(disponible)}. Mínimo \$5.', style: TextStyle(color: c.muted)),
+          const SizedBox(height: 12),
+          TextField(
+            controller: ctrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Monto en dólares', prefixText: '\$ '),
+          ),
+          const SizedBox(height: 10),
+          Text('Lo enviamos a ${_resumen!['banco']} · ${_resumen!['cedula']} · ${_resumen!['telefono']}, '
+              'en bolívares a la tasa BCV del día, en 1 a 2 días hábiles.',
+              style: TextStyle(color: c.muted, fontSize: 13, height: 1.35)),
+          const SizedBox(height: 14),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Pedir retiro')),
+        ]),
+      ),
+    );
+    if (ok != true) return;
+    final m = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
+    if (m == null || m < 5) return _snack(context, 'El retiro mínimo es de \$5.');
+    if (m > disponible) return _snack(context, 'No tienes ese saldo disponible.');
+    setState(() => _busy = true);
+    try {
+      await _db.rpc('pedir_retiro', params: {'p_monto': m});
+      if (mounted) _snack(context, 'Listo. Te enviamos ${_usd(m)} a tu Pago Móvil en 1 a 2 días hábiles.');
+      await _load();
+    } catch (e) {
+      if (mounted) _snack(context, _err(e, 'No se pudo pedir el retiro.'));
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -476,54 +554,45 @@ class _SaldoPageState extends State<SaldoPage> {
   Widget build(BuildContext context) {
     final rows = _rows;
     final ink = Theme.of(context).colorScheme.onSurface;
-    double sum(bool Function(Map<String, dynamic>) f) => (rows ?? const [])
-        .where(f)
-        .fold(0.0, (a, r) => a + (r['price'] as num).toDouble());
-    final enCamino = sum((r) =>
-        ['revision', 'retenido', 'enviado', 'disputa'].contains(r['status']));
-    final porCobrar =
-        sum((r) => r['status'] == 'liberado' && r['paid_out_at'] == null);
-    final cobrado = sum((r) => r['paid_out_at'] != null);
-
-    Widget tile(String label, double v, String hint, {bool strong = false}) =>
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: strong ? context.leafSoft : context.chip,
-                borderRadius: BorderRadius.circular(12)),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: TextStyle(color: context.muted, fontSize: 12)),
-              Text(_usd(v),
-                  style: display(20, color: strong ? context.leaf : ink)
-                      .copyWith(
-                          fontFeatures: const [FontFeature.tabularFigures()])),
-              Text(hint, style: TextStyle(color: context.muted, fontSize: 11)),
-            ]),
-          ),
-        );
-
+    double n(String k) => ((_saldo[k] as num?) ?? 0).toDouble();
+    final disponible = n('disponible');
     return Scaffold(
-      appBar: AppBar(title: const Text('Saldo')),
+      appBar: AppBar(title: const Text('Saldo Pavito')),
       body: rows == null
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(padding: const EdgeInsets.all(16), children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(color: context.leafSoft, borderRadius: BorderRadius.circular(18)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Disponible', style: TextStyle(color: context.muted)),
+                    Text(_usd(disponible),
+                        style: display(36, color: context.leaf)
+                            .copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                    if (bsText(disponible).isNotEmpty)
+                      Text(bsText(disponible), style: TextStyle(color: context.muted, fontSize: 13)),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: disponible >= 5 ? _retirar : null,
+                      icon: const Icon(Icons.account_balance_outlined),
+                      label: Text(disponible >= 5 ? 'Retirar a mi Pago Móvil' : 'Retiras desde \$5'),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: 10),
                 Row(children: [
-                  tile('Por cobrar', porCobrar, 'Te lo enviamos pronto',
-                      strong: true),
+                  Expanded(child: _mini('Pendiente', n('pendiente'), 'Ventas en camino')),
                   const SizedBox(width: 8),
-                  tile('En camino', enCamino, 'Pagado, sin entregar'),
-                  const SizedBox(width: 8),
-                  tile('Ya cobrado', cobrado, 'Enviado a tu cuenta'),
+                  Expanded(child: _mini('En retiro', n('en_retiro'), 'Te lo enviamos en 1–2 días')),
                 ]),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
-                    'Cuando el comprador confirma que recibió el artículo (o pasan 7 días sin quejas), '
-                    'te enviamos el dinero por Pago Móvil a los datos de abajo.',
-                    style: TextStyle(color: context.muted, fontSize: 13)),
+                    'Cuando el comprador confirma que recibió (o pasan 7 días sin quejas), el dinero de tu venta entra aquí. '
+                    'Úsalo para comprar en Pavito o retíralo a tu Pago Móvil desde \$5. '
+                    'Si te devolvemos una compra cancelada, también llega a este saldo al instante.',
+                    style: TextStyle(color: context.muted, fontSize: 13, height: 1.35)),
                 const SizedBox(height: 20),
                 Text('Dónde cobras', style: display(18, color: ink)),
                 const SizedBox(height: 8),
@@ -552,7 +621,7 @@ class _SaldoPageState extends State<SaldoPage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                          'Cambiaste estos datos hace poco: por seguridad, los pagos esperan 24 h desde el cambio.',
+                          'Cambiaste estos datos hace poco: por seguridad, podrás retirar 24 h después del cambio.',
                           style: TextStyle(color: context.muted, fontSize: 13)),
                     ),
                   const SizedBox(height: 8),
@@ -595,24 +664,49 @@ class _SaldoPageState extends State<SaldoPage> {
                         child: const Text('Cancelar')),
                 ],
                 const SizedBox(height: 24),
-                if (rows.isNotEmpty)
-                  Text('Mis ventas', style: display(18, color: ink)),
-                for (final r in rows)
+                if (_retiros.isNotEmpty) ...[
+                  Text('Retiros', style: display(18, color: ink)),
+                  for (final r in _retiros)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                          r['estado'] == 'pagado'
+                              ? Icons.check_circle_outline
+                              : r['estado'] == 'rechazado'
+                                  ? Icons.undo_rounded
+                                  : Icons.schedule_rounded,
+                          color: r['estado'] == 'pagado' ? context.leaf : context.muted),
+                      title: Text(_usd(r['monto'] as num)),
+                      subtitle: Text('${{'pendiente': 'En camino a tu Pago Móvil', 'pagado': 'Enviado', 'rechazado': 'Devuelto a tu saldo'}[r['estado']] ?? r['estado']}'
+                          '${r['motivo'] != null && '${r['motivo']}'.isNotEmpty ? ' · ${r['motivo']}' : ''} · ${_fecha('${r['creado']}')}'),
+                    ),
+                  const SizedBox(height: 12),
+                ],
+                Text('Movimientos', style: display(18, color: ink)),
+                if (_movs.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Aquí verás tus ventas cobradas, devoluciones, compras y retiros.',
+                        style: TextStyle(color: context.muted)),
+                  ),
+                for (final m in _movs)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(field(r['listings'], 'title', 'Artículo')),
-                    subtitle: Text(r['paid_out_at'] != null
-                        ? 'Cobrado'
-                        : r['status'] == 'liberado'
-                            ? 'Por cobrar'
-                            : r['status'] == 'esperando_pago'
-                                ? 'Esperando pago del comprador'
-                                : 'En camino'),
-                    trailing: Text(_usd(r['price'] as num)),
-                    onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) =>
-                                OrderPage(orderId: r['id'] as String))),
+                    title: Text(const {
+                          'venta': 'Venta completada',
+                          'reembolso': 'Devolución de una compra',
+                          'compra': 'Compra pagada con saldo',
+                          'retiro': 'Retiro a tu Pago Móvil',
+                          'retiro_devuelto': 'Retiro devuelto',
+                          'ajuste': 'Ajuste de Pavito',
+                        }[m['tipo']] ??
+                        '${m['tipo']}'),
+                    subtitle: Text(_fecha('${m['creado']}')),
+                    trailing: Text(
+                        '${(m['monto'] as num) > 0 ? '+' : '−'}${_usd((m['monto'] as num).abs())}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: (m['monto'] as num) > 0 ? context.leaf : ink)),
                   ),
               ]),
             ),

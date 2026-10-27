@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -26,10 +27,8 @@ final _secciones = <_Seccion>[
       'Compradores que dicen haber pagado', () => const _OrdersTab(status: 'revision')),
   _Seccion('Problemas', Icons.report_problem_outlined, 'disputa',
       'Pedidos con un reclamo abierto', () => const _OrdersTab(status: 'disputa')),
-  _Seccion('Pagar a vendedores', Icons.payments_outlined, 'por_pagar',
-      'Ventas completadas sin pagar', () => const _PayoutsTab()),
-  _Seccion('Reembolsos', Icons.undo_rounded, 'reembolsos',
-      'Dinero que hay que devolver', () => const _RefundsTab()),
+  _Seccion('Retiros', Icons.payments_outlined, 'por_pagar',
+      'Saldo que piden retirar a su Pago Móvil', () => const _RetirosTab()),
   _Seccion('Denuncias', Icons.flag_outlined, 'denuncias',
       'Anuncios o usuarios denunciados', () => const _ReportsTab()),
   _Seccion('Destacados y tasa', Icons.rocket_launch_outlined, 'destacados',
@@ -61,8 +60,8 @@ class _Contadores {
     final r = await Future.wait([
       c(_db.from('orders').select('id').eq('status', 'revision').limit(1).count(CountOption.exact)),
       c(_db.from('orders').select('id').eq('status', 'disputa').limit(1).count(CountOption.exact)),
-      c(_db.from('orders').select('id').eq('status', 'liberado').isFilter('paid_out_at', null).limit(1).count(CountOption.exact)),
-      c(_db.from('orders').select('id').eq('status', 'cancelado').not('paid_at', 'is', null).isFilter('refunded_at', null).limit(1).count(CountOption.exact)),
+      c(_db.from('retiros').select('id').eq('estado', 'pendiente').limit(1).count(CountOption.exact)),
+      Future.value(0),
       c(_db.from('reports').select('id').eq('status', 'abierta').limit(1).count(CountOption.exact)),
       c(_db.from('promotions').select('id').eq('status', 'revision').limit(1).count(CountOption.exact)),
       c(_db.from('listings').select('id').eq('status', 'active').limit(1).count(CountOption.exact)),
@@ -529,8 +528,8 @@ class _OrdersTabState extends State<_OrdersTab> {
   Future<void> _set(String id, String status) async {
     const q = {
       'retenido': '¿Confirmas que el pago llegó a la cuenta? El vendedor recibirá el aviso para enviar.',
-      'cancelado': '¿Cancelar este pedido? La prenda vuelve a la venta.',
-      'liberado': '¿Cerrar el reclamo a favor del vendedor? Quedará listo para pagarle.',
+      'cancelado': '¿Cancelar este pedido? Si ya estaba pagado, el dinero vuelve al instante al Saldo Pavito del comprador.',
+      'liberado': '¿Cerrar el reclamo a favor del vendedor? El dinero pasa a su Saldo Pavito.',
     };
     if (!await _seguro(context, q[status] ?? '¿Confirmas el cambio?')) return;
     try {
@@ -906,16 +905,16 @@ class _PromosTabState extends State<_PromosTab> {
   }
 }
 
-/// Ventas completadas que falta pagar al vendedor, con sus datos de Pago Móvil.
-class _PayoutsTab extends StatefulWidget {
-  const _PayoutsTab();
+/// Retiros pedidos por los usuarios desde su Saldo Pavito: se pagan por Pago Móvil.
+class _RetirosTab extends StatefulWidget {
+  const _RetirosTab();
   @override
-  State<_PayoutsTab> createState() => _PayoutsTabState();
+  State<_RetirosTab> createState() => _RetirosTabState();
 }
 
-class _PayoutsTabState extends State<_PayoutsTab> {
+class _RetirosTabState extends State<_RetirosTab> {
   List<Map<String, dynamic>>? _rows;
-  Map<String, Map> _payout = {};
+  bool _verPagados = false;
 
   @override
   void initState() {
@@ -926,30 +925,12 @@ class _PayoutsTabState extends State<_PayoutsTab> {
   Future<void> _load() async {
     try {
       final r = await _db
-          .from('orders')
-          .select(
-              'id, price, seller_id, bundle_id, updated_at, released_at, listings(title), seller:profiles!orders_seller_id_fkey(username)')
-          .eq('status', 'liberado')
-          .isFilter('paid_out_at', null)
-          .order('updated_at', ascending: true);
-      final ids = {for (final x in r) x['seller_id'] as String}.toList();
-      final p = ids.isEmpty
-          ? <Map<String, dynamic>>[]
-          : await _db
-              .from('private_profiles')
-              .select('id, payout_resumen, payout_cambiado')
-              .inFilter('id', ids);
-      if (!mounted) return;
-      setState(() {
-        _rows = List<Map<String, dynamic>>.from(r);
-        _payout = {
-          for (final x in p)
-            x['id'] as String: {
-              ...((x['payout_resumen'] as Map?) ?? const {}),
-              if (x['payout_cambiado'] != null) '_cambiado': x['payout_cambiado'],
-            }
-        };
-      });
+          .from('retiros')
+          .select('id, monto, estado, destino, ref_pago, motivo, creado, resuelto_at, user:profiles!retiros_user_id_fkey(username)')
+          .eq('estado', _verPagados ? 'pagado' : 'pendiente')
+          .order('creado', ascending: !_verPagados)
+          .limit(100);
+      if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r));
     } catch (_) {
       if (mounted) setState(() => _rows = []);
     }
@@ -957,35 +938,35 @@ class _PayoutsTabState extends State<_PayoutsTab> {
 
   void _aviso(Object e) {
     if (!mounted) return;
-    final t = e is PostgrestException ? e.message : 'No se pudo completar.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e is PostgrestException ? e.message : 'No se pudo completar.')));
   }
 
-  /// Muestra los datos completos de cobro. Solo funciona para una venta por pagar
-  /// y cada consulta queda registrada en la auditoría.
-  Future<void> _verDatos(String orderId) async {
+  /// Datos completos para hacer el Pago Móvil (cada consulta queda registrada).
+  Future<void> _verDatos(Map<String, dynamic> r) async {
     try {
       final d = Map<String, dynamic>.from(
-          await _db.rpc('admin_datos_cobro', params: {'p_order': orderId}) as Map);
+          (await _db.rpc('admin_datos_retiro', params: {'p_retiro': r['id']})) as Map);
       if (!mounted) return;
+      final bs = tasaBs > 0 ? (_n(r['monto']) * tasaBs) : 0;
       await showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (c) => AlertDialog(
           title: const Text('Datos para el Pago Móvil'),
           content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SelectableText('Banco: ${d['banco']}'),
-            SelectableText('Cédula / RIF: ${d['cedula']}'),
-            SelectableText('Teléfono: ${d['telefono']}'),
-            if (d['cambiado_reciente'] == true)
-              const Padding(
-                padding: EdgeInsets.only(top: 10),
-                child: Text('Estos datos cambiaron hace menos de 24 h. Confirma con el vendedor antes de pagar.',
-                    style: TextStyle(color: LP.clayText, fontWeight: FontWeight.w700)),
-              ),
-            const SizedBox(height: 10),
-            Text('Esta consulta quedó registrada.', style: TextStyle(color: ctx.muted, fontSize: 12)),
+            SelectableText('Banco: ${d['banco']}\nCédula / RIF: ${d['cedula']}\nTeléfono: ${d['telefono']}'),
+            const SizedBox(height: 8),
+            SelectableText('Monto: ${_usd(r['monto'])}${bs > 0 ? '  ·  Bs ${bs.toStringAsFixed(2)} (tasa ${tasaBs.toStringAsFixed(2)})' : ''}',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            if (d['cambiado_despues'] == true) ...[
+              const SizedBox(height: 8),
+              const Text('Cambió sus datos después de pedir el retiro: no se puede pagar. Recházalo.',
+                  style: TextStyle(color: Color(0xFFB3261E), fontWeight: FontWeight.w700)),
+            ],
+            const SizedBox(height: 8),
+            Text('Esta consulta quedó registrada.', style: TextStyle(color: c.muted, fontSize: 12)),
           ]),
-          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+          actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cerrar'))],
         ),
       );
     } catch (e) {
@@ -993,80 +974,134 @@ class _PayoutsTabState extends State<_PayoutsTab> {
     }
   }
 
+  Future<void> _pagar(Map<String, dynamic> r) async {
+    final ref = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('¿Ya le enviaste ${_usd(r['monto'])}?'),
+        content: TextField(
+            controller: ref,
+            decoration: const InputDecoration(labelText: 'Referencia del Pago Móvil que hiciste')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Volver')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, ya le pagué')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _db.rpc('admin_pagar_retiro', params: {'p_retiro': r['id'], 'p_ref': ref.text.trim()});
+    } catch (e) {
+      _aviso(e);
+    }
+    _load();
+  }
+
+  Future<void> _rechazar(Map<String, dynamic> r) async {
+    final motivo = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Rechazar retiro'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('El dinero vuelve a su Saldo Pavito y le avisamos el motivo.'),
+          const SizedBox(height: 8),
+          TextField(controller: motivo, decoration: const InputDecoration(labelText: 'Motivo (ej. datos incorrectos)')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Volver')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Rechazar')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _db.rpc('admin_rechazar_retiro', params: {'p_retiro': r['id'], 'p_motivo': motivo.text.trim()});
+    } catch (e) {
+      _aviso(e);
+    }
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final rows = _rows;
-    if (rows == null) return const Center(child: CircularProgressIndicator());
-    if (rows.isEmpty) {
-      return Center(
-          child: Text('No hay pagos pendientes a vendedores.',
-              style: TextStyle(color: context.muted)));
-    }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(padding: const EdgeInsets.all(16), children: [
-        for (final r in rows)
-          Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(field(r['listings'], 'title', 'Artículo'),
-                            style: const TextStyle(fontWeight: FontWeight.w700)),
-                      ),
-                      if (_atrasado(r['released_at'] ?? r['updated_at'], 2))
-                        const _Atrasado(),
-                    ]),
-                    Text(
-                        '@${field(r['seller'], 'username', '?')} recibe \$${(r['price'] as num).toStringAsFixed(2)}'
-                        '${r['bundle_id'] != null ? ' (parte de un lote)' : ''}'),
-                    const SizedBox(height: 4),
-                    Builder(builder: (_) {
-                      final p = _payout[r['seller_id']] ?? const {};
-                      final ch = DateTime.tryParse('${p['_cambiado'] ?? ''}');
-                      final reciente = ch != null && DateTime.now().difference(ch).inHours < 24;
-                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(p['banco'] == null
-                            ? 'El vendedor no ha puesto sus datos de cobro (Yo → Saldo).'
-                            : 'Pago Móvil: ${p['banco']} · ${p['cedula']} · ${p['telefono']}'),
-                        if (reciente)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 4),
-                            child: Text('Cambió sus datos hace menos de 24 h: no se puede pagar todavía.',
-                                style: TextStyle(color: LP.clayText, fontWeight: FontWeight.w700)),
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Row(children: [
+          ChoiceChip(label: const Text('Por pagar'), selected: !_verPagados, onSelected: (_) {
+            setState(() => _verPagados = false);
+            _load();
+          }),
+          const SizedBox(width: 8),
+          ChoiceChip(label: const Text('Pagados'), selected: _verPagados, onSelected: (_) {
+            setState(() => _verPagados = true);
+            _load();
+          }),
+        ]),
+      ),
+      Expanded(
+        child: rows == null
+            ? const Center(child: CircularProgressIndicator())
+            : rows.isEmpty
+                ? Center(child: Text(_verPagados ? 'Todavía no hay retiros pagados.' : 'No hay retiros por pagar.',
+                    style: TextStyle(color: context.muted)))
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(padding: const EdgeInsets.all(16), children: [
+                      for (final r in rows)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Row(children: [
+                                Expanded(
+                                  child: Text('@${field(r['user'], 'username', '?')} retira ${_usd(r['monto'])}',
+                                      style: const TextStyle(fontWeight: FontWeight.w800)),
+                                ),
+                                if (!_verPagados && _atrasado(r['creado'], 2)) const _Atrasado(),
+                              ]),
+                              if (tasaBs > 0)
+                                Text('≈ Bs ${(_n(r['monto']) * tasaBs).toStringAsFixed(2)} a la tasa de hoy',
+                                    style: TextStyle(color: context.muted)),
+                              Text('Destino: ${_destino(r['destino'])}', style: TextStyle(color: context.muted)),
+                              if (_verPagados && r['ref_pago'] != null)
+                                Text('Referencia: ${r['ref_pago']}', style: TextStyle(color: context.muted)),
+                              if (!_verPagados) ...[
+                                const SizedBox(height: 10),
+                                Wrap(spacing: 8, runSpacing: 8, children: [
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                                    icon: const Icon(Icons.lock_open_outlined, size: 18),
+                                    label: const Text('Ver datos para pagar'),
+                                    onPressed: () => _verDatos(r),
+                                  ),
+                                  FilledButton(
+                                      style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                                      onPressed: () => _pagar(r),
+                                      child: const Text('Ya le pagué')),
+                                  TextButton(onPressed: () => _rechazar(r), child: const Text('Rechazar')),
+                                ]),
+                              ],
+                            ]),
                           ),
-                      ]);
-                    }),
-                    const SizedBox(height: 8),
-                    Wrap(spacing: 8, runSpacing: 8, children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.lock_open_outlined, size: 18),
-                      label: const Text('Ver datos para pagar'),
-                      onPressed: () => _verDatos(r['id'] as String),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!await _seguro(context, '¿Ya le transferiste a este vendedor? Se marca como pagado y no se puede deshacer.')) return;
-                        try {
-                          await _db.rpc('admin_mark_paid',
-                              params: {'p_order': r['id']});
-                        } catch (e) {
-                          _aviso(e);
-                        }
-                        _load();
-                      },
-                      child: const Text('Ya le pagué'),
-                    ),
+                        ),
                     ]),
-                  ]),
-            ),
-          ),
-      ]),
-    );
+                  ),
+      ),
+    ]);
+  }
+}
+
+/// El destino guardado es el resumen enmascarado de los datos de cobro.
+String _destino(Object? d) {
+  try {
+    final m = d is Map ? d : (jsonDecode('${d ?? ''}') as Map);
+    return '${m['banco']} · ${m['cedula']} · ${m['telefono']}';
+  } catch (_) {
+    return '${d ?? '—'}';
   }
 }
 
@@ -1207,7 +1242,7 @@ class _MoneyTabState extends State<_MoneyTab> {
         );
     final alertas = <String>[
       if (_n(c['pagos_atrasados']) > 0)
-        '${c['pagos_atrasados']} pago(s) a vendedores pasados de 2 días hábiles',
+        '${c['pagos_atrasados']} retiro(s) pasados de 2 días hábiles',
       if (_n(c['reembolsos_atrasados']) > 0)
         '${c['reembolsos_atrasados']} reembolso(s) pasados de 5 días hábiles',
       if (_n(c['disputas_atrasadas']) > 0)
@@ -1233,8 +1268,8 @@ class _MoneyTabState extends State<_MoneyTab> {
         Text('Siempre tiene que estar en la cuenta de Pavito.',
             style: TextStyle(color: context.muted)),
         fila('Pedidos en curso', c['retenido'], ayuda: 'Pagos confirmados que aún no se liberan'),
-        fila('Por pagar a vendedores', c['por_pagar'], ayuda: 'Ventas completadas sin pagar'),
-        fila('Reembolsos pendientes', c['reembolsos'], ayuda: 'Pedidos cancelados ya pagados'),
+        fila('Saldos de los usuarios', c['saldos'], ayuda: 'Ventas cobradas y devoluciones que aún no retiran'),
+        fila('Retiros por pagar', c['retiros_pendientes'], ayuda: 'Pedidos de retiro a Pago Móvil'),
         fila('Total de otros', c['terceros'], fuerte: true),
         const Divider(height: 28),
         Text('Ganancia de Pavito', style: display(18, color: context.ink)),
@@ -1303,126 +1338,22 @@ class _MoneyTabState extends State<_MoneyTab> {
   }
 }
 
-/// Pedidos cancelados que ya estaban pagados: hay que devolver el dinero al comprador.
-class _RefundsTab extends StatefulWidget {
-  const _RefundsTab();
-  @override
-  State<_RefundsTab> createState() => _RefundsTabState();
-}
-
-class _RefundsTabState extends State<_RefundsTab> {
-  List<Map<String, dynamic>>? _rows;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final r = await _db
-          .from('orders')
-          .select(
-              'id, price, fee, bundle_id, pay_ref, cancelled_at, updated_at, listings(title), buyer:profiles!orders_buyer_id_fkey(username)')
-          .eq('status', 'cancelado')
-          .not('paid_at', 'is', null)
-          .isFilter('refunded_at', null)
-          .order('cancelled_at', ascending: true);
-      // Un lote se devuelve de una vez: se agrupa por lote.
-      final g = <String, Map<String, dynamic>>{};
-      for (final x in r) {
-        final k = (x['bundle_id'] ?? x['id']) as String;
-        final t = _n(x['price']) + _n(x['fee']);
-        if (g.containsKey(k)) {
-          g[k]!['total'] = _n(g[k]!['total']) + t;
-          g[k]!['n'] = (g[k]!['n'] as int) + 1;
-        } else {
-          g[k] = {...x, 'total': t, 'n': 1};
-        }
-      }
-      // Teléfono del comprador para devolverle el dinero (los datos de entrega van por función segura).
-      for (final x in g.values) {
-        try {
-          x['delivery'] = await _db.rpc('order_delivery', params: {'oid': x['id']});
-        } catch (_) {}
-      }
-      if (mounted) setState(() => _rows = g.values.toList());
-    } catch (_) {
-      if (mounted) setState(() => _rows = []);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = _rows;
-    if (rows == null) return const Center(child: CircularProgressIndicator());
-    if (rows.isEmpty) {
-      return Center(
-          child: Text('No hay reembolsos pendientes.',
-              style: TextStyle(color: context.muted)));
-    }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(padding: const EdgeInsets.all(16), children: [
-        for (final r in rows)
-          Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(
-                        r['n'] == 1
-                            ? field(r['listings'], 'title', 'Artículo')
-                            : 'Lote de ${r['n']} artículos',
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                  if (_atrasado(r['cancelled_at'] ?? r['updated_at'], 5)) const _Atrasado(),
-                ]),
-                Text('Devolver ${_usd(r['total'])} a @${field(r['buyer'], 'username', '?')}'),
-                Text('Referencia de su pago: ${r['pay_ref'] ?? '—'}',
-                    style: TextStyle(color: context.muted)),
-                if (r['delivery'] is Map && (r['delivery'] as Map)['phone'] != null)
-                  Text('Teléfono: ${(r['delivery'] as Map)['phone']}',
-                      style: TextStyle(color: context.muted)),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () async {
-                    if (!await _seguro(context, '¿Ya le devolviste el dinero al comprador? Se marca como reembolsado.')) return;
-                    try {
-                      await _db.rpc('admin_mark_refunded', params: {'p_order': r['id']});
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(e is PostgrestException ? e.message : 'No se pudo marcar.')));
-                      }
-                    }
-                    _load();
-                  },
-                  child: const Text('Ya le devolví el dinero'),
-                ),
-              ]),
-            ),
-          ),
-      ]),
-    );
-  }
-}
-
 const _accion = {
   'estado_pedido': 'Cambio de estado de pedido',
   'pago_a_vendedor': 'Pago a vendedor',
   'reembolso': 'Reembolso',
   'ver_datos_cobro': 'Vio datos bancarios',
+  'ver_datos_retiro': 'Vio datos para un retiro',
   'cambio_datos_cobro': 'Cambio de datos de cobro',
+  'pedir_retiro': 'Pidió un retiro',
+  'pagar_retiro': 'Pagó un retiro',
+  'rechazar_retiro': 'Rechazó un retiro',
+  'pago_con_saldo': 'Pagó con su saldo',
   'bloqueo': 'Bloqueó a un usuario',
   'desbloqueo': 'Desbloqueó a un usuario',
   'tasa': 'Cambio de tasa',
   'cuadre': 'Cuadre guardado',
 };
-
 
 /// Confirmación del administrador antes de mover dinero o estados.
 Future<bool> _seguro(BuildContext context, String texto) async {

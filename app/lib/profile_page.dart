@@ -81,7 +81,7 @@ class ProfilePage extends StatelessWidget {
               page: SellerProfilePage(sellerId: a.id, username: a.username)),
           _item(context, Icons.favorite_border, 'Favoritos',
               page: const FavoritesPage()),
-          _item(context, Icons.account_balance_wallet_outlined, 'Saldo',
+          _item(context, Icons.account_balance_wallet_outlined, 'Saldo Pavito',
               page: const SaldoPage()),
           _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
               page: const OrdersPage()),

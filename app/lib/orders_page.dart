@@ -313,6 +313,7 @@ class _OrderPageState extends State<OrderPage> {
   final _ref = TextEditingController();
   String _pago = pagoPagoMovil;
   final _tracking = TextEditingController();
+  double _saldo = 0;
 
   @override
   void initState() {
@@ -347,6 +348,12 @@ class _OrderPageState extends State<OrderPage> {
             .select('id, price, fee, listings(title)')
             .eq('bundle_id', row['bundle_id'] as String)
             .order('created_at', ascending: true));
+      }
+      if (row['status'] == 'esperando_pago') {
+        try {
+          final m = await _db.rpc('mi_saldo') as Map?;
+          _saldo = ((m?['disponible'] as num?) ?? 0).toDouble();
+        } catch (_) {}
       }
       if (!mounted) return;
       setState(() {
@@ -414,6 +421,41 @@ class _OrderPageState extends State<OrderPage> {
     final ink = Theme.of(context).colorScheme.onSurface;
 
     final actions = <Widget>[];
+    if (isBuyer && status == 'esperando_pago' && _saldo >= price + fee) {
+      actions.addAll([
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: context.leafSoft, borderRadius: BorderRadius.circular(14)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Tienes ${_money(_saldo)} en tu Saldo Pavito',
+                style: TextStyle(fontWeight: FontWeight.w800, color: context.leaf)),
+            const Text('Paga al instante, sin transferencias ni referencias.'),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      if (!await _confirmar(context, '¿Pagar con tu saldo?',
+                          'Se descuentan ${_money(price + fee)} de tu Saldo Pavito. El pago queda protegido hasta que recibas tu compra.',
+                          'Sí, pagar')) return;
+                      setState(() => _busy = true);
+                      try {
+                        await _db.rpc('pagar_con_saldo', params: {'p_order': widget.orderId});
+                        await _load();
+                      } on PostgrestException catch (e) {
+                        setState(() => _error = e.message);
+                      } catch (_) {
+                        setState(() => _error = 'No se pudo pagar. Revisa tu conexión.');
+                      }
+                      if (mounted) setState(() => _busy = false);
+                    },
+              child: Text('Pagar ${_money(price + fee)} con mi saldo'),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 18),
+      ]);
+    }
     if (isBuyer && status == 'esperando_pago') {
       final metodos = metodosPago();
       if (!metodos.contains(_pago)) _pago = metodos.first;
@@ -568,13 +610,13 @@ class _OrderPageState extends State<OrderPage> {
     } else if (status == 'enviado' && !isBuyer) {
       hint = 'Esperando que el comprador confirme que la recibió.';
     } else if (status == 'liberado' && !isBuyer) {
-      hint = 'Completado. El pago de ${_money(price)} es tuyo.';
+      hint = 'Completado. Los ${_money(price)} ya están en tu Saldo Pavito (Yo → Saldo Pavito).';
     } else if (status == 'disputa') {
       hint = 'Nuestro equipo revisará el caso y te contactará.';
     } else if (status == 'cancelado' && isBuyer && o['paid_at'] != null) {
       hint = o['refunded_at'] != null
-          ? 'Ya te devolvimos el dinero por el mismo medio con que pagaste.'
-          : 'Te devolvemos todo lo que pagaste, por el mismo medio, en un máximo de 5 días hábiles.';
+          ? 'Te devolvimos ${_money(price + fee)} a tu Saldo Pavito. Úsalo en otra compra o retíralo en Yo → Saldo Pavito.'
+          : 'Te devolvemos todo lo que pagaste a tu Saldo Pavito.';
     }
 
     return RefreshIndicator(
