@@ -55,14 +55,14 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 
 ## 5. Pagos y Compra protegida
 
-1. El comprador paga por **Pago Móvil a la cuenta de Pavito** que muestra la app (nunca a la cuenta del vendedor) y escribe la referencia del pago.
+1. El comprador paga **a la cuenta de Pavito** que muestra la app (Pago Móvil, Binance Pay o Zinli; nunca a la cuenta del vendedor) y escribe la referencia del pago.
 2. Pavito verifica que el pago llegó. Hasta entonces el pedido figura como "Verificando el pago". Una misma referencia no sirve para dos pedidos.
 3. Con el pago confirmado, el dinero queda **retenido** por Pavito y el vendedor recibe la dirección de entrega.
 4. El dinero se **libera al vendedor** cuando:
    - el comprador confirma que recibió el artículo, o
    - pasan **7 días** desde que el vendedor marcó el envío sin que el comprador reporte un problema.
 5. Pavito paga al vendedor el precio completo por Pago Móvil, a los datos de cobro que tenga en Yo → Saldo, en un plazo de [2 días hábiles] desde la liberación. Si sus datos están incompletos, el pago espera hasta que los complete.
-6. Si el pedido se cancela antes del envío, o se resuelve una disputa a favor del comprador, Pavito **devuelve el importe** al Pago Móvil de origen en [5 días hábiles].
+6. Si el pedido se cancela antes del envío, o se resuelve una disputa a favor del comprador, Pavito **devuelve el importe** por el mismo medio con que se pagó en [5 días hábiles].
 7. La tarifa de protección no se devuelve si el pedido se completó; sí se devuelve si se cancela por causa del vendedor o se resuelve a favor del comprador.
 8. El dinero retenido se guarda en una cuenta de Pavito separada de sus gastos y no genera intereses para nadie.
 

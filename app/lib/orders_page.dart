@@ -74,6 +74,37 @@ String? notaEntrega(String m) {
   return null;
 }
 
+/// Formas de pago. Pago Móvil en bolívares; Binance Pay y Zinli en dólares.
+/// Binance y Zinli se ocultan si sus datos en config.dart están vacíos.
+const pagoPagoMovil = 'Pago Móvil';
+const pagoBinance = 'Binance Pay';
+const pagoZinli = 'Zinli';
+List<String> metodosPago() => [
+      pagoPagoMovil,
+      if (binancePayId.isNotEmpty) pagoBinance,
+      if (zinliCorreo.isNotEmpty) pagoZinli,
+    ];
+String instruccionPago(String m) {
+  if (m == pagoBinance) {
+    return 'En Binance ve a Pay → Enviar, pega el Pay ID y envía el monto exacto en USDT. '
+        'Luego copia aquí el "ID de la orden" y toca "Ya pagué".';
+  }
+  if (m == pagoZinli) {
+    return 'En Zinli toca Enviar, escribe el correo y envía el monto exacto. '
+        'Luego copia aquí el número de la transacción y toca "Ya pagué".';
+  }
+  return 'Haz el pago desde tu banco, luego escribe aquí el número de referencia y toca "Ya pagué".';
+}
+String etiquetaRefPago(String m) => m == pagoBinance
+    ? 'ID de la orden de Binance'
+    : m == pagoZinli
+        ? 'Número de transacción Zinli'
+        : 'Número de referencia';
+/// La referencia guarda el método al inicio (p. ej. "Binance: 123…"), así el
+/// equipo sabe dónde verificarla sin cambiar la base de datos.
+String refConMetodo(String m, String r) =>
+    m == pagoBinance ? 'Binance: $r' : m == pagoZinli ? 'Zinli: $r' : r;
+
 /// Punto de entrada del botón "Comprar".
 void startCheckout(BuildContext context, Listing item) {
   if (appState.account == null) {
@@ -250,6 +281,7 @@ class _OrderPageState extends State<OrderPage> {
   bool _busy = false;
   String? _error;
   final _ref = TextEditingController();
+  String _pago = pagoPagoMovil;
   final _tracking = TextEditingController();
 
   @override
@@ -353,25 +385,46 @@ class _OrderPageState extends State<OrderPage> {
 
     final actions = <Widget>[];
     if (isBuyer && status == 'esperando_pago') {
+      final metodos = metodosPago();
+      if (!metodos.contains(_pago)) _pago = metodos.first;
+      final m = _pago;
       actions.addAll([
-        Text('Paga por Pago Móvil', style: display(20, color: ink)),
+        Text('¿Cómo quieres pagar?', style: display(20, color: ink)),
         const SizedBox(height: 8),
-        _Box(children: [
-          _Line('Banco', pagoMovilBanco),
-          _Line('Cédula / RIF', pagoMovilCedula),
-          _Line('Teléfono', pagoMovilTelefono),
-          _Line('Monto en dólares', _money(price + fee), bold: true),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final x in metodos)
+            ChoiceChip(
+              label: Text(x),
+              selected: x == m,
+              onSelected: _busy ? null : (_) => setState(() { _pago = x; _ref.clear(); }),
+            ),
         ]),
         const SizedBox(height: 10),
-        Text(
-            'Haz el pago desde tu banco, luego escribe aquí el número de referencia y toca "Ya pagué".',
-            style: TextStyle(color: context.muted, fontSize: 13)),
+        _Box(children: [
+          if (m == pagoPagoMovil) ...[
+            _Line('Banco', pagoMovilBanco),
+            _Line('Cédula / RIF', pagoMovilCedula),
+            _Line('Teléfono', pagoMovilTelefono),
+          ],
+          if (m == pagoBinance) ...[
+            _Line('Pay ID', binancePayId),
+            _Line('Nombre', binancePayNombre),
+            _Line('Moneda', 'USDT'),
+          ],
+          if (m == pagoZinli) ...[
+            _Line('Correo Zinli', zinliCorreo),
+            _Line('Nombre', zinliNombre),
+          ],
+          _Line(m == pagoBinance ? 'Monto en USDT' : 'Monto en dólares', _money(price + fee), bold: true),
+        ]),
+        const SizedBox(height: 10),
+        Text(instruccionPago(m), style: TextStyle(color: context.muted, fontSize: 13, height: 1.35)),
         const SizedBox(height: 10),
         TextField(
             controller: _ref,
-            keyboardType: TextInputType.number,
-            decoration:
-                const InputDecoration(labelText: 'Número de referencia')),
+            keyboardType: m == pagoPagoMovil ? TextInputType.number : TextInputType.text,
+            maxLength: 30,
+            decoration: InputDecoration(labelText: etiquetaRefPago(m), counterText: '')),
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy
@@ -382,7 +435,7 @@ class _OrderPageState extends State<OrderPage> {
                     setState(() => _error = 'Escribe la referencia del pago.');
                     return;
                   }
-                  _update({'status': 'revision', 'pay_ref': r});
+                  _update({'status': 'revision', 'pay_ref': refConMetodo(m, r)});
                 },
           child: const Text('Ya pagué'),
         ),
@@ -457,8 +510,8 @@ class _OrderPageState extends State<OrderPage> {
       hint = 'Nuestro equipo revisará el caso y te contactará.';
     } else if (status == 'cancelado' && isBuyer && o['paid_at'] != null) {
       hint = o['refunded_at'] != null
-          ? 'Ya te devolvimos el dinero a tu Pago Móvil.'
-          : 'Te devolvemos todo lo que pagaste a tu Pago Móvil en un máximo de 5 días hábiles.';
+          ? 'Ya te devolvimos el dinero por el mismo medio con que pagaste.'
+          : 'Te devolvemos todo lo que pagaste, por el mismo medio, en un máximo de 5 días hábiles.';
     }
 
     return RefreshIndicator(
