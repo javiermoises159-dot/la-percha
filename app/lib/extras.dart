@@ -1070,7 +1070,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     final photos = widget.item.photos;
     if (photos.length <= 1) {
       return AspectRatio(
-          aspectRatio: 1, child: ListingPhoto(item: widget.item, iconSize: 96));
+          aspectRatio: 1, child: ListingPhoto(item: widget.item, iconSize: 96, grande: true));
     }
     return AspectRatio(
       aspectRatio: 1,
@@ -1082,7 +1082,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (_, __, ___) =>
-                  ListingPhoto(item: widget.item, iconSize: 96)),
+                  ListingPhoto(item: widget.item, iconSize: 96, grande: true)),
         ),
         Positioned(
           bottom: 10,

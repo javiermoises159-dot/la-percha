@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Listing {
@@ -292,13 +293,21 @@ class ListingsStore extends ChangeNotifier {
     if (uid == null) return 'Inicia sesión para vender.';
     try {
       final urls = <String>[];
-      for (final photo in photos.take(5)) {
+      for (final (i, photo) in photos.take(5).indexed) {
         final png = photo.length > 4 && photo[0] == 0x89 && photo[1] == 0x50;
-        final path =
-            '$uid/${DateTime.now().microsecondsSinceEpoch}.${png ? 'png' : 'jpg'}';
+        final ts = DateTime.now().microsecondsSinceEpoch;
+        // La portada lleva además una miniatura ("m_…" → "m_…-mini.jpg") para la cuadrícula.
+        final mini = i == 0 ? miniaturaJpg(photo) : null;
+        final path = '$uid/${mini != null ? 'm_' : ''}$ts.${png ? 'png' : 'jpg'}';
         await _db.storage.from('listing-photos').uploadBinary(path, photo,
             fileOptions:
                 FileOptions(contentType: png ? 'image/png' : 'image/jpeg'));
+        if (mini != null) {
+          try {
+            await _db.storage.from('listing-photos').uploadBinary('$uid/m_$ts-mini.jpg', mini,
+                fileOptions: const FileOptions(contentType: 'image/jpeg'));
+          } catch (_) {}
+        }
         urls.add(_db.storage.from('listing-photos').getPublicUrl(path));
       }
       await _db.from('listings').insert({
@@ -329,7 +338,9 @@ final listingsStore = ListingsStore();
 
 /// Foto de la prenda: la real si existe, o un color con icono.
 class ListingPhoto extends StatelessWidget {
-  const ListingPhoto({super.key, required this.item, this.iconSize = 48});
+  const ListingPhoto({super.key, required this.item, this.iconSize = 48, this.grande = false});
+  /// true = foto completa (vistas grandes); false = miniatura si existe (cuadrículas).
+  final bool grande;
   final Listing item;
   final double iconSize;
 
@@ -340,8 +351,22 @@ class ListingPhoto extends StatelessWidget {
         child: Icon(categoryIcons[item.category] ?? Icons.checkroom,
             size: iconSize, color: const Color(0xFFB9B2AA)));
     if (item.photos.isEmpty) return placeholder;
+    final full = item.photos.first;
+    final mini = grande ? null : urlMiniatura(full);
+    if (mini != null) {
+      return Image.network(
+        mini,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Image.network(full,
+            fit: BoxFit.cover, width: double.infinity, height: double.infinity,
+            errorBuilder: (_, __, ___) => placeholder),
+        loadingBuilder: (_, child, progress) => progress == null ? child : placeholder,
+      );
+    }
     return Image.network(
-      item.photos.first,
+      full,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
@@ -350,4 +375,23 @@ class ListingPhoto extends StatelessWidget {
           progress == null ? child : placeholder,
     );
   }
+}
+
+
+/// Miniatura JPG de unos 400 px de ancho para las cuadrículas (gasta 5–6 veces menos datos).
+Uint8List? miniaturaJpg(Uint8List foto) {
+  try {
+    final d = img.decodeImage(foto);
+    if (d == null) return null;
+    final r = d.width > 400 ? img.copyResize(d, width: 400, interpolation: img.Interpolation.average) : d;
+    return Uint8List.fromList(img.encodeJpg(r, quality: 72));
+  } catch (_) {
+    return null;
+  }
+}
+
+/// URL de la miniatura de una portada subida con miniatura ("…/m_123.jpg" → "…/m_123-mini.jpg").
+String? urlMiniatura(String url) {
+  final m = RegExp(r'^(.*/m_\d+)\.(jpg|png)$').firstMatch(url);
+  return m == null ? null : '${m.group(1)}-mini.jpg';
 }

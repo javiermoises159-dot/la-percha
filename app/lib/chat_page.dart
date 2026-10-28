@@ -58,18 +58,36 @@ class _ChatPageState extends State<ChatPage> {
   final _ctrl = TextEditingController();
   final _scroll = ScrollController();
   Timer? _timer;
+  RealtimeChannel? _canal;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _load());
+    // Tiempo real: el servidor avisa cuando llega un mensaje a esta conversación.
+    // Si la conexión en vivo falla, el temporizador de respaldo sigue trayendo mensajes.
+    try {
+      _canal = _db
+          .channel('chat-${widget.threadId}')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'messages',
+            filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq, column: 'thread_id', value: widget.threadId),
+            callback: (_) => _load(),
+          )
+          .subscribe();
+    } catch (_) {}
+    _timer = Timer.periodic(const Duration(seconds: 20), (_) => _load());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    final c = _canal;
+    if (c != null) _db.removeChannel(c);
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();

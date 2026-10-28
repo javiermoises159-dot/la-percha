@@ -114,7 +114,7 @@ class _OfferBarState extends State<OfferBar> {
   void initState() {
     super.initState();
     _load();
-    _timer = Timer.periodic(const Duration(seconds: 6), (_) => _load());
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _load());
   }
 
   @override
