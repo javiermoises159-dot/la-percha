@@ -19,7 +19,7 @@ csp = "; ".join([
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     f"img-src 'self' data: blob: https://{SUPA}",
-    f"connect-src 'self' https://{SUPA} wss://{SUPA} https://fonts.gstatic.com https://fonts.googleapis.com https://challenges.cloudflare.com",
+    f"connect-src 'self' blob: https://{SUPA} wss://{SUPA} https://fonts.gstatic.com https://fonts.googleapis.com https://challenges.cloudflare.com",
     "frame-src https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
