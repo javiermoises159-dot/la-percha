@@ -71,6 +71,15 @@ class AppState extends ChangeNotifier {
     super.dispose();
   }
 
+  /// Pregunta al servidor si esta cuenta es de administrador (ya no se lee de la tabla pública).
+  Future<bool> _esAdmin() async {
+    try {
+      return await _db.rpc('is_admin') == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> refresh() async {
     final user = _db.auth.currentUser;
     if (user == null) {
@@ -82,7 +91,7 @@ class AppState extends ChangeNotifier {
     }
     try {
       final row =
-          await _db.from('profiles').select().eq('id', user.id).maybeSingle();
+          await _db.from('profiles').select('username, city').eq('id', user.id).maybeSingle();
       sinPerfil = row == null;
       if (row != null) {
         account = Account(
@@ -90,7 +99,7 @@ class AppState extends ChangeNotifier {
           username: row['username'] as String,
           city: row['city'] as String,
           email: user.email ?? '',
-          isAdmin: row['is_admin'] == true,
+          isAdmin: await _esAdmin(),
         );
         final f = await _db.from('favorites').select('listing_id, price_at');
         favs = {for (final r in f) r['listing_id'] as String};

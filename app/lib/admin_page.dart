@@ -919,7 +919,7 @@ class _UsersTabState extends State<_UsersTab> {
 
   Future<void> _load() async {
     try {
-      var f = _db.from('profiles').select('id, username, city, blocked, is_admin, verificado, fundador_n, created_at');
+      var f = _db.from('admin_profiles').select('id, username, city, blocked, is_admin, verificado, fundador_n, created_at');
       final q = _q.text.trim().replaceAll(RegExp(r'[^A-Za-z0-9_.]'), '');
       if (q.isNotEmpty) f = f.ilike('username', '%$q%');
       final r = await f.order('created_at', ascending: false).limit(100);
