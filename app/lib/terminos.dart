@@ -31,7 +31,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 
 1. **Vender no tiene comisión:** cobras el precio completo que pusiste (o el de la oferta que aceptaste).
 2. Solo puedes vender artículos **tuyos, usados o sin estrenar, que tengas en tu poder** y puedas enviar o entregar.
-3. El anuncio debe ser fiel: **fotos reales del artículo** (al menos una), estado honesto, talla y defectos visibles. Si usas la portada de catálogo que genera Pavito con "Foto y listo", debes añadir también una foto real; el anuncio lo indicará.
+3. El anuncio debe ser fiel: **fotos reales del artículo** (al menos una), estado honesto, talla y defectos visibles.
 4. El precio se publica en **dólares (USD)**; Pavito muestra una referencia en bolívares con la tasa oficial del BCV. El precio va de 1 a 5.000 USD.
 5. Puedes **editar** tu anuncio (título, marca, descripción, categoría, talla, estado y precio) mientras no tenga un pedido, y **subirlo arriba gratis** una vez cada 7 días. Si bajas el precio, avisamos a quienes lo guardaron en favoritos.
 6. **No se permite publicar:**
@@ -143,7 +143,6 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 | Dirección y teléfono de entrega | Enviar tu pedido | El vendedor, solo tras confirmar el pago | Se borra 30 días después del pedido |
 | Datos de cobro (Pago Móvil) | Enviarte tus retiros | Solo Pavito | Mientras tengas cuenta |
 | Mensajes del chat | Comunicarte y resolver disputas | Las dos partes y Pavito si hay disputa o denuncia | Mientras tengas cuenta |
-| Fotos que subes a "Foto y listo" | Armar el anuncio con un servicio de análisis de imágenes | Pavito y ese proveedor, solo para analizarla | No se guarda fuera del anuncio |
 | Fotos y videos de un pedido (paquete, reclamo, devolución) | Resolver problemas con el pedido | Comprador, vendedor y Pavito | Mientras exista el registro del pedido |
 | Visitas a los anuncios | Mostrar al vendedor cuántas veces vieron su anuncio | Solo el vendedor (el total) | Se guarda un identificador anónimo del dispositivo, sin tu nombre |
 | Alertas de búsqueda y favoritos | Avisarte de prendas nuevas y bajadas de precio | Solo tú | Hasta que las borres |
@@ -152,7 +151,7 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 
 1. Puedes ver, corregir o borrar tus datos desde la app, o pedirlo a [correo de soporte].
 2. Al borrar tu cuenta se eliminan tus datos personales; los registros de pedidos que exija la ley se conservan el tiempo obligatorio.
-3. Usamos proveedores para alojar la app y guardar las fotos (Supabase, Cloudflare), para la verificación anti-bots (Cloudflare Turnstile), para el inicio de sesión con Google, para enviar notificaciones (el servicio de notificaciones de tu navegador o teléfono), para analizar fotos en "Foto y listo" y para la tasa del BCV. Solo reciben lo necesario para su servicio.
+3. Usamos proveedores para alojar la app y guardar las fotos (Supabase, Cloudflare), para la verificación anti-bots (Cloudflare Turnstile), para el inicio de sesión con Google, para enviar notificaciones (el servicio de notificaciones de tu navegador o teléfono) y para la tasa del BCV. Solo reciben lo necesario para su servicio.
 
 ## 11. Responsabilidad, cambios y ley aplicable
 

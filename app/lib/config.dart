@@ -21,6 +21,10 @@ const vapidPublica = 'BHtmdF5vFPfoNDVd9Q3ZZd_BpDSiPX3Ucq5POaaPnue6QFOtQKx7qfpuf1
 /// al menos un método de pago con datos REALES abajo.
 const pagosAbiertos = false;
 
+/// "Foto y listo" (la IA arma el anuncio con una foto). Apagado: se vende llenando los datos a mano.
+/// Para activarlo hace falta una clave de Gemini con facturación en Supabase (GEMINI_API_KEY).
+const iaActiva = false;
+
 /// Datos de Pago Móvil de Pavito, donde pagan los compradores.
 /// OJO: son datos de EJEMPLO. Cámbialos por los reales antes de recibir pagos.
 const pagoMovilBanco = '0102 - Banco de Venezuela (ejemplo)';

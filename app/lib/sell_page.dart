@@ -1,3 +1,4 @@
+import 'config.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -230,10 +231,12 @@ class _SellPageState extends State<SellPage> {
         Text('Vender', style: display(26, color: ink)),
         const SizedBox(height: 4),
         Text(
-            'Sin comisión: cobras el precio completo. O escríbelo tú mismo más abajo.',
+            iaActiva
+                ? 'Sin comisión: cobras el precio completo. O escríbelo tú mismo más abajo.'
+                : 'Sin comisión: cobras el precio completo.',
             style: TextStyle(color: context.muted)),
         const SizedBox(height: 16),
-        if (_photos.isEmpty) ...[
+        if (iaActiva && _photos.isEmpty) ...[
           _MagicButton(busy: _scanning, hasPhoto: false, onTap: _scan),
           const SizedBox(height: 20),
         ],
@@ -325,7 +328,7 @@ class _SellPageState extends State<SellPage> {
         Text(
             'Hasta 5 fotos con buena luz: de frente, detalles y etiqueta. Más fotos, más confianza.',
             style: TextStyle(color: context.muted, fontSize: 12)),
-        if (_photos.isNotEmpty) ...[
+        if (iaActiva && _photos.isNotEmpty) ...[
           const SizedBox(height: 10),
           _MagicButton(busy: _scanning, hasPhoto: true, onTap: _scan),
         ],
