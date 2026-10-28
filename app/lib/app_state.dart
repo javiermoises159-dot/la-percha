@@ -227,12 +227,34 @@ class AppState extends ChangeNotifier {
   String _authMessage(String m) {
     final t = m.toLowerCase();
     if (t.contains('invalid login')) return 'Correo o contraseña incorrectos.';
-    if (t.contains('already registered'))
+    if (t.contains('email not confirmed')) {
+      return 'Primero confirma tu correo: te enviamos un mensaje con un botón. Revisa también el spam.';
+    }
+    if (t.contains('already registered')) {
       return 'Ese correo ya tiene una cuenta.';
-    if (t.contains('password'))
-      return 'La contraseña debe tener al menos 6 caracteres.';
-    if (t.contains('rate limit'))
+    }
+    if (t.contains('only request this after')) {
+      final n = RegExp(r'(\d+)\s*seconds').firstMatch(t)?.group(1);
+      return 'Espera ${n ?? "unos"} segundos antes de intentarlo otra vez.';
+    }
+    if (t.contains('rate limit') || t.contains('too many')) {
       return 'Demasiados intentos. Espera unos minutos.';
+    }
+    if (t.contains('captcha')) {
+      return 'No pudimos comprobar que eres una persona. Recarga la página e inténtalo otra vez.';
+    }
+    if (t.contains('error sending')) {
+      return 'No pudimos enviar el correo de confirmación. Inténtalo de nuevo en unos minutos.';
+    }
+    if (t.contains('valid email') || t.contains('invalid email')) {
+      return 'Ese correo no es válido.';
+    }
+    if (t.contains('different from the old')) {
+      return 'La nueva contraseña debe ser distinta a la anterior.';
+    }
+    if (t.contains('password')) {
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    }
     return m;
   }
 
