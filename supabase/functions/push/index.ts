@@ -11,12 +11,28 @@ function respuesta(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+// Comparación que no revela, por el tiempo que tarda, cuántas letras acertó quien adivina.
+function iguales(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return respuesta(405, { error: "Solo POST" });
   const url = Deno.env.get("SUPABASE_URL");
   const servicio = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const privada = Deno.env.get("VAPID_PRIVATE_KEY");
   if (!url || !servicio || !privada) return respuesta(503, { error: "Falta configuración" });
+
+  // Solo la base de datos de Pavito puede llamar a esta función (lleva una clave interna).
+  const dada = req.headers.get("x-push-secret") ?? "";
+  const hs = { apikey: servicio, Authorization: `Bearer ${servicio}` };
+  const filaClave = await fetch(`${url}/rest/v1/secretos?clave=eq.push&select=valor`, { headers: hs })
+    .then((r) => r.json()).catch(() => []);
+  const real = Array.isArray(filaClave) && filaClave[0] ? String(filaClave[0].valor) : "";
+  if (!dada || !real || !iguales(dada, real)) return respuesta(401, { error: "No autorizado" });
 
   let id = 0;
   try {
