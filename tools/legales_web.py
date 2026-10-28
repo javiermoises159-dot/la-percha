@@ -6,8 +6,8 @@ src = (R/"app/lib/terminos.dart").read_text(encoding="utf-8")
 md = re.search(r"r'''(.*?)'''", src, re.S).group(1)
 for a, b in [("[razón social], RIF [RIF], con domicilio en [dirección]", "el equipo de Pavito"),
              ("[razón social]", "Pavito"),
-             ("[correo de soporte] · [teléfono o WhatsApp oficial de soporte]", "CORREO_SOPORTE"),
-             ("[correo de soporte]", "CORREO_SOPORTE"),
+             ("[correo de soporte] · [teléfono o WhatsApp oficial de soporte]", "soporte@pavito.app"),
+             ("[correo de soporte]", "soporte@pavito.app"),
              ("[ciudad]", "Venezuela")]:
     md = md.replace(a, b)
 
