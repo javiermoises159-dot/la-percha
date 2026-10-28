@@ -16,17 +16,21 @@ WEB = RAIZ / "app/web_overrides/icons"
 ANDROID = RAIZ / "app/android_icons"
 
 # (archivo, tamaño, % del lado que ocupa la guacamaya, esquinas redondeadas)
+# La guacamaya va "asomada": apoyada en el borde de abajo, con el cuerpo cortado por el borde.
 SALIDAS = [
-    (WEB / "Icon-192.png", 192, 0.70, True),
-    (WEB / "Icon-512.png", 512, 0.70, True),
-    (WEB / "Icon-maskable-192.png", 192, 0.56, False),
-    (WEB / "Icon-maskable-512.png", 512, 0.56, False),
-    (WEB / "apple-touch-icon.png", 180, 0.68, False),
-    (WEB / "favicon.png", 64, 0.82, True),
-    (ANDROID / "play-store-512.png", 512, 0.66, False),
+    (WEB / "Icon-192.png", 192, 0.84, True),
+    (WEB / "Icon-512.png", 512, 0.84, True),
+    (WEB / "Icon-maskable-192.png", 192, 0.74, False),
+    (WEB / "Icon-maskable-512.png", 512, 0.74, False),
+    (WEB / "apple-touch-icon.png", 180, 0.84, False),
+    (WEB / "favicon.png", 64, 0.92, True),
+    (ANDROID / "play-store-512.png", 512, 0.82, False),
 ]
 for carpeta, lado in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
-    SALIDAS.append((ANDROID / f"mipmap-{carpeta}/ic_launcher.png", lado, 0.66, True))
+    SALIDAS.append((ANDROID / f"mipmap-{carpeta}/ic_launcher.png", lado, 0.82, True))
+import os
+if os.environ.get("PERFIL"):  # foto de perfil para redes (círculo)
+    SALIDAS.append((pathlib.Path(os.environ["PERFIL"]), 1080, 0.80, False))
 
 
 VISTA = "0 0 120 120"  # se recalcula con la caja real del dibujo (centrado óptico)
@@ -38,8 +42,8 @@ def html(lado, escala, redondo):
     svg = re.sub(r'viewBox="[^"]*"', f'viewBox="{VISTA}"', SVG, count=1)
     return (f"<html><body style='margin:0;background:transparent'>"
             f"<div style='width:{lado}px;height:{lado}px;background:{AMARILLO};border-radius:{radio};"
-            f"display:grid;place-items:center'>"
-            f"<div style='width:{m}px;height:{m}px'>{svg.replace('<svg ', f'<svg width=\"{m}\" height=\"{m}\" ', 1)}</div>"
+            f"display:flex;justify-content:center;align-items:flex-end;overflow:hidden'>"
+            f"<div style='width:{m}px;height:{m}px;flex:none;margin-bottom:-{m * 0.07:.1f}px;margin-left:{m * 0.06:.1f}px'>{svg.replace('<svg ', f'<svg width=\"{m}\" height=\"{m}\" ', 1)}</div>"
             f"</div></body></html>")
 
 
@@ -67,7 +71,7 @@ async def main():
             await pg.screenshot(path=str(ruta), omit_background=True,
                                 clip={"x": 0, "y": 0, "width": lado, "height": lado})
             await pg.close()
-            print("ok", ruta.relative_to(RAIZ))
+            print("ok", ruta.name)
         await b.close()
 
 asyncio.run(main())
