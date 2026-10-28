@@ -5,7 +5,7 @@
 import webpush from "npm:web-push@3.6.7";
 
 const VAPID_PUBLICA = "BHtmdF5vFPfoNDVd9Q3ZZd_BpDSiPX3Ucq5POaaPnue6QFOtQKx7qfpuf1gkpc9ddRBGasF0I3LO2U9AQSrWw40";
-const SITIO = "https://pavito.pages.dev";
+const SITIO = "https://pavito.app";
 
 function respuesta(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

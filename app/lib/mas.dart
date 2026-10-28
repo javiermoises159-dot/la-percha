@@ -387,7 +387,7 @@ class _InvitarPageState extends State<InvitarPage> {
   @override
   Widget build(BuildContext context) {
     final u = appState.account?.username ?? '';
-    final link = 'https://pavito.pages.dev/?ref=$u';
+    final link = 'https://pavito.app/?ref=$u';
     final texto = 'Te invito a Pavito: compra y vende ropa y cosas que ya no usas en toda Venezuela, '
         'con pago protegido. Vender es gratis. $link';
     return Scaffold(

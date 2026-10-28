@@ -28,10 +28,10 @@ head_extra += '''
   <meta property="og:site_name" content="Pavito">
   <meta property="og:title" content="Pavito · Compra y vende en toda Venezuela">
   <meta property="og:description" content="Lo que ya no usas, otra persona lo quiere. Tu pago queda protegido hasta que lo recibes. Vender es gratis.">
-  <meta property="og:image" content="https://pavito.pages.dev/compartir.jpg">
+  <meta property="og:image" content="https://pavito.app/compartir.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:url" content="https://pavito.pages.dev/">
+  <meta property="og:url" content="https://pavito.app/">
   <meta property="og:locale" content="es_VE">
   <meta name="twitter:card" content="summary_large_image">
 '''

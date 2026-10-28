@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /captcha-app.html
-Sitemap: https://pavito.pages.dev/sitemap.xml
+Sitemap: https://pavito.app/sitemap.xml
