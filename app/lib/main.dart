@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'cookies.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
       authOptions: const FlutterAuthClientOptions(
           authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce));
   vigilarErrores();
+  await Cookies.cargar();
   runApp(const LaPerchaApp());
 }
 
@@ -55,7 +57,8 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
-      builder: (context, child) => _WideFrame(child: child ?? const SizedBox()),
+      builder: (context, child) => _WideFrame(
+          child: AvisoCookies(navigatorKey: navKey, child: child ?? const SizedBox())),
       home: ListenableBuilder(
         listenable: _state,
         builder: (context, _) {

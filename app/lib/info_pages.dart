@@ -77,7 +77,7 @@ Nunca vendemos tus datos.$_draft''';
 
 const cookiesText = '''Cookies
 
-Pavito usa almacenamiento en tu dispositivo solo para mantener tu sesión iniciada. No usamos cookies de publicidad.''';
+Pavito usa cookies y almacenamiento en tu dispositivo para mantener tu sesión y que la app funcione, y, si lo aceptas, un identificador anónimo para contar visitas a los anuncios. No usamos cookies de publicidad. Puedes ver el detalle y cambiar tu elección en Yo → Cookies.''';
 
 /// Términos completos de Pavito, con títulos, listas y tablas.
 class TermsPage extends StatelessWidget {

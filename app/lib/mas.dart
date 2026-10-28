@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'app_state.dart';
+import 'cookies.dart';
 import 'extras.dart';
 import 'listing.dart';
 import 'push.dart';
@@ -28,6 +29,11 @@ String? _dispositivo;
 /// Identificador al azar de este dispositivo (solo para contar vistas sin cuenta).
 Future<String> dispositivoId() async {
   if (_dispositivo != null) return _dispositivo!;
+  // Sin permiso de estadística: un identificador solo para esta visita, sin guardarlo.
+  if (!Cookies.estadisticas) {
+    final r = Random.secure();
+    return _dispositivo = 's${List.generate(15, (_) => r.nextInt(16).toRadixString(16)).join()}';
+  }
   try {
     final p = await SharedPreferences.getInstance();
     var id = p.getString('pv_dispositivo');

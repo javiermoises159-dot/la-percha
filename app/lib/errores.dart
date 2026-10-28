@@ -13,6 +13,9 @@ Future<void> reportarError(Object error, StackTrace? pila) async {
   try {
     final msg = '$error'.split('\n').first;
     if (msg.isEmpty || !_enviados.add(msg) || _enviados.length > 30) return;
+    // Errores causados por extensiones del navegador de la persona, no por Pavito.
+    final texto = '$error\n$pila';
+    if (texto.contains('chrome-extension://') || texto.contains('moz-extension://') || texto.contains('safari-web-extension://')) return;
     await Supabase.instance.client.rpc('reportar_error', params: {
       'p_mensaje': msg,
       'p_pila': pila?.toString().split('\n').take(12).join('\n'),

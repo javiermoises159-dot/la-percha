@@ -144,7 +144,7 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 | Datos de cobro (Pago Móvil) | Enviarte tus retiros | Solo Pavito | Mientras tengas cuenta |
 | Mensajes del chat | Comunicarte y resolver disputas | Las dos partes y Pavito si hay disputa o denuncia | Mientras tengas cuenta |
 | Fotos y videos de un pedido (paquete, reclamo, devolución) | Resolver problemas con el pedido | Comprador, vendedor y Pavito | Mientras exista el registro del pedido |
-| Visitas a los anuncios | Mostrar al vendedor cuántas veces vieron su anuncio | Solo el vendedor (el total) | Se guarda un identificador anónimo del dispositivo, sin tu nombre |
+| Visitas a los anuncios | Mostrar al vendedor cuántas veces vieron su anuncio | Solo el vendedor (el total) | Solo si aceptas las cookies de estadística se guarda un identificador anónimo del dispositivo, sin tu nombre |
 | Alertas de búsqueda y favoritos | Avisarte de prendas nuevas y bajadas de precio | Solo tú | Hasta que las borres |
 | Permiso de notificaciones del navegador o teléfono | Enviarte avisos de tus pedidos y mensajes | Solo Pavito | Hasta que las desactives (máx. 10 dispositivos) |
 | Errores técnicos de la app (mensaje del error, pantalla, versión y tipo de dispositivo) | Detectar y arreglar fallos | Solo Pavito | 30 días |
@@ -152,6 +152,7 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 1. Puedes ver, corregir o borrar tus datos desde la app, o pedirlo a [correo de soporte].
 2. Al borrar tu cuenta se eliminan tus datos personales; los registros de pedidos que exija la ley se conservan el tiempo obligatorio.
 3. Usamos proveedores para alojar la app y guardar las fotos (Supabase, Cloudflare), para la verificación anti-bots (Cloudflare Turnstile), para el inicio de sesión con Google, para enviar notificaciones (el servicio de notificaciones de tu navegador o teléfono) y para la tasa del BCV. Solo reciben lo necesario para su servicio.
+4. **Cookies:** Pavito usa cookies y almacenamiento en tu dispositivo necesarios para mantener tu sesión, recordar tu elección, aplicar el código de invitación y hacer la verificación anti-bots. Con tu permiso usa además un identificador anónimo para contar visitas a los anuncios. No usamos cookies de publicidad. La primera vez que entras eliges "Aceptar todas" o "Solo necesarias", y puedes cambiarlo cuando quieras en Yo → Cookies.
 
 ## 11. Responsabilidad, cambios y ley aplicable
 

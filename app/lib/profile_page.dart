@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cookies.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
@@ -151,7 +152,7 @@ class ProfilePage extends StatelessWidget {
         _item(context, Icons.description_outlined, 'Términos y condiciones',
             page: const TermsPage()),
         _item(context, Icons.cookie_outlined, 'Cookies',
-            page: const InfoPage(title: 'Cookies', body: cookiesText)),
+            page: const CookiesPage()),
       ];
 }
 
