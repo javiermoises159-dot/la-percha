@@ -14,7 +14,7 @@ head_extra = """
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@600;800&display=swap">
   <meta name="theme-color" content="#E0452C">
   <meta name="apple-mobile-web-app-title" content="Pavito">
-  <meta name="description" content="Pavito: compra y vende lo que ya no usas en toda Venezuela. Publicar es gratis y sin comisiones.">
+  <meta name="description" content="Pavito: vende lo que ya no usas y compra con pago protegido en toda Venezuela.">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <style>html,body{margin:0;height:100%;background:#E0452C}</style>
 """
@@ -27,7 +27,7 @@ head_extra += '''
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pavito">
   <meta property="og:title" content="Pavito · Compra y vende en toda Venezuela">
-  <meta property="og:description" content="Lo que ya no usas, otra persona lo quiere. Publicar es gratis y sin comisiones.">
+  <meta property="og:description" content="Lo que ya no usas, otra persona lo quiere. Tu pago queda protegido hasta que lo recibes. Vender es gratis.">
   <meta property="og:image" content="https://pavito.pages.dev/compartir.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">

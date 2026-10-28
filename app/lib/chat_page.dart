@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,7 +10,7 @@ import 'listing.dart';
 import 'theme.dart';
 
 /// Abre (o crea) la conversación con el vendedor de una prenda.
-Future<void> openChatFor(BuildContext context, Listing item, {String? borrador}) async {
+Future<void> openChatFor(BuildContext context, Listing item) async {
   final a = appState.account;
   if (a == null) {
     showAuthSheet(context, appState,
@@ -36,8 +35,7 @@ Future<void> openChatFor(BuildContext context, Listing item, {String? borrador})
     Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => ChatPage(
             threadId: row!['id'] as String,
-            title: '@${item.seller} · ${item.title}',
-            borrador: borrador)));
+            title: '@${item.seller} · ${item.title}')));
   } catch (_) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -46,10 +44,9 @@ Future<void> openChatFor(BuildContext context, Listing item, {String? borrador})
 }
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.threadId, required this.title, this.borrador});
+  const ChatPage({super.key, required this.threadId, required this.title});
   final String threadId;
   final String title;
-  final String? borrador; // texto que aparece ya escrito (sin enviar)
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -66,7 +63,6 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.borrador != null) _ctrl.text = widget.borrador!;
     _load();
     _timer = Timer.periodic(const Duration(seconds: 4), (_) => _load());
   }
@@ -214,69 +210,18 @@ class _AvisoEstafa extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber.shade700),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.shield_outlined, size: 18),
-        const SizedBox(width: 8),
+      child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.shield_outlined, size: 18),
+        SizedBox(width: 8),
         Expanded(
           child: Text(
-            modoDirecto
-                ? 'Cuidado: nunca pagues por adelantado a alguien sin reseñas. Si puedes, '
-                  'entrega en persona en un lugar público, o paga al recibir.'
-                : 'Cuidado: este mensaje menciona contactos o pagos fuera de Pavito. '
-                  'Paga siempre con "Comprar" dentro de la app: si pagas por fuera, '
-                  'tu dinero no está protegido.',
-            style: const TextStyle(fontSize: 12.5),
+            'Cuidado: este mensaje menciona contactos o pagos fuera de Pavito. '
+            'Paga siempre con "Comprar" dentro de la app: si pagas por fuera, '
+            'tu dinero no está protegido.',
+            style: TextStyle(fontSize: 12.5),
           ),
         ),
       ]),
     );
   }
-}
-
-
-/// "Comprar" en modo directo: consejos de seguridad y luego el chat con el
-/// vendedor, con el mensaje ya escrito. Pavito no toca el dinero.
-void comprarDirecto(BuildContext context, Listing item) {
-  if (appState.account == null) {
-    showAuthSheet(context, appState, message: 'Crea tu cuenta para escribirle al vendedor.');
-    return;
-  }
-  final precio = item.price % 1 == 0 ? item.price.toStringAsFixed(0) : item.price.toStringAsFixed(2);
-  Widget punto(BuildContext c, IconData i, String t) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(i, size: 22, color: c.leaf),
-          const SizedBox(width: 12),
-          Expanded(child: Text(t, style: TextStyle(color: c.ink, height: 1.35))),
-        ]),
-      );
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Compra directa al vendedor', style: display(22, color: ctx.ink)),
-          const SizedBox(height: 6),
-          Text('Acuerdan el pago y la entrega por el chat. Pavito no cobra comisión y no recibe tu dinero.',
-              style: TextStyle(color: ctx.muted, height: 1.4)),
-          const SizedBox(height: 18),
-          punto(ctx, Icons.handshake_outlined, 'Lo más seguro: entrega en persona, en un lugar público, y pagas al ver la prenda.'),
-          punto(ctx, Icons.local_shipping_outlined, 'Si es por envío, pide fotos reales y la guía, y paga solo a quien tenga buenas reseñas.'),
-          punto(ctx, Icons.block_outlined, 'Nunca mandes códigos, claves ni pagues "para apartar" a alguien que no conoces.'),
-          const SizedBox(height: 8),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              openChatFor(context, item,
-                  borrador: '¡Hola! Me interesa "${item.title}" por \$$precio. ¿Sigue disponible? ¿Cómo hacemos el pago y la entrega?');
-            },
-            child: const Text('Escribirle al vendedor'),
-          ),
-        ]),
-      ),
-    ),
-  );
 }

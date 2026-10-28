@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'package:flutter/material.dart';
 
 import 'terminos.dart';
@@ -24,26 +23,7 @@ class InfoPage extends StatelessWidget {
 const _draft =
     '\n\n(Borrador informativo. Será revisado por un abogado antes del lanzamiento oficial.)';
 
-String get guideText => modoDirecto ? _guiaDirecta : _guiaProtegida;
-
-const _guiaDirecta = '''Cómo funciona Pavito
-
-Comprar
-1. Busca una prenda y ábrela.
-2. Toca "Comprar" o escríbele al vendedor.
-3. Acuerden el pago y la entrega por el chat. Pavito no cobra comisión y no recibe el dinero.
-
-Vender
-1. Ve a "Vender", sube una foto y rellena los datos.
-2. Cuando alguien te escriba, acuerden el pago y la entrega.
-3. Al venderla, márcala como vendida en tu armario.
-
-Consejos de seguridad
-- Lo más seguro: entrega en persona, en un lugar público, y pago al ver la prenda.
-- Si es por envío, pide fotos reales y guía, y fíjate en las reseñas.
-- Nunca pagues "para apartar" a alguien que no conoces ni compartas códigos o claves.''';
-
-const _guiaProtegida = '''Cómo funciona Pavito
+const guideText = '''Cómo funciona Pavito
 
 Comprar
 1. Busca una prenda y ábrela.
@@ -110,7 +90,7 @@ class TermsPage extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [MarkdownLite(modoDirecto ? terminosDirectoMd + terminosMd : terminosMd)],
+          children: [MarkdownLite(terminosMd)],
         ),
       ),
     );

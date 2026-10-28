@@ -121,15 +121,12 @@ bool pagosCerrados(BuildContext context) {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(modoDirecto ? 'Escríbele al vendedor' : 'Los pagos abren muy pronto', style: display(22, color: ctx.ink)),
+          Text('Los pagos abren muy pronto', style: display(22, color: ctx.ink)),
           const SizedBox(height: 8),
           Text(
-              modoDirecto
-                  ? 'En Pavito el trato es directo: escríbele al vendedor por el chat y acuerden el pago y la entrega. '
-                    'Los pagos dentro de la app (como los destacados) abren muy pronto.'
-                  : 'Estamos terminando de preparar la compra protegida. Mientras tanto puedes guardar en '
-                    'favoritos lo que te guste, escribirle al vendedor y hacerle una oferta. Te avisaremos '
-                    'apenas puedas comprar.',
+              'Estamos terminando de preparar la compra protegida. Mientras tanto puedes guardar en '
+              'favoritos lo que te guste, escribirle al vendedor y hacerle una oferta. Te avisaremos '
+              'apenas puedas comprar.',
               style: TextStyle(color: ctx.muted, height: 1.4)),
           const SizedBox(height: 16),
           SizedBox(

@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -409,9 +408,7 @@ class _SellPageState extends State<SellPage> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-                modoDirecto
-                    ? 'Tú cobras \$${price.toStringAsFixed(2)} completos: Pavito no cobra comisión.'
-                    : 'Tú cobras \$${price.toStringAsFixed(2)}. El comprador paga además la protección.',
+                'Tú cobras \$${price.toStringAsFixed(2)}. El comprador paga además la protección.',
                 style: TextStyle(color: context.leaf, fontSize: 13)),
           ),
         if (_error != null)

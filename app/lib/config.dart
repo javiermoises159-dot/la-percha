@@ -21,11 +21,6 @@ const vapidPublica = 'BHtmdF5vFPfoNDVd9Q3ZZd_BpDSiPX3Ucq5POaaPnue6QFOtQKx7qfpuf1
 /// al menos un método de pago con datos REALES abajo.
 const pagosAbiertos = false;
 
-/// Modo directo (lanzamiento): el comprador le paga DIRECTAMENTE al vendedor y Pavito no
-/// toca ese dinero. "Comprar" abre el chat con el vendedor y consejos de seguridad.
-/// Ponlo en false solo cuando tengas un proveedor de pagos autorizado (compra protegida).
-const modoDirecto = true;
-
 /// Datos de Pago Móvil de Pavito, donde pagan los compradores.
 /// OJO: son datos de EJEMPLO. Cámbialos por los reales antes de recibir pagos.
 const pagoMovilBanco = '0102 - Banco de Venezuela (ejemplo)';

@@ -140,19 +140,3 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 4. **Ley aplicable:** estos términos se rigen por las leyes de la República Bolivariana de Venezuela. Cualquier controversia se intentará resolver primero de forma amistosa a través de soporte; si no, ante los tribunales de [ciudad].
 5. **Contacto:** [correo de soporte] · [teléfono o WhatsApp oficial de soporte]. Pavito solo te escribe desde esos canales.
 ''';
-
-/// Aviso que va ANTES de los términos mientras la app está en modo directo.
-const terminosDirectoMd = r'''## Importante: etapa de lanzamiento (trato directo)
-
-Por ahora Pavito funciona en **modo directo**:
-
-1. Pavito es solo un lugar para publicar y encontrar artículos y hablar por el chat. **Pavito no recibe, guarda ni procesa el dinero** de las compras.
-2. Comprador y vendedor acuerdan entre ellos el precio, el pago y la entrega. **El trato es solo entre ellos**, y Pavito no es parte de esa venta.
-3. Por eso, mientras dure esta etapa, **la Compra protegida, la tarifa de protección y el Saldo Pavito no están activos**. Las secciones de estos términos que hablan de ellos aplicarán solo cuando se activen, y te lo avisaremos antes.
-4. Pavito no cobra comisión por las ventas. Los únicos pagos a Pavito son los servicios de promoción (destacados), cuando estén disponibles.
-5. Pavito no responde por pagos, entregas o acuerdos entre usuarios, pero sí puedes **denunciar** a cualquier usuario o anuncio y lo revisaremos, y podemos bloquear cuentas que engañen a otros.
-6. Consejos: prefiere la entrega en persona en un lugar público y pagar al ver el artículo; nunca pagues "para apartar" a alguien que no conoces.
-
----
-
-''';

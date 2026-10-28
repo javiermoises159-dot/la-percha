@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -390,7 +389,7 @@ class _InvitarPageState extends State<InvitarPage> {
     final u = appState.account?.username ?? '';
     final link = 'https://pavito.pages.dev/?ref=$u';
     final texto = 'Te invito a Pavito: compra y vende ropa y cosas que ya no usas en toda Venezuela, '
-        '${modoDirecto ? 'sin comisiones' : 'con pago protegido'}. Vender es gratis. $link';
+        'con pago protegido. Vender es gratis. $link';
     return Scaffold(
       appBar: AppBar(title: const Text('Invita y gana')),
       body: ListView(padding: const EdgeInsets.all(20), children: [

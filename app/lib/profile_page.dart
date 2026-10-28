@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -85,12 +84,10 @@ class ProfilePage extends StatelessWidget {
               page: const FavoritesPage()),
           _item(context, Icons.notifications_active_outlined, 'Mis alertas de búsqueda',
               page: const AlertasPage()),
-          if (!modoDirecto) ...[
-            _item(context, Icons.account_balance_wallet_outlined, 'Saldo Pavito',
-                page: const SaldoPage()),
-            _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
-                page: const OrdersPage()),
-          ],
+          _item(context, Icons.account_balance_wallet_outlined, 'Saldo Pavito',
+              page: const SaldoPage()),
+          _item(context, Icons.receipt_long_outlined, 'Mis pedidos',
+              page: const OrdersPage()),
           _item(context, Icons.rocket_launch_outlined,
               'Herramientas de promoción',
               page: const PromotePage()),
@@ -106,7 +103,7 @@ class ProfilePage extends StatelessWidget {
           const Divider(height: 1),
           _item(context, Icons.help_outline, 'Guía de Pavito',
               page:
-                  InfoPage(title: 'Guía de Pavito', body: guideText)),
+                  const InfoPage(title: 'Guía de Pavito', body: guideText)),
           _item(context, Icons.support_agent_outlined, 'Centro de ayuda',
               page: const InfoPage(title: 'Centro de ayuda', body: helpText)),
           const Divider(height: 1),
@@ -231,29 +228,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
       listingsStore.load();
     } catch (_) {
       _snack('No se pudo cambiar el anuncio.');
-    }
-  }
-
-  Future<void> _vendido(Listing l) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('¿Marcar como vendido?'),
-        content: Text('"${l.title}" dejará de aparecer en venta. Esto no se puede deshacer.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sí, se vendió')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await _db.rpc('marcar_vendido', params: {'p_listing': l.id});
-      await _load();
-      listingsStore.load();
-      _snack('¡Felicidades por la venta!');
-    } catch (_) {
-      _snack('No se pudo marcar como vendido.');
     }
   }
 
@@ -465,7 +439,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                                     });
                                                   }
                                                   if (v == 'bump') _subir(l);
-                                                  if (v == 'sold') _vendido(l);
                                                 },
                                                 itemBuilder: (_) => [
                                                   if (st == 'active' || st == 'hidden')
@@ -477,9 +450,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                                   if (st == 'active')
                                                     const PopupMenuItem(
                                                         value: 'promo', child: Text('Destacar')),
-                                                  if (st == 'active' || st == 'hidden')
-                                                    const PopupMenuItem(
-                                                        value: 'sold', child: Text('Marcar como vendido')),
                                                   if (st == 'active')
                                                     const PopupMenuItem(
                                                         value: 'hide', child: Text('Ocultar')),

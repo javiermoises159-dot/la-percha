@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -88,9 +87,7 @@ class WelcomeScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
               child: Text(
-                modoDirecto
-                    ? 'Compra y vende ropa y cosas de casa en toda Venezuela. Publicar es gratis y sin comisiones.'
-                    : 'Compra y vende ropa y cosas de casa en toda Venezuela. Pago protegido y sin comisión para quien vende.',
+                'Compra y vende ropa y cosas de casa en toda Venezuela. Pago protegido y sin comisión para quien vende.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: context.muted, fontSize: 12),
               ),

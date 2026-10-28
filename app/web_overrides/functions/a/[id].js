@@ -13,7 +13,7 @@ export async function onRequest({ params, request }) {
   const origin = new URL(request.url).origin;
   const destino = `${origin}/?a=${id}`;
   let titulo = 'Pavito · Vende lo que ya no usas';
-  let texto = 'Compra y vende en toda Venezuela. Publicar es gratis y sin comisiones.';
+  let texto = 'Compra y vende en toda Venezuela con pago protegido. Vender es gratis.';
   let imagen = `${origin}/compartir.jpg`;
   let cuerpo = '<h1>Pavito</h1><p>Este anuncio ya no está disponible. Mira otras prendas en Pavito.</p>';
   let ld = '';
@@ -30,7 +30,7 @@ export async function onRequest({ params, request }) {
       const usd = Number(l.price);
       const bs = tasa && Number(tasa.valor) > 0 ? ` (Bs ${Math.round(usd * Number(tasa.valor)).toLocaleString('es-VE')})` : '';
       titulo = `${l.title} · $${usd % 1 ? usd.toFixed(2) : usd}${bs}`;
-      texto = `${l.size} · ${l.condition} · ${l.city}. Escríbele al vendedor en Pavito.`;
+      texto = `${l.size} · ${l.condition} · ${l.city}. Compra protegida en Pavito: tu pago queda guardado hasta que lo recibes.`;
       if (Array.isArray(l.photos) && l.photos[0] && String(l.photos[0]).startsWith(SUPA)) imagen = l.photos[0];
       estado = 200;
       const vendedor = l.profiles && l.profiles.username ? l.profiles.username : '';
@@ -41,7 +41,7 @@ export async function onRequest({ params, request }) {
 <p>${esc(l.category)} · Talla ${esc(l.size)} · ${esc(l.condition)} · ${esc(l.city)}</p>
 <p>${esc(desc)}</p>
 ${vendedor ? `<p>Vende: @${esc(vendedor)}</p>` : ''}
-<p>Escríbele al vendedor en Pavito: sin comisiones.</p>`;
+<p>Compra protegida en Pavito: tu pago queda guardado hasta que recibes la prenda.</p>`;
       ld = JSON.stringify({
         '@context': 'https://schema.org', '@type': 'Product', name: l.title, description: desc || texto,
         image: [imagen], category: l.category,
