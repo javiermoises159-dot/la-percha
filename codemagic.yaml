@@ -67,6 +67,7 @@ workflows:
       - name: Aplicar las migraciones nuevas
         script: python3 tools/migrar.py
       - name: Actualizar correos de Pavito (Supabase)
+        ignore_failure: true
         script: python3 tools/plantillas_correo.py
       - name: Subir funciones del servidor (IA)
         script: |
