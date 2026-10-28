@@ -11,7 +11,7 @@ export async function onRequest({ request }) {
       { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
     if (r.ok) filas = await r.json();
   } catch (_) {}
-  const urls = [`<url><loc>${origin}/</loc><changefreq>hourly</changefreq></url>`]
+  const urls = [`<url><loc>${origin}/</loc><changefreq>hourly</changefreq></url>`, `<url><loc>${origin}/inicio/</loc><changefreq>weekly</changefreq></url>`]
     .concat(filas.filter((f) => /^[0-9a-f-]{36}$/.test(f.id)).map((f) =>
       `<url><loc>${origin}/a/${f.id}</loc><lastmod>${String(f.created_at).slice(0, 10)}</lastmod></url>`));
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
