@@ -96,7 +96,7 @@ async function geminiConRespaldo(env: Env, modelos: string[], body: unknown) {
       ultimo = e;
       const st = (e as { status?: number }).status ?? 0;
       console.error(String(e));
-      if (![400, 403, 404, 429].includes(st)) break; // otro tipo de fallo: no tiene sentido seguir
+      if (![400, 402, 403, 404, 429].includes(st)) break; // otro tipo de fallo: no tiene sentido seguir
     }
   }
   throw ultimo;
@@ -164,6 +164,8 @@ export async function handle(req: Request, env: Env): Promise<Response> {
     return json(502, {
       error: st === 429
         ? "La IA llegó a su límite gratis por ahora. Intenta en unos minutos o llena los datos a mano."
+        : st === 402
+        ? "La IA de Pavito todavía no está activada. Por ahora llena los datos a mano. (código 402)"
         : `No pudimos analizar la foto. Intenta con otra.${st ? ` (código ${st})` : ""}`,
       codigo: st ?? null,
     });
