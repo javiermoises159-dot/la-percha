@@ -58,7 +58,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light, // siempre claro, aunque el teléfono esté en modo oscuro
       builder: (context, child) => _WideFrame(
           child: AvisoCookies(navigatorKey: navKey, child: child ?? const SizedBox())),
       home: ListenableBuilder(
