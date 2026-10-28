@@ -175,9 +175,13 @@ class _MarqueeRowState extends State<MarqueeRow>
   void initState() {
     super.initState();
     _ticker = createTicker((elapsed) {
-      if (!_ctrl.hasClients) return;
+      // No mover nada hasta que la lista tenga medidas (evita "RenderBox was not laid out").
+      if (!mounted || !_ctrl.hasClients || _setW <= 0) return;
+      if (!_ctrl.position.hasContentDimensions) return;
       final off = (elapsed.inMicroseconds / 1e6 * widget.speed) % _setW;
-      _ctrl.jumpTo(widget.reverse ? _setW - off : off);
+      try {
+        _ctrl.jumpTo(widget.reverse ? _setW - off : off);
+      } catch (_) {}
     })
       ..start();
   }

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Versión de la app que se guarda con cada error (súbela al publicar cambios grandes).
-const versionApp = '2026.10.27';
+const versionApp = '2026.10.28';
 
 final _enviados = <String>{};
 
