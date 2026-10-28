@@ -301,11 +301,11 @@ class ListingsStore extends ChangeNotifier {
         final path = '$uid/${mini != null ? 'm_' : ''}$ts.${png ? 'png' : 'jpg'}';
         await _db.storage.from('listing-photos').uploadBinary(path, photo,
             fileOptions:
-                FileOptions(contentType: png ? 'image/png' : 'image/jpeg'));
+                FileOptions(contentType: png ? 'image/png' : 'image/jpeg', cacheControl: '31536000'));
         if (mini != null) {
           try {
             await _db.storage.from('listing-photos').uploadBinary('$uid/m_$ts-mini.jpg', mini,
-                fileOptions: const FileOptions(contentType: 'image/jpeg'));
+                fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '31536000'));
           } catch (_) {}
         }
         urls.add(_db.storage.from('listing-photos').getPublicUrl(path));
