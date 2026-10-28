@@ -6,7 +6,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 
 ## 1. Quiénes somos y qué es Pavito
 
-1. Pavito es operado por [razón social], RIF [RIF], con domicilio en [dirección] ("Pavito", "nosotros").
+1. Pavito es operado por el equipo de Pavito ("Pavito", "nosotros").
 2. Pavito es un mercado: pone en contacto a quien vende con quien compra. **Pavito no es el vendedor** de los artículos ni su dueño; cada anuncio es responsabilidad de quien lo publica.
 3. Pavito sí presta dos servicios propios: la **Compra protegida** (guardar el pago hasta que el comprador recibe el artículo) y los **servicios de promoción** (destacar anuncios).
 4. Definiciones:
@@ -149,7 +149,7 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 | Permiso de notificaciones del navegador o teléfono | Enviarte avisos de tus pedidos y mensajes | Solo Pavito | Hasta que las desactives (máx. 10 dispositivos) |
 | Errores técnicos de la app (mensaje del error, pantalla, versión y tipo de dispositivo) | Detectar y arreglar fallos | Solo Pavito | 30 días |
 
-1. Puedes ver, corregir o borrar tus datos desde la app, o pedirlo a [correo de soporte].
+1. Puedes ver, corregir o borrar tus datos desde la app, o pedirlo a soporte@pavito.app.
 2. Al borrar tu cuenta se eliminan tus datos personales; los registros de pedidos que exija la ley se conservan el tiempo obligatorio.
 3. Usamos proveedores para alojar la app y guardar las fotos (Supabase, Cloudflare), para la verificación anti-bots (Cloudflare Turnstile), para el inicio de sesión con Google, para enviar notificaciones (el servicio de notificaciones de tu navegador o teléfono) y para la tasa del BCV. Solo reciben lo necesario para su servicio.
 4. **Cookies:** Pavito usa cookies y almacenamiento en tu dispositivo necesarios para mantener tu sesión, recordar tu elección, aplicar el código de invitación y hacer la verificación anti-bots. Con tu permiso usa además un identificador anónimo para contar visitas a los anuncios. No usamos cookies de publicidad. La primera vez que entras eliges "Aceptar todas" o "Solo necesarias", y puedes cambiarlo cuando quieras en Yo → Cookies.
@@ -157,8 +157,8 @@ Pavito guarda solo lo necesario para que compres y vendas con seguridad, y no ve
 ## 11. Responsabilidad, cambios y ley aplicable
 
 1. **Responsabilidad:** el vendedor responde por lo que vende y por la veracidad de su anuncio. Pavito responde por guardar y entregar correctamente el dinero de la Compra protegida. Pavito no responde por acuerdos hechos fuera de la app.
-2. **Propiedad intelectual:** la marca Pavito, la guacamaya y la app son de [razón social]. Las fotos y textos de tus anuncios siguen siendo tuyos; nos das permiso para mostrarlos en Pavito y en su promoción mientras el anuncio exista.
+2. **Propiedad intelectual:** la marca Pavito, la guacamaya y la app son de Pavito. Las fotos y textos de tus anuncios siguen siendo tuyos; nos das permiso para mostrarlos en Pavito y en su promoción mientras el anuncio exista.
 3. **Cambios:** podemos actualizar estos términos. Te avisaremos en la app con al menos 15 días de antelación; si sigues usando Pavito después, aceptas la nueva versión. Los pedidos en curso siguen las reglas vigentes al momento de pagar.
-4. **Ley aplicable:** estos términos se rigen por las leyes de la República Bolivariana de Venezuela. Cualquier controversia se intentará resolver primero de forma amistosa a través de soporte; si no, ante los tribunales de [ciudad].
-5. **Contacto:** [correo de soporte] · [teléfono o WhatsApp oficial de soporte]. Pavito solo te escribe desde esos canales.
+4. **Ley aplicable:** estos términos se rigen por las leyes de la República Bolivariana de Venezuela. Cualquier controversia se intentará resolver primero de forma amistosa a través de soporte; si no, ante los tribunales de Venezuela.
+5. **Contacto:** soporte@pavito.app. Pavito solo te escribe desde esos canales.
 ''';
