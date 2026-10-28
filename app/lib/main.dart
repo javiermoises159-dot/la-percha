@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'cookies.dart';
+import 'visitas.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
           authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce));
   vigilarErrores();
   await Cookies.cargar();
+  vigilarVisitas();
   runApp(const LaPerchaApp());
 }
 

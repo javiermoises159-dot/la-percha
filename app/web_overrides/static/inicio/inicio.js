@@ -42,3 +42,18 @@
   let y0=null;pa.addEventListener('pointerdown',e=>y0=e.clientX);pa.addEventListener('pointerup',e=>{if(y0===null)return;const dx=e.clientX-y0;y0=null;if(Math.abs(dx)>35)irP(p+(dx<0?1:-1))});
   irP(0);
 })();
+
+// Cuenta la visita a esta página (sin nombre ni IP) para el panel de Pavito.
+(function(){
+  try{
+    var q=new URLSearchParams(location.search),o=(q.get('utm_source')||q.get('o')||'').toLowerCase(),h='';
+    try{h=document.referrer?new URL(document.referrer).hostname:''}catch(e){}
+    if(!o){o=/instagram/.test(h)?'instagram':/tiktok/.test(h)?'tiktok':/whatsapp|wa\.me/.test(h)?'whatsapp':/facebook|^l\.|^lm\./.test(h)?'facebook':/google/.test(h)?'google':(h&&h!==location.hostname)?h.replace(/^www\./,''):'directo'}
+    o=o.replace(/[^a-z0-9._ -]/g,'').slice(0,40)||'otro';
+    var s='';for(var i=0;i<20;i++)s+='abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)];
+    var k='sb_publishable_PFt4DdXlWbQEvyEgP58BZQ_CKXaoHGG';
+    fetch('https://udhyuyokrxggdnnepbmr.supabase.co/rest/v1/rpc/registrar_visita',{method:'POST',keepalive:true,
+      headers:{'Content-Type':'application/json',apikey:k,Authorization:'Bearer '+k},
+      body:JSON.stringify({p_sesion:s,p_disp:null,p_origen:o,p_ruta:'inicio',p_plataforma:'web'})}).catch(function(){});
+  }catch(e){}
+})();

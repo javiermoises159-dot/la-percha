@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'admin_chat.dart';
+import 'admin_visitas.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'listing.dart';
@@ -25,6 +26,8 @@ class _Seccion {
 }
 
 final _secciones = <_Seccion>[
+  _Seccion('Visitas y registros', Icons.insights_outlined, null,
+      'De dónde llega la gente y cuántos se registran', () => const VisitasAdminPage()),
   _Seccion('Pagos por verificar', Icons.fact_check_outlined, 'revision',
       'Compradores que dicen haber pagado', () => const _OrdersTab(status: 'revision')),
   _Seccion('Problemas', Icons.report_problem_outlined, 'disputa',
