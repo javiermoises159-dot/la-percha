@@ -74,7 +74,7 @@ workflows:
     max_build_duration: 20
     environment:
       groups:
-        - copia   # SUPABASE_DB_URL (Session pooler) y COPIA_CLAVE
+        - SUPABASE_ACCESS_TOKEN   # aquí están también SUPABASE_DB_URL y COPIA_CLAVE
     scripts:
       - name: Instalar pg_dump
         script: |
@@ -85,7 +85,7 @@ workflows:
       - name: Copiar y cifrar
         script: |
           set -euo pipefail
-          if [ -z "${SUPABASE_DB_URL:-}" ] || [ -z "${COPIA_CLAVE:-}" ]; then echo "Faltan SUPABASE_DB_URL o COPIA_CLAVE en el grupo 'copia'"; exit 1; fi
+          if [ -z "${SUPABASE_DB_URL:-}" ] || [ -z "${COPIA_CLAVE:-}" ]; then echo "Faltan SUPABASE_DB_URL o COPIA_CLAVE en el grupo SUPABASE_ACCESS_TOKEN"; exit 1; fi
           F=pavito-$(date -u +%Y-%m-%d)
           "$(brew --prefix libpq)/bin/pg_dump" "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges \
             -n public -n interno -n auth -n storage -f "$F.dump"
