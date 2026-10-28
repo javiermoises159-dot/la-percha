@@ -5,6 +5,7 @@ import 'app_state.dart';
 import 'features.dart';
 import 'auth_sheet.dart';
 import 'config.dart';
+import 'pruebas.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
 import 'theme.dart';
@@ -556,7 +557,14 @@ class _OrderPageState extends State<OrderPage> {
               'Si no, el pedido se cancela y el dinero vuelve al comprador.',
               style: TextStyle(color: context.muted, height: 1.35)),
         ],
+        const SizedBox(height: 12),
+        Text('Recomendado: foto o video del paquete', style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
+        const SizedBox(height: 4),
+        Text('Muestra la prenda dentro del paquete y la guía. Si hay un reclamo, es tu mejor prueba.',
+            style: TextStyle(color: context.muted, height: 1.35, fontSize: 13)),
         const SizedBox(height: 8),
+        PruebasBloque(orderId: widget.orderId, subirTipo: 'envio', permitirVideo: true),
+        const SizedBox(height: 12),
         TextField(
             controller: _tracking,
             decoration: const InputDecoration(
@@ -596,11 +604,9 @@ class _OrderPageState extends State<OrderPage> {
           onPressed: _busy
               ? null
               : () async {
-                  if (await _confirmar(context, '¿Tuviste un problema?',
-                      'Congelamos el pago y nuestro equipo revisa el caso. Cuéntale al vendedor por el chat qué pasó y guarda fotos.',
-                      'Abrir reclamo')) {
-                    _update({'status': 'disputa'});
-                  }
+                  final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                      builder: (_) => ReclamoPage(orderId: widget.orderId, tipo: 'reclamo')));
+                  if (ok == true) _update({'status': 'disputa'});
                 },
           child: const Text('Tuve un problema'),
         ),
@@ -660,10 +666,9 @@ class _OrderPageState extends State<OrderPage> {
             onPressed: _busy
                 ? null
                 : () async {
-                    if (await _confirmar(context, '¿La devolución llegó con problemas?',
-                        'Congelamos el caso y nuestro equipo lo revisa. Guarda fotos del paquete y de la prenda.', 'Abrir reclamo')) {
-                      _update({'status': 'disputa'});
-                    }
+                    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                        builder: (_) => ReclamoPage(orderId: widget.orderId, tipo: 'devolucion')));
+                    if (ok == true) _update({'status': 'disputa'});
                   },
             child: const Text('Llegó con problemas'),
           ),
@@ -746,6 +751,10 @@ class _OrderPageState extends State<OrderPage> {
         if (o['tracking'] != null) ...[
           const SizedBox(height: 14),
           _Box(children: [_Line('Seguimiento', '${o['tracking']}')]),
+        ],
+        if (status != 'retenido' && status != 'esperando_pago' && status != 'revision') ...[
+          const SizedBox(height: 14),
+          PruebasBloque(key: ValueKey('pv$status'), orderId: widget.orderId, ocultarSiVacio: true),
         ],
         const SizedBox(height: 18),
         ...actions,

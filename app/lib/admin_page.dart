@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
 import 'orders_page.dart';
+import 'pruebas.dart';
 import 'theme.dart';
 
 SupabaseClient get _db => Supabase.instance.client;
@@ -742,6 +743,10 @@ class _OrdersTabState extends State<_OrdersTab> {
                     Text('Referencia del pago: ${r['pay_ref'] ?? '-'}'),
                   if (!pagos && r['tracking'] != null)
                     Text('Seguimiento: ${r['tracking']}'),
+                  if (!pagos) ...[
+                    const SizedBox(height: 8),
+                    PruebasBloque(orderId: r['id'] as String, ocultarSiVacio: true),
+                  ],
                   const SizedBox(height: 10),
                   Row(children: [
                     Expanded(

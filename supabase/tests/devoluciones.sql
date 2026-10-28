@@ -15,6 +15,7 @@ create function pg_temp.hasta_disputa(l text) returns void language plpgsql as $
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-00000000000a',false);
   update public.orders set status='enviado', tracking='MRW 1' where listing_id=l::uuid;
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-00000000000b',false);
+  insert into public.pruebas (order_id, tipo, path) select id, 'reclamo', id::text || '/00000000-0000-0000-0000-00000000000b/f.jpg' from public.orders where listing_id=l::uuid;
   update public.orders set status='disputa' where listing_id=l::uuid;
   reset role; end $$;
 select pg_temp.hasta_disputa('11111111-1111-1111-1111-111111111111');
