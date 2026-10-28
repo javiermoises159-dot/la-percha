@@ -108,66 +108,105 @@ class CookiesPage extends StatelessWidget {
 }
 
 /// Aviso abajo de la pantalla la primera vez. No bloquea la app.
-class AvisoCookies extends StatelessWidget {
+/// Se pinta dentro del Overlay del navegador (así tiene todo lo que los botones necesitan).
+class AvisoCookies extends StatefulWidget {
   const AvisoCookies({super.key, required this.child, required this.navigatorKey});
   final Widget child;
   final GlobalKey<NavigatorState> navigatorKey;
 
   @override
+  State<AvisoCookies> createState() => _AvisoCookiesState();
+}
+
+class _AvisoCookiesState extends State<AvisoCookies> {
+  OverlayEntry? _entry;
+
+  @override
+  void initState() {
+    super.initState();
+    Cookies.eleccion.addListener(_revisar);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revisar());
+  }
+
+  @override
+  void dispose() {
+    Cookies.eleccion.removeListener(_revisar);
+    _entry?.remove();
+    super.dispose();
+  }
+
+  void _revisar() {
+    final falta = Cookies.eleccion.value == null;
+    if (!falta) {
+      _entry?.remove();
+      _entry = null;
+      return;
+    }
+    if (_entry != null) return;
+    final overlay = widget.navigatorKey.currentState?.overlay;
+    if (overlay == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revisar());
+      return;
+    }
+    _entry = OverlayEntry(builder: (context) => _Banner(navigatorKey: widget.navigatorKey));
+    overlay.insert(_entry!);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _Banner extends StatelessWidget {
+  const _Banner({required this.navigatorKey});
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      child,
-      ValueListenableBuilder<String?>(
-        valueListenable: Cookies.eleccion,
-        builder: (context, v, _) {
-          if (v != null) return const SizedBox.shrink();
-          final ink = Theme.of(context).colorScheme.onSurface;
-          return Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
-            child: SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Material(
-                    elevation: 8,
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-                      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        Text('🍪 Cookies', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: ink)),
-                        const SizedBox(height: 6),
-                        Text(
-                            'Usamos las necesarias para que puedas entrar y usar Pavito. Con tu permiso, también un identificador anónimo para contar visitas a los anuncios. Nada de publicidad.',
-                            style: TextStyle(height: 1.4, color: ink)),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                              style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                              onPressed: () => navigatorKey.currentState
-                                  ?.push(MaterialPageRoute<void>(builder: (_) => const CookiesPage())),
-                              child: const Text('Ver detalles')),
-                        ),
-                        Row(children: [
-                          Expanded(
-                              child: OutlinedButton(
-                                  onPressed: () => Cookies.elegir('necesarias'), child: const Text('Solo necesarias'))),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: FilledButton(
-                                  onPressed: () => Cookies.elegir('todas'), child: const Text('Aceptar todas'))),
-                        ]),
-                      ]),
+    final ink = Theme.of(context).colorScheme.onSurface;
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Material(
+                elevation: 8,
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Text('🍪 Cookies', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: ink)),
+                    const SizedBox(height: 6),
+                    Text(
+                        'Usamos las necesarias para que puedas entrar y usar Pavito. Con tu permiso, también un identificador anónimo para contar visitas a los anuncios. Nada de publicidad.',
+                        style: TextStyle(height: 1.4, color: ink)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                          onPressed: () => navigatorKey.currentState
+                              ?.push(MaterialPageRoute<void>(builder: (_) => const CookiesPage())),
+                          child: const Text('Ver detalles')),
                     ),
-                  ),
+                    Row(children: [
+                      Expanded(
+                          child: OutlinedButton(
+                              onPressed: () => Cookies.elegir('necesarias'), child: const Text('Solo necesarias'))),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child: FilledButton(onPressed: () => Cookies.elegir('todas'), child: const Text('Aceptar todas'))),
+                    ]),
+                  ]),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
-    ]);
+    );
   }
 }

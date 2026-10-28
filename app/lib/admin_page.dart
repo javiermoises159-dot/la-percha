@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'admin_chat.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'listing.dart';
@@ -746,6 +747,18 @@ class _OrdersTabState extends State<_OrdersTab> {
                   if (!pagos) ...[
                     const SizedBox(height: 8),
                     PruebasBloque(orderId: r['id'] as String, ocultarSiVacio: true),
+                    if (r['status'] == 'disputa' || r['status'] == 'devolucion')
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.forum_outlined, size: 18),
+                          label: const Text('Ver chat entre ellos'),
+                          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                              builder: (_) => AdminChatPage(
+                                  orderId: r['id'] as String,
+                                  titulo: '@${field(r['buyer'], 'username', '?')} y @${field(r['seller'], 'username', '?')}'))),
+                        ),
+                      ),
                   ],
                   const SizedBox(height: 10),
                   Row(children: [
@@ -834,10 +847,22 @@ class _ReportsTabState extends State<_ReportsTab> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            icon: const Icon(Icons.history, size: 18),
+            label: const Text('Chats consultados'),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const AdminAccesosChatPage())),
+          ),
+        ),
         for (final r in _rows)
           ListTile(
             title: Text('${r['reason']}'),
             subtitle: Text(_detalle(r)),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => AdminChatPage(reportId: r['id'] as String, titulo: 'Chat de la denuncia'))),
+            leading: const Icon(Icons.forum_outlined),
             trailing: TextButton(
               onPressed: () async {
                 try {
