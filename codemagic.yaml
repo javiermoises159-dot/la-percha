@@ -70,27 +70,27 @@ workflows:
 
   copia-seguridad:
     name: Pavito - Copia de seguridad
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     max_build_duration: 20
     environment:
       groups:
         - copia   # SUPABASE_DB_URL (Session pooler) y COPIA_CLAVE
     scripts:
-      - name: Instalar pg_dump 17
+      - name: Instalar pg_dump
         script: |
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
-          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17 gnupg >/dev/null
+          export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew install libpq >/dev/null
+          command -v gpg >/dev/null || brew install gnupg >/dev/null
+          "$(brew --prefix libpq)/bin/pg_dump" --version
       - name: Copiar y cifrar
         script: |
           set -euo pipefail
           if [ -z "${SUPABASE_DB_URL:-}" ] || [ -z "${COPIA_CLAVE:-}" ]; then echo "Faltan SUPABASE_DB_URL o COPIA_CLAVE en el grupo 'copia'"; exit 1; fi
           F=pavito-$(date -u +%Y-%m-%d)
-          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges \
+          "$(brew --prefix libpq)/bin/pg_dump" "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges \
             -n public -n interno -n auth -n storage -f "$F.dump"
           ls -lh "$F.dump"
-          /usr/lib/postgresql/17/bin/pg_restore -l "$F.dump" | grep -c "TABLE DATA" | xargs echo "Tablas con datos:"
+          "$(brew --prefix libpq)/bin/pg_restore" -l "$F.dump" | grep -c "TABLE DATA" | xargs echo "Tablas con datos:"
           gpg --batch --yes --pinentry-mode loopback --passphrase "$COPIA_CLAVE" --symmetric --cipher-algo AES256 -o "$F.dump.gpg" "$F.dump"
           rm -f "$F.dump"
     artifacts:
