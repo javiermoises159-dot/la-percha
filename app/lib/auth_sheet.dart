@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'info_pages.dart';
+import 'nav.dart';
 import 'theme.dart';
 
 const _cities = [
@@ -113,6 +114,24 @@ class _AuthFlowState extends State<AuthFlow> {
     }
   }
 
+  Future<void> _olvide() async {
+    final email = _email.text.trim();
+    if (!isValidEmail(email)) {
+      return setState(() => _error = 'Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".');
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await widget.state.pedirRecuperacion(email);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _error = err ??
+          'Listo. Si ese correo tiene cuenta, te enviamos un enlace para poner una contraseña nueva. Revisa también el spam.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context);
@@ -203,6 +222,11 @@ class _AuthFlowState extends State<AuthFlow> {
               child: Text(_busy
                   ? 'Un momento…'
                   : (_login ? 'Entrar' : 'Crear cuenta'))),
+          if (_login)
+            TextButton(
+              onPressed: _busy ? null : _olvide,
+              child: const Text('¿Olvidaste tu contraseña?'),
+            ),
           TextButton(
             onPressed: () => setState(() {
               _login = !_login;
@@ -340,4 +364,72 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
           FilledButton(onPressed: _busy ? null : _guardar, child: Text(_busy ? 'Un momento…' : 'Entrar a Pavito')),
         ]),
       );
+}
+
+
+/// Se abre al tocar el enlace del correo de recuperación: pone la contraseña nueva.
+Future<void> mostrarNuevaClave(AppState state) async {
+  final ctx = navKey.currentContext;
+  if (ctx == null) return;
+  final c = TextEditingController();
+  String? error;
+  bool busy = false;
+  await showDialog<void>(
+    context: ctx,
+    barrierDismissible: false,
+    builder: (dctx) => StatefulBuilder(
+      builder: (dctx, setS) => AlertDialog(
+        title: const Text('Nueva contraseña'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: c,
+              obscureText: true,
+              decoration: const InputDecoration(
+                  labelText: 'Contraseña nueva', hintText: 'Mínimo 8 caracteres'),
+            ),
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(error!, style: const TextStyle(color: Color(0xFFB3261E))),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: busy ? null : () => Navigator.of(dctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: busy
+                ? null
+                : () async {
+                    if (c.text.length < 8) {
+                      setS(() => error = 'Usa una contraseña de al menos 8 caracteres.');
+                      return;
+                    }
+                    setS(() {
+                      busy = true;
+                      error = null;
+                    });
+                    final e = await state.guardarNuevaClave(c.text);
+                    if (e == null) {
+                      if (dctx.mounted) Navigator.of(dctx).pop();
+                      avisoGlobal('Contraseña cambiada. Ya puedes usar la app.');
+                    } else {
+                      setS(() {
+                        busy = false;
+                        error = e;
+                      });
+                    }
+                  },
+            child: Text(busy ? 'Guardando…' : 'Guardar'),
+          ),
+        ],
+      ),
+    ),
+  );
+  c.dispose();
 }

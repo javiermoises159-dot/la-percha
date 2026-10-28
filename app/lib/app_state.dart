@@ -1,3 +1,4 @@
+import 'auth_sheet.dart' show mostrarNuevaClave;
 import 'captcha.dart';
 import 'config.dart';
 import 'mas.dart';
@@ -48,7 +49,12 @@ class AppState extends ChangeNotifier {
   StreamSubscription<AuthState>? _sub;
 
   Future<void> load() async {
-    _sub = _db.auth.onAuthStateChange.listen((_) => refresh(), onError: (Object e) {
+    _sub = _db.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.passwordRecovery) {
+        Future<void>.delayed(const Duration(milliseconds: 1500), () => mostrarNuevaClave(this));
+      }
+      refresh();
+    }, onError: (Object e) {
       final m = e is AuthException ? e.message : '$e';
       Future<void>.delayed(const Duration(seconds: 2), () => avisoGlobal('No se pudo entrar con Google: $m'));
     });
@@ -201,6 +207,33 @@ class AppState extends ChangeNotifier {
       return null;
     } on PostgrestException catch (e) {
       return e.code == '23505' ? 'Ese nombre de usuario ya está en uso.' : e.message;
+    } catch (_) {
+      return 'No se pudo guardar. Revisa tu conexión.';
+    }
+  }
+
+  /// Manda el correo para poner una contraseña nueva.
+  Future<String?> pedirRecuperacion(String email) async {
+    try {
+      final captcha = await _captcha();
+      if (captcha == false) return _sinCaptcha;
+      await _db.auth.resetPasswordForEmail(email.trim(),
+          redirectTo: webBase, captchaToken: captcha is String ? captcha : null);
+      return null;
+    } on AuthException catch (e) {
+      return _authMessage(e.message);
+    } catch (_) {
+      return 'No se pudo enviar el correo. Revisa tu conexión.';
+    }
+  }
+
+  /// Guarda la contraseña nueva (después de abrir el enlace del correo).
+  Future<String?> guardarNuevaClave(String clave) async {
+    try {
+      await _db.auth.updateUser(UserAttributes(password: clave));
+      return null;
+    } on AuthException catch (e) {
+      return _authMessage(e.message);
     } catch (_) {
       return 'No se pudo guardar. Revisa tu conexión.';
     }
