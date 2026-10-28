@@ -11,7 +11,7 @@ const turnstileSiteKey = '0x4AAAAAAFoRRXPnmlkb5ipJ';
 
 /// Dirección pública de la web (la usa Android para la comprobación anti-bots).
 /// Su dominio debe estar en la lista de "Hostnames" del widget de Turnstile.
-const webBase = 'https://la-percha.pages.dev';
+const webBase = 'https://pavito.app';
 
 /// Clave PÚBLICA de las notificaciones (Web Push). La privada vive solo en Supabase.
 const vapidPublica = 'BHtmdF5vFPfoNDVd9Q3ZZd_BpDSiPX3Ucq5POaaPnue6QFOtQKx7qfpuf1gkpc9ddRBGasF0I3LO2U9AQSrWw40';
