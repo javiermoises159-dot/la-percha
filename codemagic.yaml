@@ -83,6 +83,11 @@ workflows:
         - SUPABASE_ACCESS_TOKEN   # aquí también está GITHUB_TOKEN (permiso de escribir en la-percha)
       flutter: stable
     scripts:
+      - name: Aplicar las migraciones nuevas
+        script: python3 tools/migrar.py
+      - name: Actualizar correos de Pavito (Supabase)
+        ignore_failure: true
+        script: python3 tools/plantillas_correo.py
       - name: Compilar y publicar la web
         script: |
           [ -n "$GITHUB_TOKEN" ] || { echo "Falta GITHUB_TOKEN"; exit 1; }

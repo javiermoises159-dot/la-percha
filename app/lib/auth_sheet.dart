@@ -48,6 +48,9 @@ class _AuthFlowState extends State<AuthFlow> {
   String? _error;
   bool _busy = false;
   bool _terms = false;
+  bool _codigoModo = false;
+  final _codigo = TextEditingController();
+  final _clave2 = TextEditingController();
   final _user = TextEditingController();
   final _email = TextEditingController();
   final _pass = TextEditingController();
@@ -65,6 +68,8 @@ class _AuthFlowState extends State<AuthFlow> {
     _email.dispose();
     _pass.dispose();
     _city.dispose();
+    _codigo.dispose();
+    _clave2.dispose();
     super.dispose();
   }
 
@@ -127,9 +132,36 @@ class _AuthFlowState extends State<AuthFlow> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _error = err ??
-          'Listo. Si ese correo tiene cuenta, te enviamos un enlace para poner una contraseña nueva. Revisa también el spam.';
+      if (err == null) {
+        _codigoModo = true;
+        _error = 'Te enviamos un código de 6 números a $email. Revisa también el spam.';
+      } else {
+        _error = err;
+      }
     });
+  }
+
+  Future<void> _cambiarClave() async {
+    final email = _email.text.trim();
+    final cod = _codigo.text.trim();
+    final nueva = _clave2.text;
+    if (cod.length < 6) return setState(() => _error = 'Escribe el código de 6 números que llegó a tu correo.');
+    if (nueva.length < 8) return setState(() => _error = 'Usa una contraseña de al menos 8 caracteres.');
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await widget.state.recuperarConCodigo(email, cod, nueva);
+    if (!mounted) return;
+    if (err == null) {
+      Navigator.of(context).pop();
+      avisoGlobal('Contraseña cambiada. Ya entraste a tu cuenta.');
+    } else {
+      setState(() {
+        _busy = false;
+        _error = err;
+      });
+    }
   }
 
   @override
@@ -140,7 +172,7 @@ class _AuthFlowState extends State<AuthFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(_login ? 'Iniciar sesión' : 'Crea tu cuenta',
+          Text(_codigoModo ? 'Cambiar contraseña' : (_login ? 'Iniciar sesión' : 'Crea tu cuenta'),
               style: display(24, color: t.colorScheme.onSurface)),
           const SizedBox(height: 12),
           if (_error != null)
@@ -167,8 +199,39 @@ class _AuthFlowState extends State<AuthFlow> {
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
+            enabled: !_codigoModo,
             decoration: const InputDecoration(labelText: 'Correo'),
           ),
+          if (_codigoModo) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _codigo,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(labelText: 'Código del correo', counterText: ''),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _clave2,
+              obscureText: true,
+              decoration: const InputDecoration(
+                  labelText: 'Contraseña nueva', hintText: 'Mínimo 8 caracteres'),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+                onPressed: _busy ? null : _cambiarClave,
+                child: Text(_busy ? 'Un momento…' : 'Cambiar contraseña')),
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => setState(() {
+                        _codigoModo = false;
+                        _error = null;
+                      }),
+              child: const Text('Volver'),
+            ),
+          ],
+          if (!_codigoModo) ...[
           const SizedBox(height: 12),
           TextField(
             controller: _pass,
@@ -258,6 +321,7 @@ class _AuthFlowState extends State<AuthFlow> {
               label: const Text('Continuar con Google'),
               style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
             ),
+          ],
           ],
         ],
       ),

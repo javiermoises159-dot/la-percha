@@ -227,6 +227,25 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Cambia la contraseña con el código de 6 números que llegó al correo.
+  Future<String?> recuperarConCodigo(String email, String codigo, String clave) async {
+    try {
+      await _db.auth.verifyOTP(
+          email: email.trim(), token: codigo.trim(), type: OtpType.recovery);
+      await _db.auth.updateUser(UserAttributes(password: clave));
+      await refresh();
+      return null;
+    } on AuthException catch (e) {
+      final t = e.message.toLowerCase();
+      if (t.contains('expired') || t.contains('invalid')) {
+        return 'El código no es correcto o ya venció. Pide uno nuevo.';
+      }
+      return _authMessage(e.message);
+    } catch (_) {
+      return 'No se pudo cambiar la contraseña. Revisa tu conexión.';
+    }
+  }
+
   /// Guarda la contraseña nueva (después de abrir el enlace del correo).
   Future<String?> guardarNuevaClave(String clave) async {
     try {
