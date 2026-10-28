@@ -26,5 +26,7 @@ cd build/web
 git init -q -b gh-pages
 git add -A
 git -c user.name=la-percha -c user.email=noreply@github.com commit -q -m "Publicar web"
-git push -q -f https://github.com/javiermoises159-dot/la-percha gh-pages
+DESTINO="https://github.com/javiermoises159-dot/la-percha"
+[ -n "$GITHUB_TOKEN" ] && DESTINO="https://x-access-token:${GITHUB_TOKEN}@github.com/javiermoises159-dot/la-percha"
+git push -q -f "$DESTINO" gh-pages
 echo "Publicado en https://${DOMINIO:-la-percha.pages.dev}"

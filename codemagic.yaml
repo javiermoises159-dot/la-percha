@@ -74,6 +74,20 @@ workflows:
           npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
           npx -y supabase@2 functions deploy push --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
 
+  publicar-web:
+    name: Pavito - Publicar la web (pavito.app)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      groups:
+        - SUPABASE_ACCESS_TOKEN   # aquí también está GITHUB_TOKEN (permiso de escribir en la-percha)
+      flutter: stable
+    scripts:
+      - name: Compilar y publicar la web
+        script: |
+          [ -n "$GITHUB_TOKEN" ] || { echo "Falta GITHUB_TOKEN"; exit 1; }
+          bash tools/publicar_web.sh
+
   copia-seguridad:
     name: Pavito - Copia de seguridad
     instance_type: mac_mini_m2
