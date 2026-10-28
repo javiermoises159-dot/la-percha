@@ -39,7 +39,7 @@ class _LaPerchaAppState extends State<LaPerchaApp> {
   @override
   void initState() {
     super.initState();
-    if (Uri.base.queryParameters.containsKey('a')) _state.guest = true;
+    if (Uri.base.queryParameters.containsKey('a') || Uri.base.queryParameters.containsKey('t')) _state.guest = true;
     guardarInvitacion();
     _state.load();
     listingsStore.load();

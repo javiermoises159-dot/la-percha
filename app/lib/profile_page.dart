@@ -78,6 +78,13 @@ class ProfilePage extends StatelessWidget {
                 page: const AdminGate()),
           _item(context, Icons.checkroom_outlined, 'Mi armario',
               page: const MyListingsPage()),
+          ListTile(
+            leading: const Icon(Icons.storefront_outlined),
+            title: const Text('Compartir mi tienda'),
+            subtitle: Text('pavito.app/t/${a.username}'),
+            trailing: const Icon(Icons.ios_share_rounded),
+            onTap: () => compartirTienda(context, a.username, mia: true),
+          ),
           _item(context, Icons.person_outline, 'Ver mi perfil público',
               page: SellerProfilePage(sellerId: a.id, username: a.username)),
           _item(context, Icons.favorite_border, 'Favoritos',

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -287,12 +288,28 @@ class ListingDetail extends StatelessWidget {
 
 
 /// Enlace para compartir: muestra foto, título y precio en WhatsApp y abre el anuncio.
-String enlaceAnuncio(Listing l) => '${Uri.base.origin}/a/${l.id}';
+String get _sitio => kIsWeb ? Uri.base.origin : 'https://pavito.app';
+String enlaceAnuncio(Listing l) => '$_sitio/a/${l.id}';
+String enlaceTienda(String usuario) => '$_sitio/t/$usuario';
+
+/// Comparte la tienda de un vendedor: en WhatsApp sale con foto y cuántas prendas tiene.
+void compartirTienda(BuildContext context, String usuario, {bool mia = false}) {
+  final url = enlaceTienda(usuario);
+  final texto = mia
+      ? 'Mira mi tienda en Pavito 👗 Todo lo que vendo, con compra protegida: $url'
+      : 'Mira la tienda de @$usuario en Pavito. Compra protegida: $url';
+  _hojaCompartir(context, mia ? 'Compartir mi tienda' : 'Compartir tienda', texto, url,
+      nota: mia ? 'Ponlo en la bio de tu Instagram y en tus estados de WhatsApp.' : null);
+}
 
 void compartirAnuncio(BuildContext context, Listing l) {
   final url = enlaceAnuncio(l);
   final precio = l.price % 1 == 0 ? l.price.toStringAsFixed(0) : l.price.toStringAsFixed(2);
   final texto = 'Mira esto en Pavito: ${l.title} a \$$precio. Compra protegida: tu pago queda guardado hasta que lo recibes. $url';
+  _hojaCompartir(context, 'Compartir', texto, url);
+}
+
+void _hojaCompartir(BuildContext context, String titulo, String texto, String url, {String? nota}) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -300,7 +317,9 @@ void compartirAnuncio(BuildContext context, Listing l) {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('Compartir', style: display(22, color: ctx.ink)),
+          Text(titulo, style: display(22, color: ctx.ink)),
+          if (nota != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(nota, style: TextStyle(color: ctx.muted))),
+          if (nota != null) Padding(padding: const EdgeInsets.only(top: 8), child: SelectableText(url, style: const TextStyle(fontWeight: FontWeight.w700))),
           const SizedBox(height: 12),
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1FA855)),

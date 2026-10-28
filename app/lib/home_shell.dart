@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'seller_profile.dart';
 
 import 'app_state.dart';
 import 'auth_sheet.dart';
@@ -38,6 +39,20 @@ class _HomeShellState extends State<HomeShell> {
     // Al tocar una notificación se abre la lista de avisos.
     if (Uri.base.queryParameters['abrir'] == 'avisos' && widget.state.account != null) {
       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AvisosPage()));
+      return;
+    }
+    final tienda = Uri.base.queryParameters['t'];
+    if (tienda != null && RegExp(r'^[A-Za-z0-9_.]{3,20}$').hasMatch(tienda)) {
+      try {
+        final r = await Supabase.instance.client
+            .from('profiles')
+            .select('id, username')
+            .ilike('username', tienda.replaceAll('_', r'\_'))
+            .maybeSingle();
+        if (r == null || !mounted) return;
+        Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => SellerProfilePage(sellerId: '${r['id']}', username: '${r['username']}')));
+      } catch (_) {}
       return;
     }
     final id = Uri.base.queryParameters['a'];

@@ -8,6 +8,7 @@ import 'fundador.dart';
 import 'mas.dart';
 import 'explore_page.dart';
 import 'listing.dart';
+import 'listing_detail.dart';
 import 'theme.dart';
 
 /// Perfil público de una persona: sus datos, valoración y prendas a la venta.
@@ -66,6 +67,10 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
     final isMe = appState.account?.id == widget.sellerId;
     return Scaffold(
       appBar: AppBar(title: Text('@${widget.username}'), actions: [
+        IconButton(
+            tooltip: isMe ? 'Compartir mi tienda' : 'Compartir tienda',
+            icon: const Icon(Icons.ios_share_rounded),
+            onPressed: () => compartirTienda(context, widget.username, mia: isMe)),
         if (!isMe)
           PopupMenuButton<String>(
             tooltip: 'Más opciones',
@@ -124,6 +129,14 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                                 ? 'Aún sin valoraciones'
                                 : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
                           ])),
+                      if (isMe) ...[
+                        const SizedBox(height: 8),
+                        FilledButton.icon(
+                          onPressed: () => compartirTienda(context, widget.username, mia: true),
+                          icon: const Icon(Icons.storefront_rounded, size: 18),
+                          label: const Text('Compartir mi tienda'),
+                        ),
+                      ],
                       if (!isMe) ...[
                         const SizedBox(height: 8),
                         FollowButton(sellerId: widget.sellerId),
