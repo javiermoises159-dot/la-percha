@@ -130,9 +130,9 @@ String tamanoSugerido(String categoria) {
 }
 
 const tamanosPaquete = {
-  'chico': 'Pequeño: cabe en un sobre o bolsa grande',
-  'mediano': 'Mediano: cabe en una caja de zapatos',
-  'grande': 'Grande: cabe en una caja de mudanza',
+  'chico': 'Pequeño: hasta 1 kg (sobre o bolsa)',
+  'mediano': 'Mediano: hasta 2 kg (caja de zapatos)',
+  'grande': 'Grande: hasta 4 kg (caja grande)',
 };
 
 const _clothing = {'Mujer', 'Hombre', 'Niños', 'Bebés'};

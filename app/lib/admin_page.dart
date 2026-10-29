@@ -1626,11 +1626,11 @@ class _TarifasEnvio extends StatefulWidget {
 
 class _TarifasEnvioState extends State<_TarifasEnvio> {
   static const _tamanos = {
-    'chico': 'Chico (accesorios, bebés, libros, mascotas)',
-    'mediano': 'Mediano (ropa de mujer, hombre y niños)',
-    'grande': 'Grande (zapatos, hogar, deportes)',
+    'chico': 'Pequeño (hasta 1 kg)',
+    'mediano': 'Mediano (hasta 2 kg)',
+    'grande': 'Grande (hasta 4 kg)',
   };
-  static const _zonas = {'ciudad': 'Misma ciudad', 'region': 'Misma región', 'pais': 'Resto del país'};
+  static const _zonas = {'ciudad': 'Misma ciudad', 'region': 'Misma región', 'pais': 'Resto del país', 'isla': 'Margarita'};
   final Map<String, TextEditingController> _c = {
     for (final t in _tamanos.keys) for (final z in _zonas.keys) 'envio_${t}_$z': TextEditingController()
   };
@@ -1682,7 +1682,7 @@ class _TarifasEnvioState extends State<_TarifasEnvio> {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('Tarifas de envío (USD)', style: TextStyle(fontWeight: FontWeight.w700)),
-      const Text('Lo que paga el comprador, según el tamaño de la prenda y la zona. Va incluido en el pago y se lo entregamos al vendedor.',
+      const Text('Lo que paga el comprador, según el tamaño del paquete y la zona. Base: tarifas de Tealca (enero 2026) + 16 % de IVA. Va incluido en el pago y se lo entregamos al vendedor.',
           style: TextStyle(fontSize: 12)),
       for (final t in _tamanos.entries) ...[
         const SizedBox(height: 10),
