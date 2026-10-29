@@ -1,8 +1,39 @@
 /// Términos y condiciones de Pavito (fuente: documento "Pavito · Términos y condiciones").
 /// Formato: markdown sencillo, lo pinta MarkdownLite.
-const terminosMd = r'''Versión del 28 de octubre de 2026. Borrador pendiente de revisión legal.
+const terminosMd = r'''Versión del 29 de octubre de 2026. Borrador pendiente de revisión legal.
 
 Estos términos regulan el uso de Pavito, la app y la web donde personas en Venezuela compran y venden ropa y cosas de casa usadas. Al crear una cuenta o usar Pavito, aceptas estos términos.
+
+## Resumen en 1 minuto
+
+Esto es un resumen para que lo entiendas rápido. Lo que vale son las secciones completas de abajo.
+
+- **Pavito es un mercado:** junta a quien vende con quien compra. El vendedor responde por lo que vende.
+- **Vender no cuesta comisión.** El comprador paga una tarifa de protección de 0,25 USD + 5 % del precio, y el envío.
+- **Compra protegida:** el comprador paga a Pavito, el dinero queda retenido y solo llega al vendedor cuando el comprador confirma que recibió el artículo, o a los 7 días del envío si no reporta un problema.
+- **Todo pago va por Pavito.** Lo que se pague fuera de la app no está protegido.
+- **Si hay un problema,** el comprador abre un reclamo con fotos y Pavito decide en 5 días hábiles.
+- **Reglas claras de convivencia:** nada de fraude, falsificaciones ni artículos prohibidos. Se sanciona con aviso, suspensión o bloqueo.
+- **Mayores de 18 años,** una persona, una cuenta.
+
+### Plazos y montos en un vistazo
+
+| Qué | Plazo o monto |
+| --- | --- |
+| Pedido sin pagar | Se cancela solo a las **24 horas** |
+| Máximo de pedidos sin pagar a la vez | **3** |
+| Oferta aceptada | Vale **48 horas** solo para el comprador |
+| Vendedor: enviar y cargar la guía | **3 días** desde que Pavito confirma el pago; si no, se cancela y se reembolsa |
+| Comprador: reportar un problema | Hasta **7 días** desde el envío |
+| Liberación automática al vendedor | **7 días** después del envío, si no hay reclamo |
+| Pavito resuelve un reclamo | **5 días hábiles** |
+| Comprador: enviar una devolución pedida por Pavito | **3 días hábiles** |
+| Vendedor: confirmar la devolución recibida | **7 días**; si no, se reembolsa al comprador |
+| Retiro del Saldo Pavito | Desde **5 USD**, hasta 3 por día, en **hasta 2 días hábiles** |
+| Retiro tras cambiar datos de cobro | Se puede hacer **24 horas** después del cambio |
+| Datos de entrega del comprador | Se borran **30 días** después de terminado el pedido |
+
+**Días hábiles:** son de lunes a viernes, hora de Caracas. No se cuentan sábados ni domingos.
 
 ## 1. Quiénes somos y qué es Pavito
 
@@ -14,6 +45,8 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
    - **Vendedor / Comprador:** el usuario que publica un artículo / el que lo compra.
    - **Pedido:** la compra de uno o varios artículos (un **lote**) del mismo vendedor.
    - **Tarifa de protección:** lo que paga el comprador por la Compra protegida.
+   - **Día hábil:** de lunes a viernes, hora de Caracas.
+   - **Saldo Pavito:** el dinero que tienes en tu cuenta de Pavito, de tus ventas completadas y devoluciones (ver sección 5).
 5. Aceptas estos términos al crear tu cuenta. Si no estás de acuerdo, no uses Pavito.
 6. **Etapa de lanzamiento:** mientras la app muestre el aviso "Estamos en fase de prueba", puedes crear tu cuenta, publicar, chatear, hacer ofertas y guardar favoritos, pero **todavía no se pueden pagar compras ni destacados**. Te avisaremos por correo y en la app cuando se activen; desde ese momento aplican las secciones de pagos de estos términos.
 
@@ -54,8 +87,9 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 ## 4. Comprar en Pavito
 
 1. Toda compra hecha con el botón **Comprar** tiene **Compra protegida**: tu dinero queda guardado y no llega al vendedor hasta que confirmas que recibiste el artículo como se describía.
-2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El **envío** se calcula según el tamaño de la prenda y tu ciudad, lo ves antes de pagar y va incluido en el pago protegido (no paga tarifa de protección); se lo entregamos al vendedor, que paga la guía. Si el anuncio dice **Envío gratis**, lo paga el vendedor; en la entrega en persona no hay envío.
-3. Antes de pagar ves el total en USD y su referencia en bolívares.
+2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El **envío** se calcula según el tamaño de la prenda y tu ciudad, lo ves antes de pagar y va incluido en el pago protegido (el envío no paga tarifa de protección); se lo entregamos al vendedor, que paga la guía.
+   **Ejemplo:** un artículo de 20 USD paga una tarifa de 0,25 + 1,00 = 1,25 USD, así que el total es 21,25 USD, más el envío que se muestre. Si el anuncio dice **Envío gratis**, lo paga el vendedor; en la entrega en persona no hay envío.
+3. Antes de pagar ves el total en USD y su referencia en bolívares. Si pagas por Pago Móvil, el monto exacto en bolívares se calcula con la tasa oficial del BCV que muestra la app en ese momento.
 4. **Ofertas:** puedes ofrecer desde el 50 % del precio. Si el vendedor acepta, ese precio vale 48 horas solo para ti. El vendedor puede contraofertar.
 5. **Lotes:** puedes comprar de 2 a 10 artículos del mismo vendedor en un solo pedido, con un solo pago y un solo envío, y con el descuento que el vendedor tenga activo.
 6. Puedes tener como máximo **3 pedidos sin pagar** a la vez. Un pedido sin pagar en **24 horas** se cancela solo y el artículo vuelve a estar a la venta.
