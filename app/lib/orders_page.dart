@@ -80,6 +80,11 @@ class _EnvioInfoState extends State<EnvioInfo> {
       ]),
       const SizedBox(height: 6),
       Text(nota, style: TextStyle(color: context.muted, fontSize: 13)),
+      if (!gratis && logueado && ciudadInicial() == widget.item.city) ...[
+        const SizedBox(height: 6),
+        Text('Está en tu ciudad (${widget.item.city}): puedes elegir entrega en persona y no pagas envío.',
+            style: TextStyle(color: context.leaf, fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
     ]);
   }
 }
@@ -360,6 +365,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             _recalc();
           },
         ),
+        if (!widget.item.envioGratis && _ciudad == widget.item.city && !_metodo.startsWith('Entrega en persona')) ...[
+          const SizedBox(height: 8),
+          Text('La prenda está en ${widget.item.city}, igual que tu ciudad: elige "Entrega en persona" y no pagas envío.',
+              style: TextStyle(color: context.leaf, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
         if (widget.item.envioGratis && _metodo.contains('envío gratis')) ...[
           const SizedBox(height: 8),
           Text('Este vendedor ofrece envío gratis: él paga el envío, tú no pagas nada al recibir.',
