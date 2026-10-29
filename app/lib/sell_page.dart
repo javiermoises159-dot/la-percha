@@ -47,6 +47,8 @@ class _SellPageState extends State<SellPage> {
   final _brand = TextEditingController();
   final List<Uint8List> _photos = [];
   bool _envioGratis = false;
+  String? _tamElegido;
+  String get _tam => _tamElegido ?? tamanoSugerido(_category);
   bool _fotoIa = false; // la primera foto es una portada creada por la IA
   bool _scanning = false;
   bool _autoScan = false;
@@ -199,6 +201,7 @@ class _SellPageState extends State<SellPage> {
       fotoIa: _fotoIa,
       brand: _brand.text,
       envioGratis: _envioGratis,
+      envioTamano: _tam,
     );
     if (!mounted) return;
     if (err != null) {
@@ -213,6 +216,7 @@ class _SellPageState extends State<SellPage> {
     _brand.clear();
     setState(() {
       _envioGratis = false;
+      _tamElegido = null;
       _busy = false;
       _photos.clear();
       _fotoIa = false;
@@ -358,6 +362,21 @@ class _SellPageState extends State<SellPage> {
               labelText: 'Marca (opcional)', hintText: 'Zara, Nike, Bershka…'),
         ),
         const SizedBox(height: 4),
+        DropdownButtonFormField<String>(
+          key: ValueKey(_tam),
+          initialValue: _tam,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Tamaño del paquete'),
+          items: [
+            for (final e in tamanosPaquete.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)),
+          ],
+          onChanged: (v) => setState(() => _tamElegido = v),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text('El comprador paga el envío, que se calcula con este tamaño y su ciudad.',
+              style: TextStyle(color: context.muted, fontSize: 12)),
+        ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Ofrecer envío gratis'),

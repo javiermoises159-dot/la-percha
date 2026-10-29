@@ -22,7 +22,11 @@ class Listing {
     this.createdAt,
     this.brand,
     this.envioGratis = false,
+    this.envioTamano,
   });
+
+  /// Tamaño del paquete elegido por el vendedor: chico, mediano o grande (null = según la categoría).
+  final String? envioTamano;
 
   /// El vendedor paga el envío.
   final bool envioGratis;
@@ -69,6 +73,7 @@ class Listing {
       fotoIa: m['foto_ia'] == true,
       createdAt: DateTime.tryParse('${m['created_at'] ?? ''}')?.toLocal(),
       envioGratis: m['envio_gratis'] == true,
+      envioTamano: m['envio_tamano'] as String?,
       brand: (m['brand'] as String?)?.trim().isEmpty == true ? null : m['brand'] as String?,
     );
   }
@@ -116,6 +121,19 @@ const categories = [
   'Deportes',
   'Mascotas',
 ];
+
+/// Tamaño de paquete sugerido según la categoría.
+String tamanoSugerido(String categoria) {
+  if (const {'Accesorios', 'Bebés', 'Libros y juegos', 'Mascotas'}.contains(categoria)) return 'chico';
+  if (const {'Zapatos', 'Hogar', 'Deportes'}.contains(categoria)) return 'grande';
+  return 'mediano';
+}
+
+const tamanosPaquete = {
+  'chico': 'Pequeño: cabe en un sobre o bolsa grande',
+  'mediano': 'Mediano: cabe en una caja de zapatos',
+  'grande': 'Grande: cabe en una caja de mudanza',
+};
 
 const _clothing = {'Mujer', 'Hombre', 'Niños', 'Bebés'};
 const _clothingSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Única'];
@@ -294,6 +312,7 @@ class ListingsStore extends ChangeNotifier {
     bool fotoIa = false,
     String? brand,
     bool envioGratis = false,
+    String? envioTamano,
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
@@ -327,6 +346,7 @@ class ListingsStore extends ChangeNotifier {
         'photos': urls,
         if (fotoIa) 'foto_ia': true,
         if (envioGratis) 'envio_gratis': true,
+        if (envioTamano != null) 'envio_tamano': envioTamano,
         if (brand != null && brand.trim().isNotEmpty) 'brand': brand.trim(),
       });
       await load();

@@ -127,6 +127,7 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
   late String _talla = widget.item.size;
   late String _estado = widget.item.condition;
   late bool _envioGratis = widget.item.envioGratis;
+  late String _tam = widget.item.envioTamano ?? tamanoSugerido(widget.item.category);
   bool _busy = false;
   String? _err;
 
@@ -158,6 +159,7 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
       'condition': _estado,
       'brand': _marca.text.trim().isEmpty ? null : _marca.text.trim(),
       'envio_gratis': _envioGratis,
+      'envio_tamano': _tam,
     });
     if (!mounted) return;
     if (e != null) {
@@ -212,6 +214,16 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
             controller: _precio,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Precio en dólares', prefixText: '\$ ')),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: _tam,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Tamaño del paquete'),
+          items: [
+            for (final e in tamanosPaquete.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)),
+          ],
+          onChanged: (v) => setState(() => _tam = v ?? _tam),
+        ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Ofrecer envío gratis'),
