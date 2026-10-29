@@ -32,6 +32,8 @@ const ciudades = [
 ];
 
 const estados = [
+  'Nuevo con etiqueta',
+  'Nuevo sin etiqueta',
   'Como nuevo',
   'Muy buen estado',
   'Buen estado',

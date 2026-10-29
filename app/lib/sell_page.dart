@@ -12,6 +12,8 @@ import 'listing.dart';
 import 'theme.dart';
 
 const _conditions = [
+  'Nuevo con etiqueta',
+  'Nuevo sin etiqueta',
   'Como nuevo',
   'Muy buen estado',
   'Buen estado',
