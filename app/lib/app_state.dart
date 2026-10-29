@@ -74,7 +74,7 @@ class AppState extends ChangeNotifier {
   /// Pregunta al servidor si esta cuenta es de administrador (ya no se lee de la tabla pública).
   Future<bool> _esAdmin() async {
     try {
-      return await _db.rpc('is_admin') == true;
+      return await _db.rpc('cuenta_es_admin') == true;
     } catch (_) {
       return false;
     }
