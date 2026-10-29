@@ -120,12 +120,17 @@ const categories = [
   'Libros y juegos',
   'Deportes',
   'Mascotas',
+  'Belleza',
+  'Juguetes',
+  'Arte y manualidades',
+  'Música',
+  'Otros',
 ];
 
 /// Tamaño de paquete sugerido según la categoría.
 String tamanoSugerido(String categoria) {
-  if (const {'Accesorios', 'Bebés', 'Libros y juegos', 'Mascotas'}.contains(categoria)) return 'chico';
-  if (const {'Zapatos', 'Hogar', 'Deportes'}.contains(categoria)) return 'grande';
+  if (const {'Accesorios', 'Bebés', 'Libros y juegos', 'Mascotas', 'Belleza'}.contains(categoria)) return 'chico';
+  if (const {'Zapatos', 'Hogar', 'Deportes', 'Música'}.contains(categoria)) return 'grande';
   return 'mediano';
 }
 
@@ -189,6 +194,11 @@ const categoryIcons = {
   'Libros y juegos': Icons.menu_book_outlined,
   'Deportes': Icons.sports_soccer,
   'Mascotas': Icons.pets,
+  'Belleza': Icons.brush_outlined,
+  'Juguetes': Icons.toys_outlined,
+  'Arte y manualidades': Icons.palette_outlined,
+  'Música': Icons.music_note_outlined,
+  'Otros': Icons.category_outlined,
 };
 
 /// Anuncios que vienen del servidor.

@@ -5,6 +5,7 @@
 const CATEGORIAS = [
   "Mujer", "Hombre", "Niños", "Bebés", "Zapatos", "Accesorios",
   "Hogar", "Libros y juegos", "Deportes", "Mascotas",
+  "Belleza", "Juguetes", "Arte y manualidades", "Música", "Otros",
 ];
 const ESTADOS = ["Como nuevo", "Muy buen estado", "Buen estado", "Con detalles"];
 const TALLAS = [
