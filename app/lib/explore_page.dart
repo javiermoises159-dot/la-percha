@@ -189,6 +189,7 @@ class ExplorePage extends StatefulWidget {
 class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
   String _q = '';
   String _cat = 'Todo';
+  String? _sub;
   Filtros _f = const Filtros();
 
   @override
@@ -212,7 +213,7 @@ class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
     bool okCat(Listing l) => _cat == 'Todo' ||
         (_cat == _siguiendo
             ? followStore.ids.contains(l.sellerId)
-            : l.category == _cat);
+            : l.category == _cat && (_sub == null || l.subcategoria == _sub));
     final locales = listingsStore.all.where((l) {
       final okQ =
           _q.isEmpty || l.title.toLowerCase().contains(_q.toLowerCase());
@@ -272,12 +273,34 @@ class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
                 selected: _cat == c,
                 onTap: () {
                   if (c == _siguiendo) followStore.load();
-                  setState(() => _cat = c);
+                  setState(() {
+                    _cat = c;
+                    _sub = null;
+                  });
                 },
               ),
           ],
         ),
       ),
+      if (subcategorias[_cat] != null)
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: ChoiceChip(label: const Text('Todo'), selected: _sub == null, onSelected: (_) => setState(() => _sub = null)),
+              ),
+              for (final x in subcategorias[_cat]!)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(label: Text(x), selected: _sub == x, onSelected: (_) => setState(() => _sub = x)),
+                ),
+            ],
+          ),
+        ),
       if (_cat == 'Todo' && _q.length < 2) const FundadorBanner(),
       if (_q.length >= 2)
         Align(

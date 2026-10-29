@@ -23,7 +23,11 @@ class Listing {
     this.brand,
     this.envioGratis = false,
     this.envioTamano,
+    this.subcategoria,
   });
+
+  /// Tipo dentro de la categoría (Franela, Pantalón…), opcional.
+  final String? subcategoria;
 
   /// Tamaño del paquete elegido por el vendedor: chico, mediano o grande (null = según la categoría).
   final String? envioTamano;
@@ -74,6 +78,7 @@ class Listing {
       createdAt: DateTime.tryParse('${m['created_at'] ?? ''}')?.toLocal(),
       envioGratis: m['envio_gratis'] == true,
       envioTamano: m['envio_tamano'] as String?,
+      subcategoria: m['subcategoria'] as String?,
       brand: (m['brand'] as String?)?.trim().isEmpty == true ? null : m['brand'] as String?,
     );
   }
@@ -126,6 +131,21 @@ const categories = [
   'Música',
   'Otros',
 ];
+
+/// Tipos de artículo dentro de cada categoría.
+const subcategorias = <String, List<String>>{
+  'Mujer': ['Franelas y blusas', 'Vestidos', 'Pantalones', 'Jeans', 'Faldas', 'Shorts', 'Chaquetas y abrigos', 'Ropa deportiva', 'Pijamas y ropa interior', 'Trajes de baño', 'Otros'],
+  'Hombre': ['Franelas y camisetas', 'Camisas', 'Pantalones', 'Jeans', 'Shorts', 'Chaquetas y abrigos', 'Trajes y blazers', 'Ropa deportiva', 'Pijamas y ropa interior', 'Otros'],
+  'Niños': ['Franelas', 'Pantalones y jeans', 'Vestidos y faldas', 'Chaquetas', 'Uniformes', 'Pijamas', 'Ropa deportiva', 'Otros'],
+  'Bebés': ['Conjuntos', 'Bodys y mamelucos', 'Pijamas', 'Vestiditos', 'Abrigos', 'Otros'],
+  'Zapatos': ['Deportivos', 'Casuales', 'Formales', 'Botas', 'Sandalias y chancletas', 'Tacones', 'Otros'],
+  'Accesorios': ['Bolsos y carteras', 'Gorras y sombreros', 'Cinturones', 'Relojes', 'Joyas', 'Lentes', 'Bufandas y guantes', 'Otros'],
+  'Hogar': ['Muebles', 'Decoración', 'Cocina', 'Cama y baño', 'Electrodomésticos pequeños', 'Otros'],
+  'Libros y juegos': ['Libros', 'Juegos de mesa', 'Videojuegos', 'Otros'],
+  'Deportes': ['Ropa deportiva', 'Equipos y pesas', 'Bicicletas y patines', 'Balones y pelotas', 'Otros'],
+  'Mascotas': ['Ropa', 'Camas', 'Juguetes', 'Correas y accesorios', 'Otros'],
+  'Belleza': ['Maquillaje', 'Perfumes', 'Cuidado de la piel', 'Cabello', 'Otros'],
+};
 
 /// Tamaño de paquete sugerido según la categoría.
 String tamanoSugerido(String categoria) {
@@ -323,6 +343,7 @@ class ListingsStore extends ChangeNotifier {
     String? brand,
     bool envioGratis = false,
     String? envioTamano,
+    String? subcategoria,
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
@@ -357,6 +378,7 @@ class ListingsStore extends ChangeNotifier {
         if (fotoIa) 'foto_ia': true,
         if (envioGratis) 'envio_gratis': true,
         if (envioTamano != null) 'envio_tamano': envioTamano,
+        if (subcategoria != null) 'subcategoria': subcategoria,
         if (brand != null && brand.trim().isNotEmpty) 'brand': brand.trim(),
       });
       await load();

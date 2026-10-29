@@ -115,6 +115,7 @@ class _SellPageState extends State<SellPage> {
   }
 
   String _category = 'Mujer';
+  String? _sub;
   String _size = 'M';
   String _condition = 'Muy buen estado';
   String? _city;
@@ -219,6 +220,7 @@ class _SellPageState extends State<SellPage> {
       brand: _brand.text,
       envioGratis: _envioGratis,
       envioTamano: _tam,
+      subcategoria: subcategorias[_category]?.contains(_sub) == true ? _sub : null,
     );
     if (!mounted) return;
     if (err != null) {
@@ -415,9 +417,21 @@ class _SellPageState extends State<SellPage> {
             items: categories.where((c) => c != 'Todo').toList(),
             onChanged: (v) => setState(() {
                   _category = v;
+                  _sub = null;
                   final s = sizesFor(v);
                   if (!s.contains(_size)) _size = s.first;
                 })),
+        if (subcategorias[_category] != null) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: ValueKey('sub_$_category'),
+            initialValue: _sub,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Tipo (opcional)'),
+            items: [for (final i in subcategorias[_category]!) DropdownMenuItem(value: i, child: Text(i))],
+            onChanged: (v) => setState(() => _sub = v),
+          ),
+        ],
         const SizedBox(height: 12),
         Row(children: [
           if (sizesFor(_category).length > 1) ...[
