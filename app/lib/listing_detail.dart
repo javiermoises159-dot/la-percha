@@ -277,6 +277,7 @@ class ListingDetail extends StatelessWidget {
                               MaterialPageRoute<void>(builder: (_) => EditarAnuncioPage(item: item))),
                         ),
                       ],
+                      SimilaresStrip(item: item),
                     ],
                   ),
                 ),
@@ -349,4 +350,53 @@ void _hojaCompartir(BuildContext context, String titulo, String texto, String ur
       ),
     ),
   );
+}
+
+
+/// "Te puede interesar": otras prendas de la misma categoría (mejor si es el mismo tipo o talla).
+class SimilaresStrip extends StatelessWidget {
+  const SimilaresStrip({super.key, required this.item});
+  final Listing item;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: listingsStore,
+      builder: (context, _) {
+        final lista = listingsStore.all
+            .where((l) => l.id != item.id && l.category == item.category && l.sellerId != item.sellerId)
+            .toList();
+        int puntos(Listing l) =>
+            (item.subcategoria != null && l.subcategoria == item.subcategoria ? 3 : 0) +
+            (l.size == item.size ? 2 : 0) +
+            (l.city == item.city ? 1 : 0);
+        lista.sort((a, b) => puntos(b) - puntos(a));
+        final ver = lista.take(8).toList();
+        if (ver.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 28),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Te puede interesar',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 250,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ver.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) => SizedBox(
+                  width: 150,
+                  child: ListingCard(
+                    key: ValueKey('sim_${ver[i].id}'),
+                    item: ver[i],
+                  ),
+                ),
+              ),
+            ),
+          ]),
+        );
+      },
+    );
+  }
 }

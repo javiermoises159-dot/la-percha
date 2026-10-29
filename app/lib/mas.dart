@@ -11,6 +11,7 @@ import 'cookies.dart';
 import 'extras.dart';
 import 'listing.dart';
 import 'push.dart';
+import 'rebaja.dart';
 import 'theme.dart';
 
 /// Funciones para estar a la altura de Vinted: editar anuncio, alertas de búsqueda,
@@ -128,8 +129,25 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
   late String _estado = widget.item.condition;
   late bool _envioGratis = widget.item.envioGratis;
   late String _tam = widget.item.envioTamano ?? tamanoSugerido(widget.item.category);
+  late String? _subEd = widget.item.subcategoria;
+  (int, int)? _rebaja;
   bool _busy = false;
   String? _err;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarRebaja();
+  }
+
+  Future<void> _cargarRebaja() async {
+    try {
+      final r = await _db.rpc('mi_rebaja', params: {'p_listing': widget.item.id});
+      if (r is Map && r['pct'] != null && r['dias'] != null && mounted) {
+        setState(() => _rebaja = ((r['pct'] as num).toInt(), (r['dias'] as num).toInt()));
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -160,6 +178,9 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
       'brand': _marca.text.trim().isEmpty ? null : _marca.text.trim(),
       'envio_gratis': _envioGratis,
       'envio_tamano': _tam,
+      'subcategoria': subcategorias[_categoria]?.contains(_subEd) == true ? _subEd : null,
+      'rebaja_pct': _rebaja?.$1,
+      'rebaja_dias': _rebaja?.$2,
     });
     if (!mounted) return;
     if (e != null) {
@@ -204,7 +225,21 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
         TextField(
             controller: _desc, maxLines: 3, maxLength: 300, decoration: const InputDecoration(labelText: 'Descripción')),
         const SizedBox(height: 8),
-        drop('Categoría', _categoria, cats, (v) => _categoria = v),
+        drop('Categoría', _categoria, cats, (v) {
+          _categoria = v;
+          _subEd = null;
+        }),
+        if (subcategorias[_categoria] != null) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: ValueKey('subed_$_categoria'),
+            initialValue: subcategorias[_categoria]!.contains(_subEd) ? _subEd : null,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Tipo (opcional)'),
+            items: [for (final i in subcategorias[_categoria]!) DropdownMenuItem(value: i, child: Text(i))],
+            onChanged: (v) => setState(() => _subEd = v),
+          ),
+        ],
         const SizedBox(height: 12),
         drop('Talla', _talla, tallas, (v) => _talla = v),
         const SizedBox(height: 12),
@@ -214,6 +249,8 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
             controller: _precio,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Precio en dólares', prefixText: '\$ ')),
+        const SizedBox(height: 12),
+        RebajaPicker(valor: _rebaja, onChanged: (v) => setState(() => _rebaja = v)),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _tam,

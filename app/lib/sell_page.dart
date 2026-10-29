@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_state.dart';
 import 'fundador.dart';
 import 'listing.dart';
+import 'rebaja.dart';
 import 'seguridad.dart';
 import 'theme.dart';
 
@@ -119,6 +120,7 @@ class _SellPageState extends State<SellPage> {
 
   String _category = 'Mujer';
   String? _sub;
+  (int, int)? _rebaja;
   String _size = 'M';
   String _condition = 'Muy buen estado';
   String? _city;
@@ -227,6 +229,7 @@ class _SellPageState extends State<SellPage> {
       envioGratis: _envioGratis,
       envioTamano: _tam,
       subcategoria: subcategorias[_category]?.contains(_sub) == true ? _sub : null,
+      rebaja: _rebaja,
     );
     if (!mounted) return;
     if (err != null) {
@@ -473,6 +476,8 @@ class _SellPageState extends State<SellPage> {
           decoration: const InputDecoration(
               labelText: 'Precio en dólares', prefixText: '\$ '),
         ),
+        const SizedBox(height: 12),
+        RebajaPicker(valor: _rebaja, onChanged: (v) => setState(() => _rebaja = v)),
         if (price != null && price > 0 && !_envioGratis && (_tarCiudad[_tam] ?? 0) > price)
           Padding(
             padding: const EdgeInsets.only(top: 8),

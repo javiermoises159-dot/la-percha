@@ -189,6 +189,9 @@ const _shoeSizes = [
   '45'
 ];
 
+/// ¿La categoría se mide con tallas de ropa (XS…XXL)?
+bool usaTallaRopa(String category) => _clothing.contains(category);
+
 /// Tallas según la categoría; lo que no es ropa no lleva talla.
 List<String> sizesFor(String category) {
   if (category == 'Zapatos') return _shoeSizes;
@@ -344,6 +347,7 @@ class ListingsStore extends ChangeNotifier {
     bool envioGratis = false,
     String? envioTamano,
     String? subcategoria,
+    (int, int)? rebaja,
   }) async {
     final uid = _db.auth.currentUser?.id;
     if (uid == null) return 'Inicia sesión para vender.';
@@ -379,6 +383,7 @@ class ListingsStore extends ChangeNotifier {
         if (envioGratis) 'envio_gratis': true,
         if (envioTamano != null) 'envio_tamano': envioTamano,
         if (subcategoria != null) 'subcategoria': subcategoria,
+        if (rebaja != null) ...{'rebaja_pct': rebaja.$1, 'rebaja_dias': rebaja.$2},
         if (brand != null && brand.trim().isNotEmpty) 'brand': brand.trim(),
       });
       await load();

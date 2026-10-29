@@ -136,9 +136,13 @@ Future<void> showReportSheet(BuildContext context,
 // ===================== Preferencias =====================
 
 class Prefs {
-  const Prefs({this.city, this.cats = const []});
+  const Prefs({this.city, this.cats = const [], this.ropa, this.calzado});
   final String? city;
   final List<String> cats;
+
+  /// Mi talla de ropa (XS…XXL) y de zapatos.
+  final String? ropa;
+  final String? calzado;
 }
 
 class PrefsStore extends ChangeNotifier {
@@ -157,7 +161,9 @@ class PrefsStore extends ChangeNotifier {
       if (p is Map) {
         prefs = Prefs(
             city: p['city'] as String?,
-            cats: List<String>.from((p['cats'] as List?) ?? const []));
+            cats: List<String>.from((p['cats'] as List?) ?? const []),
+            ropa: p['ropa'] as String?,
+            calzado: p['calzado'] as String?);
         notifyListeners();
       }
     } catch (_) {}
@@ -169,7 +175,7 @@ class PrefsStore extends ChangeNotifier {
     try {
       await _db.from('private_profiles').upsert({
         'id': me,
-        'prefs': {'city': p.city, 'cats': p.cats},
+        'prefs': {'city': p.city, 'cats': p.cats, 'ropa': p.ropa, 'calzado': p.calzado},
       });
       prefs = p;
       notifyListeners();
@@ -179,10 +185,17 @@ class PrefsStore extends ChangeNotifier {
     }
   }
 
-  /// Puntos para ordenar: primero lo de tu ciudad y tus categorías.
+  /// Puntos para ordenar: primero lo de tu ciudad, tu talla y tus categorías.
   int score(Listing l) =>
       (prefs.city != null && l.city == prefs.city ? 2 : 0) +
-      (prefs.cats.contains(l.category) ? 1 : 0);
+      (prefs.cats.contains(l.category) ? 1 : 0) +
+      (_tallaCoincide(l) ? 2 : 0);
+
+  bool _tallaCoincide(Listing l) {
+    if (l.category == 'Zapatos') return prefs.calzado != null && l.size == prefs.calzado;
+    if (usaTallaRopa(l.category)) return prefs.ropa != null && l.size == prefs.ropa;
+    return false;
+  }
 }
 
 final prefsStore = PrefsStore();
@@ -196,6 +209,8 @@ class PrefsPage extends StatefulWidget {
 class _PrefsPageState extends State<PrefsPage> {
   String? _city;
   late Set<String> _cats;
+  String? _ropa;
+  String? _calzado;
   bool _busy = false;
 
   @override
@@ -203,6 +218,8 @@ class _PrefsPageState extends State<PrefsPage> {
     super.initState();
     _city = prefsStore.prefs.city;
     _cats = {...prefsStore.prefs.cats};
+    _ropa = prefsStore.prefs.ropa;
+    _calzado = prefsStore.prefs.calzado;
   }
 
   @override
@@ -210,7 +227,7 @@ class _PrefsPageState extends State<PrefsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Personalización')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
-        Text('Te mostramos primero lo de tu ciudad y lo que te interesa.',
+        Text('Te mostramos primero lo de tu ciudad, lo que te queda y lo que te interesa.',
             style: TextStyle(color: context.muted)),
         const SizedBox(height: 16),
         DropdownButtonFormField<String?>(
@@ -223,6 +240,28 @@ class _PrefsPageState extends State<PrefsPage> {
               DropdownMenuItem<String?>(value: c, child: Text(c)),
           ],
           onChanged: (v) => setState(() => _city = v),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String?>(
+          initialValue: _ropa,
+          decoration: const InputDecoration(labelText: 'Mi talla de ropa'),
+          items: [
+            const DropdownMenuItem<String?>(value: null, child: Text('Sin elegir')),
+            for (final t in sizesFor('Mujer').where((t) => t != 'Única'))
+              DropdownMenuItem<String?>(value: t, child: Text(t)),
+          ],
+          onChanged: (v) => setState(() => _ropa = v),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String?>(
+          initialValue: _calzado,
+          decoration: const InputDecoration(labelText: 'Mi talla de zapatos'),
+          items: [
+            const DropdownMenuItem<String?>(value: null, child: Text('Sin elegir')),
+            for (final t in sizesFor('Zapatos'))
+              DropdownMenuItem<String?>(value: t, child: Text(t)),
+          ],
+          onChanged: (v) => setState(() => _calzado = v),
         ),
         const SizedBox(height: 20),
         const Text('Me interesa',
@@ -244,7 +283,7 @@ class _PrefsPageState extends State<PrefsPage> {
               : () async {
                   setState(() => _busy = true);
                   final e = await prefsStore
-                      .save(Prefs(city: _city, cats: _cats.toList()));
+                      .save(Prefs(city: _city, cats: _cats.toList(), ropa: _ropa, calzado: _calzado));
                   if (!context.mounted) return;
                   setState(() => _busy = false);
                   if (e != null) return _snack(context, e);
