@@ -134,12 +134,12 @@ const categories = [
 
 /// Tipos de artículo dentro de cada categoría.
 const subcategorias = <String, List<String>>{
-  'Mujer': ['Franelas y blusas', 'Vestidos', 'Pantalones', 'Jeans', 'Faldas', 'Shorts', 'Chaquetas y abrigos', 'Ropa deportiva', 'Pijamas y ropa interior', 'Trajes de baño', 'Otros'],
-  'Hombre': ['Franelas y camisetas', 'Camisas', 'Pantalones', 'Jeans', 'Shorts', 'Chaquetas y abrigos', 'Trajes y blazers', 'Ropa deportiva', 'Pijamas y ropa interior', 'Otros'],
+  'Mujer': ['Franelas y blusas', 'Suéteres y sudaderas', 'Vestidos', 'Pantalones', 'Jeans', 'Faldas', 'Shorts', 'Enterizos', 'Chaquetas y abrigos', 'Trajes y blazers', 'Ropa deportiva', 'Pijamas y ropa interior', 'Trajes de baño', 'Otros'],
+  'Hombre': ['Franelas y camisetas', 'Camisas', 'Suéteres y sudaderas', 'Pantalones', 'Jeans', 'Shorts', 'Chaquetas y abrigos', 'Trajes y blazers', 'Ropa deportiva', 'Pijamas y ropa interior', 'Otros'],
   'Niños': ['Franelas', 'Pantalones y jeans', 'Vestidos y faldas', 'Chaquetas', 'Uniformes', 'Pijamas', 'Ropa deportiva', 'Otros'],
   'Bebés': ['Conjuntos', 'Bodys y mamelucos', 'Pijamas', 'Vestiditos', 'Abrigos', 'Otros'],
-  'Zapatos': ['Deportivos', 'Casuales', 'Formales', 'Botas', 'Sandalias y chancletas', 'Tacones', 'Otros'],
-  'Accesorios': ['Bolsos y carteras', 'Gorras y sombreros', 'Cinturones', 'Relojes', 'Joyas', 'Lentes', 'Bufandas y guantes', 'Otros'],
+  'Zapatos': ['Deportivos', 'Casuales', 'Formales', 'Botas', 'Sandalias y chancletas', 'Tacones', 'Zapatillas de casa', 'Otros'],
+  'Accesorios': ['Bolsos y carteras', 'Mochilas', 'Gorras y sombreros', 'Cinturones', 'Relojes', 'Joyas', 'Lentes', 'Bufandas y guantes', 'Corbatas y pajaritas', 'Otros'],
   'Hogar': ['Muebles', 'Decoración', 'Cocina', 'Cama y baño', 'Electrodomésticos pequeños', 'Otros'],
   'Libros y juegos': ['Libros', 'Juegos de mesa', 'Videojuegos', 'Otros'],
   'Deportes': ['Ropa deportiva', 'Equipos y pesas', 'Bicicletas y patines', 'Balones y pelotas', 'Otros'],
