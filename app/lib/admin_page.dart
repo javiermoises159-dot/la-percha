@@ -1685,21 +1685,25 @@ class _TarifasEnvioState extends State<_TarifasEnvio> {
       const Text('Lo que paga el comprador, según el tamaño del paquete y la zona. Base: tarifas de Tealca (enero 2026) + 16 % de IVA. Va incluido en el pago y se lo entregamos al vendedor.',
           style: TextStyle(fontSize: 12)),
       for (final t in _tamanos.entries) ...[
+        const SizedBox(height: 18),
+        Text(t.value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
-        Text(t.value, style: const TextStyle(fontSize: 13)),
-        Row(children: [
-          for (final z in _zonas.entries)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: TextField(
-                  controller: _c['envio_${t.key}_${z.key}'],
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: z.value, prefixText: '\$ '),
+        for (final fila in [_zonas.entries.take(2), _zonas.entries.skip(2)]) ...[
+          Row(children: [
+            for (final z in fila)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: TextField(
+                    controller: _c['envio_${t.key}_${z.key}'],
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(labelText: z.value, prefixText: '\$ '),
+                  ),
                 ),
               ),
-            ),
-        ]),
+          ]),
+          const SizedBox(height: 10),
+        ],
       ],
       const SizedBox(height: 10),
       FilledButton(
