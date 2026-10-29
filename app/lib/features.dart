@@ -810,7 +810,7 @@ class _PromotePageState extends State<PromotePage> {
                 const SizedBox(height: 4),
                 Text(pagosAbiertos
                         ? '$pagoMovilBanco\n$pagoMovilCedula\n$pagoMovilTelefono'
-                        : 'Los pagos abren muy pronto. No pagues todavía.',
+                        : 'Estamos en fase de prueba. No pagues todavía.',
                     style: TextStyle(color: context.muted)),
                 const SizedBox(height: 12),
                 Text('2. Escribe la referencia',

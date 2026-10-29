@@ -213,12 +213,11 @@ bool pagosCerrados(BuildContext context) {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Los pagos abren muy pronto', style: display(22, color: ctx.ink)),
+          Text('Estamos en fase de prueba', style: display(22, color: ctx.ink)),
           const SizedBox(height: 8),
           Text(
-              'Estamos terminando de preparar la compra protegida. Mientras tanto puedes guardar en '
-              'favoritos lo que te guste, escribirle al vendedor y hacerle una oferta. Te avisaremos '
-              'apenas puedas comprar.',
+              'Ve subiendo tus prendas: te llegará un correo cuando habilitemos todos los pagos. '
+              'Mientras tanto puedes guardar favoritos, escribirle a los vendedores y explorar la app.',
               style: TextStyle(color: ctx.muted, height: 1.4)),
           const SizedBox(height: 16),
           SizedBox(
@@ -608,7 +607,7 @@ class _OrderPageState extends State<OrderPage> {
         const SizedBox(height: 10),
         if (!pagosAbiertos)
           _Box(children: [
-            Text('Los pagos abren muy pronto. No pagues todavía: te avisaremos cuando la compra protegida esté lista.',
+            Text('Estamos en fase de prueba. No pagues todavía: te llegará un correo cuando habilitemos todos los pagos.',
                 style: TextStyle(color: context.muted, height: 1.4)),
           ])
         else
@@ -646,6 +645,7 @@ class _OrderPageState extends State<OrderPage> {
           onPressed: _busy
               ? null
               : () {
+                  if (pagosCerrados(context)) return;
                   final r = _ref.text.trim();
                   if (r.length < 4) {
                     setState(() => _error = 'Escribe la referencia del pago.');

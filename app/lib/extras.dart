@@ -468,6 +468,7 @@ class _SaldoPageState extends State<SaldoPage> {
   }
 
   Future<void> _savePayout() async {
+    if (pagosCerrados(context)) return;
     if (_bancoSel == null ||
         !RegExp(r'^[VEJPGvejpg]-?\s?[\d.]{5,12}$').hasMatch(_cedula.text.trim()) ||
         _tel.text.replaceAll(RegExp(r'\D'), '').length < 10) {
@@ -515,6 +516,7 @@ class _SaldoPageState extends State<SaldoPage> {
   }
 
   Future<void> _retirar() async {
+    if (pagosCerrados(context)) return;
     final disponible = ((_saldo['disponible'] as num?) ?? 0).toDouble();
     if (_resumen == null) {
       return _snack(context, 'Primero pon abajo tus datos de Pago Móvil para cobrar.');
@@ -585,7 +587,7 @@ class _SaldoPageState extends State<SaldoPage> {
                       Text(bsText(disponible), style: TextStyle(color: context.muted, fontSize: 13)),
                     const SizedBox(height: 12),
                     FilledButton.icon(
-                      onPressed: disponible >= 5 ? _retirar : null,
+                      onPressed: (disponible >= 5 || !pagosAbiertos) ? _retirar : null,
                       icon: const Icon(Icons.account_balance_outlined),
                       label: Text(disponible >= 5 ? 'Retirar a mi Pago Móvil' : 'Retiras desde \$5'),
                     ),

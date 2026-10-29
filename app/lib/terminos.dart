@@ -15,7 +15,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
    - **Pedido:** la compra de uno o varios artículos (un **lote**) del mismo vendedor.
    - **Tarifa de protección:** lo que paga el comprador por la Compra protegida.
 5. Aceptas estos términos al crear tu cuenta. Si no estás de acuerdo, no uses Pavito.
-6. **Etapa de lanzamiento:** mientras la app muestre el aviso "Los pagos abren muy pronto", puedes crear tu cuenta, publicar, chatear, hacer ofertas y guardar favoritos, pero **todavía no se pueden pagar compras ni destacados**. Te avisaremos en la app cuando se activen; desde ese momento aplican las secciones de pagos de estos términos.
+6. **Etapa de lanzamiento:** mientras la app muestre el aviso "Estamos en fase de prueba", puedes crear tu cuenta, publicar, chatear, hacer ofertas y guardar favoritos, pero **todavía no se pueden pagar compras ni destacados**. Te avisaremos por correo y en la app cuando se activen; desde ese momento aplican las secciones de pagos de estos términos.
 
 ## 2. Tu cuenta
 
