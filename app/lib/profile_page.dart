@@ -14,6 +14,7 @@ import 'mas.dart';
 import 'admin_2fa.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
+import 'seguridad.dart';
 import 'theme.dart';
 
 /// Perfil: cabecera y menú completo.
@@ -142,6 +143,8 @@ class ProfilePage extends StatelessWidget {
   }
 
   static List<Widget> _legalItems(BuildContext context) => [
+        _item(context, Icons.shield_outlined, 'Consejos de seguridad',
+            page: const SeguridadPage()),
         _item(context, Icons.info_outline, 'Información sobre Pavito',
             page: const InfoPage(title: 'Sobre Pavito', body: aboutText)),
         _item(context, Icons.gavel_outlined, 'Notas legales',

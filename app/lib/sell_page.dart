@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_state.dart';
 import 'fundador.dart';
 import 'listing.dart';
+import 'seguridad.dart';
 import 'theme.dart';
 
 const _conditions = [
@@ -127,6 +128,9 @@ class _SellPageState extends State<SellPage> {
   void initState() {
     super.initState();
     _cargarTarifas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) mostrarSeguridadSiPrimeraVez(context);
+    });
   }
 
   Future<void> _cargarTarifas() async {
