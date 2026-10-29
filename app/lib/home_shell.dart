@@ -1,3 +1,4 @@
+import 'opinion.dart';
 import 'package:flutter/material.dart';
 import 'nav.dart';
 import 'seller_profile.dart';
@@ -34,6 +35,9 @@ class _HomeShellState extends State<HomeShell> {
     prefsStore.load().then((_) => listingsStore.resort());
     irAVender.addListener(_irAVender);
     WidgetsBinding.instance.addPostFrameCallback((_) => _abrirCompartido());
+    Future<void>.delayed(const Duration(seconds: 4), () {
+      if (mounted) pedirOpinionSiToca(context, widget.state);
+    });
   }
 
   void _irAVender() {

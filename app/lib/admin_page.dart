@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'listing.dart';
 import 'listing_detail.dart';
+import 'opinion.dart';
 import 'orders_page.dart';
 import 'pruebas.dart';
 import 'theme.dart';
@@ -26,6 +27,8 @@ class _Seccion {
 }
 
 final _secciones = <_Seccion>[
+  _Seccion('Opiniones', Icons.star_outline_rounded, null,
+      'Lo que dicen los usuarios que ya compraron o vendieron', () => const OpinionesAdminPage()),
   _Seccion('Visitas y registros', Icons.insights_outlined, null,
       'De dónde llega la gente y cuántos se registran', () => const VisitasAdminPage()),
   _Seccion('Pagos por verificar', Icons.fact_check_outlined, 'revision',
