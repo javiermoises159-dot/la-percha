@@ -204,6 +204,10 @@ class ListingDetail extends StatelessWidget {
                       ]),
                       const SizedBox(height: 14),
                       Divider(color: context.line),
+                      const SizedBox(height: 8),
+                      EnvioInfo(item: item),
+                      const SizedBox(height: 8),
+                      Divider(color: context.line),
                       InkWell(
                         onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(

@@ -5,12 +5,86 @@ import 'app_state.dart';
 import 'features.dart';
 import 'auth_sheet.dart';
 import 'config.dart';
+import 'extras.dart' show ciudades;
 import 'pruebas.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
 import 'theme.dart';
 
 SupabaseClient get _db => Supabase.instance.client;
+
+/// Si el vendedor ofrece envío gratis, se anota en el método (lo ve el vendedor en su pedido).
+String metodoSegunEnvio(String m, bool gratis) =>
+    gratis && !m.startsWith('Entrega en persona') && !m.startsWith('Envío Yummy') ? '$m (envío gratis)' : m;
+
+/// Envío calculado por el servidor (tamaño de la prenda y zona). null = no se pudo calcular.
+Future<double?> envioEstimado(String listingId, String ciudad, String metodo) async {
+  try {
+    final r = await _db.rpc('envio_estimado',
+        params: {'p_listing': listingId, 'p_ciudad': ciudad, 'p_metodo': metodo});
+    return (r as num).toDouble();
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<double?> envioEstimadoLote(List<String> ids, String ciudad, String metodo) async {
+  try {
+    final r = await _db.rpc('envio_estimado_lote',
+        params: {'p_listings': ids, 'p_ciudad': ciudad, 'p_metodo': metodo});
+    return (r as num).toDouble();
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Ciudad de entrega inicial: la de la cuenta si está en la lista.
+String ciudadInicial() {
+  final c = appState.account?.city;
+  return c != null && ciudades.contains(c) ? c : ciudades.first;
+}
+
+/// Sección "Envío" de la ficha de la prenda (como la de Vinted): precio para tu ciudad.
+class EnvioInfo extends StatefulWidget {
+  const EnvioInfo({super.key, required this.item});
+  final Listing item;
+  @override
+  State<EnvioInfo> createState() => _EnvioInfoState();
+}
+
+class _EnvioInfoState extends State<EnvioInfo> {
+  double? _e;
+  @override
+  void initState() {
+    super.initState();
+    if (appState.account != null && !widget.item.envioGratis) {
+      envioEstimado(widget.item.id, ciudadInicial(), metodosEntrega.first)
+          .then((v) { if (mounted) setState(() => _e = v); });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gratis = widget.item.envioGratis;
+    final logueado = appState.account != null;
+    final precio = gratis
+        ? 'Gratis'
+        : (logueado && _e != null ? '\$${_e!.toStringAsFixed(2)}' : 'Se calcula al pagar');
+    final nota = gratis
+        ? 'El vendedor paga el envío.'
+        : 'El precio depende del tamaño de la prenda y de tu ciudad. Lo ves completo antes de pagar y va incluido en el pago protegido.';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Expanded(child: Text('Envío', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+        Text(precio, style: TextStyle(color: context.muted, fontWeight: FontWeight.w600)),
+      ]),
+      const SizedBox(height: 6),
+      Text(nota, style: TextStyle(color: context.muted, fontSize: 13)),
+    ]);
+  }
+}
+
+String textoEnvio(double? e) => e == null ? 'Se calcula al pagar' : (e == 0 ? 'Gratis' : '\$${e.toStringAsFixed(2)}');
 
 const _statusLabel = {
   'esperando_pago': 'Esperando tu pago',
@@ -42,9 +116,9 @@ String? _limiteEnvio(Map o) {
 
 /// Formas de entrega en Venezuela. La última siempre es en persona.
 const metodosEntrega = [
-  'MRW (cobro a destino)',
-  'Zoom (cobro a destino)',
-  'Tealca (cobro a destino)',
+  'MRW',
+  'Zoom',
+  'Tealca',
   'Entrega en persona (punto seguro)',
 ];
 
@@ -169,9 +243,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
   String? _error;
   double? _price; // precio acordado (oferta aceptada) o el del anuncio
   late String _metodo = _paraItem(metodosEntrega.first);
-  String _paraItem(String m) => widget.item.envioGratis
-      ? m.replaceFirst('(cobro a destino)', '(envío pagado por el vendedor)')
-      : m;
+  late String _ciudad = ciudadInicial();
+  double? _envio;
+  String _paraItem(String m) => metodoSegunEnvio(m, widget.item.envioGratis);
+
+  Future<void> _recalc() async {
+    final e = await envioEstimado(widget.item.id, _ciudad, _metodo);
+    if (mounted) setState(() => _envio = e);
+  }
 
   @override
   void initState() {
@@ -182,6 +261,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     cargarMetodosEntrega().then((_) {
       if (mounted) setState(() {});
     });
+    _recalc();
   }
 
   @override
@@ -215,6 +295,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               'name': name,
               'phone': phone,
               'address': address,
+              'ciudad': _ciudad,
               'metodo': _metodo
             },
           })
@@ -248,9 +329,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
           if (price < item.price) _Line('Precio original', _money(item.price)),
           _Line(price < item.price ? 'Precio acordado' : 'Artículo',
               _money(price)),
+          _Line('Envío', textoEnvio(_envio)),
           _Line('Protección al comprador', _money(fee)),
-          _Line(item.envioGratis ? 'Total (envío gratis)' : 'Total (sin envío)', _money(price + fee), bold: true),
-          if (bsText(price + fee).isNotEmpty) _Line('', bsText(price + fee)),
+          _Line('Total', _money(price + fee + (_envio ?? 0)), bold: true),
+          if (bsText(price + fee + (_envio ?? 0)).isNotEmpty) _Line('', bsText(price + fee + (_envio ?? 0))),
         ]),
         const SizedBox(height: 20),
         Text('¿Dónde te la enviamos?',
@@ -263,9 +345,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
             for (final m in metodosDisponibles())
               DropdownMenuItem(value: _paraItem(m), child: Text(_paraItem(m))),
           ],
-          onChanged: (v) => setState(() => _metodo = v ?? _metodo),
+          onChanged: (v) {
+            setState(() => _metodo = v ?? _metodo);
+            _recalc();
+          },
         ),
-        if (widget.item.envioGratis && _metodo.contains('envío pagado por el vendedor')) ...[
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          initialValue: _ciudad,
+          decoration: const InputDecoration(labelText: 'Ciudad de entrega'),
+          items: [for (final c in ciudades) DropdownMenuItem(value: c, child: Text(c))],
+          onChanged: (v) {
+            setState(() => _ciudad = v ?? _ciudad);
+            _recalc();
+          },
+        ),
+        if (widget.item.envioGratis && _metodo.contains('envío gratis')) ...[
           const SizedBox(height: 8),
           Text('Este vendedor ofrece envío gratis: él paga el envío, tú no pagas nada al recibir.',
               style: TextStyle(color: context.muted, fontSize: 13)),
@@ -349,7 +444,7 @@ class _OrderPageState extends State<OrderPage> {
       final row = await _db
           .from('orders')
           .select(
-              'id, listing_id, buyer_id, seller_id, price, fee, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, paid_at, refunded_at, devolucion_at, guia_devolucion, devuelta_enviada_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
+              'id, listing_id, buyer_id, seller_id, price, fee, envio, status, pay_ref, tracking, created_at, updated_at, bundle_id, paid_out_at, paid_at, refunded_at, devolucion_at, guia_devolucion, devuelta_enviada_at, listings(title), seller:profiles!orders_seller_id_fkey(username), buyer:profiles!orders_buyer_id_fkey(username)')
           .eq('id', widget.orderId)
           .single();
       // La dirección y el teléfono solo los entrega el servidor a quien puede verlos
@@ -361,7 +456,7 @@ class _OrderPageState extends State<OrderPage> {
       if (row['bundle_id'] != null) {
         group = List<Map<String, dynamic>>.from(await _db
             .from('orders')
-            .select('id, price, fee, listings(title)')
+            .select('id, price, fee, envio, listings(title)')
             .eq('bundle_id', row['bundle_id'] as String)
             .order('created_at', ascending: true));
       }
@@ -428,6 +523,7 @@ class _OrderPageState extends State<OrderPage> {
         : group.fold(0.0, (a, r) => a + ((r as Map)[k] as num).toDouble());
     final price = total('price');
     final fee = total('fee');
+    final envio = total('envio');
     final title = group.isEmpty
         ? field(o['listings'], 'title', 'Artículo')
         : 'Lote de ${group.length} artículos';
@@ -741,7 +837,8 @@ class _OrderPageState extends State<OrderPage> {
         ],
         const SizedBox(height: 14),
         _Box(children: [
-          _Line('Prenda', _money(price)),
+          _Line('Prenda', _money(price - envio)),
+          if (envio > 0) _Line(isBuyer ? 'Envío' : 'Envío (tú pagas la guía)', _money(envio)),
           if (isBuyer) _Line('Protección', _money(fee)),
           _Line(isBuyer ? 'Total' : 'Recibes',
               _money(isBuyer ? price + fee : price),

@@ -837,6 +837,8 @@ class _BundlePageState extends State<BundlePage> {
   final _phone = TextEditingController();
   final _address = TextEditingController();
   String _metodo = metodosEntrega.first;
+  String _ciudad = ciudadInicial();
+  double? _envio;
   bool _busy = false;
   String? _error;
 
@@ -888,6 +890,20 @@ class _BundlePageState extends State<BundlePage> {
     return n >= 2 ? v('lote_2') : 0;
   }
 
+  bool get _todoGratis {
+    final l = _items;
+    return l != null && _sel.isNotEmpty && l.where((x) => _sel.contains(x.id)).every((x) => x.envioGratis);
+  }
+
+  Future<void> _recalc() async {
+    if (_sel.length < 2) {
+      if (mounted) setState(() => _envio = null);
+      return;
+    }
+    final e = await envioEstimadoLote(_sel.toList(), _ciudad, _metodo);
+    if (mounted) setState(() => _envio = e);
+  }
+
   Future<void> _buy() async {
     if (pagosCerrados(context)) return;
     final name = _name.text.trim(),
@@ -910,6 +926,7 @@ class _BundlePageState extends State<BundlePage> {
           'name': name,
           'phone': phone,
           'address': address,
+          'ciudad': _ciudad,
           'metodo': _metodo
         },
       });
@@ -955,8 +972,10 @@ class _BundlePageState extends State<BundlePage> {
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _sel.contains(l.id),
-                  onChanged: (v) => setState(
-                      () => v == true ? _sel.add(l.id) : _sel.remove(l.id)),
+                  onChanged: (v) {
+                    setState(() => v == true ? _sel.add(l.id) : _sel.remove(l.id));
+                    _recalc();
+                  },
                   secondary: SizedBox(
                       width: 52,
                       height: 52,
@@ -980,10 +999,11 @@ class _BundlePageState extends State<BundlePage> {
                 if (pct > 0)
                   _line('Descuento del lote ($pct %)',
                       '- ${_usd(subtotal - conDesc)}'),
+                _line('Envío (uno solo)', chosen.length < 2 ? '' : textoEnvio(_envio)),
                 _line('Protección al comprador', _usd(fee)),
-                _line('Total (sin envío)', _usd(conDesc + fee), bold: true),
-                if (bsText(conDesc + fee).isNotEmpty)
-                  _line('', bsText(conDesc + fee)),
+                _line('Total', _usd(conDesc + fee + (_envio ?? 0)), bold: true),
+                if (bsText(conDesc + fee + (_envio ?? 0)).isNotEmpty)
+                  _line('', bsText(conDesc + fee + (_envio ?? 0))),
               ],
               if (chosen.length >= 2) ...[
                 const SizedBox(height: 16),
@@ -993,9 +1013,22 @@ class _BundlePageState extends State<BundlePage> {
                       const InputDecoration(labelText: 'Cómo lo recibes'),
                   items: [
                     for (final m in metodosDisponibles())
-                      DropdownMenuItem(value: m, child: Text(m))
+                      DropdownMenuItem(value: m, child: Text(metodoSegunEnvio(m, _todoGratis)))
                   ],
-                  onChanged: (v) => setState(() => _metodo = v ?? _metodo),
+                  onChanged: (v) {
+                    setState(() => _metodo = v ?? _metodo);
+                    _recalc();
+                  },
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: _ciudad,
+                  decoration: const InputDecoration(labelText: 'Ciudad de entrega'),
+                  items: [for (final c in ciudades) DropdownMenuItem(value: c, child: Text(c))],
+                  onChanged: (v) {
+                    setState(() => _ciudad = v ?? _ciudad);
+                    _recalc();
+                  },
                 ),
                 if (notaEntrega(_metodo) != null) ...[
                   const SizedBox(height: 6),

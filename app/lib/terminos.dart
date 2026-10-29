@@ -54,7 +54,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 ## 4. Comprar en Pavito
 
 1. Toda compra hecha con el botón **Comprar** tiene **Compra protegida**: tu dinero queda guardado y no llega al vendedor hasta que confirmas que recibiste el artículo como se describía.
-2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El envío lo pagas aparte a la empresa de envíos (cobro a destino) salvo que acuerdes entrega en persona o que el anuncio diga **Envío gratis**: en ese caso lo paga el vendedor.
+2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El **envío** se calcula según el tamaño de la prenda y tu ciudad, lo ves antes de pagar y va incluido en el pago protegido (no paga tarifa de protección); se lo entregamos al vendedor, que paga la guía. Si el anuncio dice **Envío gratis**, lo paga el vendedor; en la entrega en persona no hay envío.
 3. Antes de pagar ves el total en USD y su referencia en bolívares.
 4. **Ofertas:** puedes ofrecer desde el 50 % del precio. Si el vendedor acepta, ese precio vale 48 horas solo para ti. El vendedor puede contraofertar.
 5. **Lotes:** puedes comprar de 2 a 10 artículos del mismo vendedor en un solo pedido, con un solo pago y un solo envío, y con el descuento que el vendedor tenga activo.
@@ -86,7 +86,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 
 ## 6. Envíos y entrega en persona
 
-1. Al comprar eliges cómo recibir: **MRW, Zoom o Tealca** (cobro a destino) o **entrega en persona**.
+1. Al comprar eliges cómo recibir: **MRW, Zoom o Tealca** o **entrega en persona**.
 2. El vendedor empaca bien el artículo, lo envía a la oficina o dirección indicada y carga la **guía de envío** en Pavito. Sin guía no puede marcar el pedido como enviado. Te recomendamos usar empresas que entreguen con firma o cédula.
 3. La empresa de envíos es un tercero: Pavito no responde por sus retrasos, pero la Compra protegida sí cubre que el artículo no llegue (ver sección 7).
 4. **Entrega en persona:** quedan en un lugar público y concurrido, de día (centro comercial, plaza con vigilancia). El comprador **revisa el artículo antes de confirmar** en la app. Nunca se paga en efectivo aparte: el pago va siempre por Pavito.

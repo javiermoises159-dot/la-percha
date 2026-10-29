@@ -1106,6 +1106,8 @@ class _PromosTabState extends State<_PromosTab> {
           ),
         ]),
         const Divider(height: 32),
+        const _TarifasEnvio(),
+        const Divider(height: 32),
         Text(
             _rows.isEmpty
                 ? 'No hay destacados por revisar.'
@@ -1612,4 +1614,99 @@ Future<bool> _seguro(BuildContext context, String texto) async {
     ),
   );
   return r == true;
+}
+
+
+/// Tarifas de envío (USD) por tamaño de paquete y zona. Las cambia el admin.
+class _TarifasEnvio extends StatefulWidget {
+  const _TarifasEnvio();
+  @override
+  State<_TarifasEnvio> createState() => _TarifasEnvioState();
+}
+
+class _TarifasEnvioState extends State<_TarifasEnvio> {
+  static const _tamanos = {
+    'chico': 'Chico (accesorios, bebés, libros, mascotas)',
+    'mediano': 'Mediano (ropa de mujer, hombre y niños)',
+    'grande': 'Grande (zapatos, hogar, deportes)',
+  };
+  static const _zonas = {'ciudad': 'Misma ciudad', 'region': 'Misma región', 'pais': 'Resto del país'};
+  final Map<String, TextEditingController> _c = {
+    for (final t in _tamanos.keys) for (final z in _zonas.keys) 'envio_${t}_$z': TextEditingController()
+  };
+  String? _msg;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _c.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _db.from('ajustes').select('clave, valor').like('clave', 'envio_%');
+      if (!mounted) return;
+      setState(() {
+        for (final row in r) {
+          final c = _c[row['clave']];
+          if (c != null) c.text = (row['valor'] as num).toStringAsFixed(2);
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _guardar() async {
+    try {
+      for (final e in _c.entries) {
+        final v = double.tryParse(e.value.text.trim().replaceAll(',', '.'));
+        if (v == null) continue;
+        await _db.rpc('admin_set_envio', params: {'p_clave': e.key, 'p_valor': v});
+      }
+      if (mounted) setState(() => _msg = 'Tarifas guardadas.');
+    } on PostgrestException catch (e) {
+      if (mounted) setState(() => _msg = e.message);
+    } catch (_) {
+      if (mounted) setState(() => _msg = 'No se pudo guardar. Revisa tu conexión.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Tarifas de envío (USD)', style: TextStyle(fontWeight: FontWeight.w700)),
+      const Text('Lo que paga el comprador, según el tamaño de la prenda y la zona. Va incluido en el pago y se lo entregamos al vendedor.',
+          style: TextStyle(fontSize: 12)),
+      for (final t in _tamanos.entries) ...[
+        const SizedBox(height: 10),
+        Text(t.value, style: const TextStyle(fontSize: 13)),
+        Row(children: [
+          for (final z in _zonas.entries)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextField(
+                  controller: _c['envio_${t.key}_${z.key}'],
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: z.value, prefixText: '\$ '),
+                ),
+              ),
+            ),
+        ]),
+      ],
+      const SizedBox(height: 10),
+      FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+          onPressed: _guardar,
+          child: const Text('Guardar tarifas')),
+      if (_msg != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_msg!)),
+    ]);
+  }
 }
