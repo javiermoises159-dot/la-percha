@@ -530,7 +530,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await Supabase.instance.client
           .from('profiles')
-          .update({'username': u, 'city': c}).eq('id', appState.account!.id);
+          .update({'username': u, 'city': c}).eq('id', appState.account?.id ?? '');
       await appState.refresh();
       if (mounted) setState(() => _msg = 'Guardado.');
     } on PostgrestException catch (e) {

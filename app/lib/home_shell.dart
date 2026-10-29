@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'nav.dart';
 import 'seller_profile.dart';
 
 import 'app_state.dart';
@@ -31,7 +32,18 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     ListingsStore.prefScore = prefsStore.score;
     prefsStore.load().then((_) => listingsStore.resort());
+    irAVender.addListener(_irAVender);
     WidgetsBinding.instance.addPostFrameCallback((_) => _abrirCompartido());
+  }
+
+  void _irAVender() {
+    if (mounted) _select(2);
+  }
+
+  @override
+  void dispose() {
+    irAVender.removeListener(_irAVender);
+    super.dispose();
   }
 
   /// Si se entró desde un enlace compartido (/a/ID → /?a=ID), abre ese anuncio.

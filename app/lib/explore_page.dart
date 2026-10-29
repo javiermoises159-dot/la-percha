@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'nav.dart';
 
 import 'app_state.dart';
 import 'extras.dart';
@@ -312,11 +313,9 @@ class _ExplorePageState extends State<ExplorePage> with _BusquedaServidor {
       Expanded(
         child: RefreshIndicator(
           onRefresh: listingsStore.load,
-          child: ListingGrid(
-              items: items,
-              emptyText: listingsStore.all.isEmpty
-                  ? 'Todavía no hay nada colgado. ¡Sé el primero en publicar!'
-                  : null),
+          child: (listingsStore.all.isEmpty && !listingsStore.loading && listingsStore.error == null)
+              ? const _PrimerosCard()
+              : ListingGrid(items: items),
         ),
       ),
     ]);
@@ -553,6 +552,38 @@ class _CatTile extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// Se ve mientras todavía no hay anuncios: invita a ser de los primeros en publicar.
+class _PrimerosCard extends StatelessWidget {
+  const _PrimerosCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+      children: [
+        Icon(Icons.checkroom_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(height: 16),
+        Text('Sé de los primeros en Pavito',
+            textAlign: TextAlign.center, style: display(26, color: context.ink)),
+        const SizedBox(height: 10),
+        Text(
+            'Estamos en fase de prueba y abrimos antes de diciembre. Sube tus prendas ahora: vender no cuesta '
+            'comisión y te llegará un correo cuando habilitemos todos los pagos.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.muted, height: 1.4)),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+          onPressed: () => irAVender.value++,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Publicar mi primera prenda'),
+        ),
+      ],
     );
   }
 }

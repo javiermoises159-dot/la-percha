@@ -10,3 +10,6 @@ void avisoGlobal(String texto) {
   mensajeroKey.currentState?.showSnackBar(
       SnackBar(content: Text(texto), duration: const Duration(seconds: 12), showCloseIcon: true));
 }
+
+/// Pide a la barra principal que abra la pestaña "Vender" (sube el contador para avisar).
+final irAVender = ValueNotifier<int>(0);

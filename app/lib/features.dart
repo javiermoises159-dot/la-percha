@@ -495,7 +495,7 @@ class _VacationPageState extends State<VacationPage> {
     try {
       await _db
           .from('profiles')
-          .update({'vacation': v}).eq('id', appState.account!.id);
+          .update({'vacation': v}).eq('id', appState.account?.id ?? '');
       setState(() => _on = v);
       listingsStore.load();
     } catch (_) {

@@ -469,6 +469,7 @@ class _SaldoPageState extends State<SaldoPage> {
 
   Future<void> _savePayout() async {
     if (pagosCerrados(context)) return;
+    if (appState.account == null) return;
     if (_bancoSel == null ||
         !RegExp(r'^[VEJPGvejpg]-?\s?[\d.]{5,12}$').hasMatch(_cedula.text.trim()) ||
         _tel.text.replaceAll(RegExp(r'\D'), '').length < 10) {
@@ -478,7 +479,7 @@ class _SaldoPageState extends State<SaldoPage> {
     setState(() => _busy = true);
     try {
       await _db.from('private_profiles').upsert({
-        'id': appState.account!.id,
+        'id': appState.account?.id ?? '',
         'payout': {
           'banco': _bancoSel,
           'cedula': _cedula.text.trim(),
@@ -805,7 +806,7 @@ class _LoteDiscountsPageState extends State<LoteDiscountsPage> {
                             'lote_2': _d2,
                             'lote_3': _d3,
                             'lote_5': _d5
-                          }).eq('id', appState.account!.id);
+                          }).eq('id', appState.account?.id ?? '');
                           if (context.mounted)
                             _snack(context, 'Descuentos guardados.');
                         } catch (e) {
