@@ -61,6 +61,9 @@ class AppState extends ChangeNotifier {
     _avisarErrorEnDireccion();
     _verGoogle();
     await refresh();
+    if (_db.auth.currentUser == null && Uri.base.fragment.contains('access_token')) {
+      Future<void>.delayed(const Duration(seconds: 2), () => avisoGlobal('Volviste de Google pero la sesión no se guardó. Prueba abrir pavito.app directo en Safari, no desde otra app.'));
+    }
     loaded = true;
     notifyListeners();
   }
@@ -109,8 +112,11 @@ class AppState extends ChangeNotifier {
               r['listing_id'] as String: (r['price_at'] as num).toDouble()
         };
       }
-    } catch (_) {
-      // Sin conexión: se mantiene lo que ya había.
+    } catch (e) {
+      // Sin conexión: se mantiene lo que ya había. Si hay sesión pero no se pudo leer el perfil, se avisa.
+      if (account == null) {
+        Future<void>.delayed(const Duration(seconds: 1), () => avisoGlobal('Entraste, pero no se pudo cargar tu perfil: ${e is PostgrestException ? e.message : e}'));
+      }
     }
     notifyListeners();
   }
