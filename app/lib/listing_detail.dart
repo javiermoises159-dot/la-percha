@@ -12,6 +12,7 @@ import 'explore_page.dart';
 import 'extras.dart';
 import 'listing.dart';
 import 'orders_page.dart';
+import 'perfil_foto.dart';
 import 'seller_profile.dart';
 import 'theme.dart';
 
@@ -217,16 +218,7 @@ class ListingDetail extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(children: [
-                            CircleAvatar(
-                                radius: 21,
-                                backgroundColor: context.soft,
-                                child: Text(
-                                    item.seller.isEmpty
-                                        ? '?'
-                                        : item.seller[0].toUpperCase(),
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: context.ink))),
+                            AvatarDe(userId: item.sellerId, nombre: item.seller, radius: 21),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(

@@ -16,8 +16,10 @@ class Account {
       required this.username,
       required this.city,
       required this.email,
+      this.avatarUrl,
       this.isAdmin = false});
   final bool isAdmin;
+  final String? avatarUrl;
   final String id;
   final String username;
   final String city;
@@ -94,7 +96,7 @@ class AppState extends ChangeNotifier {
     }
     try {
       final row =
-          await _db.from('profiles').select('username, city').eq('id', user.id).maybeSingle();
+          await _db.from('profiles').select('username, city, avatar_url').eq('id', user.id).maybeSingle();
       sinPerfil = row == null;
       if (row != null) {
         account = Account(
@@ -102,6 +104,7 @@ class AppState extends ChangeNotifier {
           username: row['username'] as String,
           city: row['city'] as String,
           email: user.email ?? '',
+          avatarUrl: row['avatar_url'] as String?,
           isAdmin: await _esAdmin(),
         );
         final f = await _db.from('favorites').select('listing_id, price_at');

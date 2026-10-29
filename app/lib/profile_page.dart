@@ -14,6 +14,7 @@ import 'mas.dart';
 import 'admin_2fa.dart';
 import 'orders_page.dart';
 import 'seller_profile.dart';
+import 'perfil_foto.dart';
 import 'seguridad.dart';
 import 'theme.dart';
 
@@ -53,11 +54,22 @@ class ProfilePage extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: context.chip,
-                  child: Text(a.username.substring(0, 1).toUpperCase(),
-                      style: display(28, color: ink)),
+                GestureDetector(
+                  onTap: () => cambiarFotoPerfil(context),
+                  child: Stack(children: [
+                    Avatar(url: a.avatarUrl, nombre: a.username, radius: 32),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            shape: BoxShape.circle),
+                        child: const Icon(Icons.camera_alt, size: 13, color: Colors.white),
+                      ),
+                    ),
+                  ]),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -74,6 +86,7 @@ class ProfilePage extends StatelessWidget {
               ]),
             ),
           ),
+          DistintivosCard(userId: a.id),
           if (a.isAdmin)
             _item(context, Icons.admin_panel_settings_outlined,
                 'Panel de administración',

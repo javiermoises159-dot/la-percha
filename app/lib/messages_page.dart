@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_state.dart';
 import 'auth_sheet.dart';
 import 'chat_page.dart';
+import 'perfil_foto.dart';
 import 'theme.dart';
 
 /// Mensajes y notificaciones.
@@ -166,9 +167,7 @@ class _ThreadListState extends State<_ThreadList> {
           final name = _names[other] ?? 'Usuario';
           final title = _titles[r['listing_id']] ?? 'Prenda';
           return ListTile(
-            leading: CircleAvatar(
-                backgroundColor: context.chip,
-                child: Text(name.isEmpty ? '?' : name[0].toUpperCase())),
+            leading: AvatarDe(userId: other, nombre: name),
             title: Text('@$name · $title',
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text((r['last_message'] as String?) ?? 'Sin mensajes',

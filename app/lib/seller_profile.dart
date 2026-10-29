@@ -9,6 +9,7 @@ import 'mas.dart';
 import 'explore_page.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
+import 'perfil_foto.dart';
 import 'theme.dart';
 
 /// Perfil público de una persona: sus datos, valoración y prendas a la venta.
@@ -93,12 +94,7 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: context.chip,
-                  child: Text(widget.username.substring(0, 1).toUpperCase(),
-                      style: display(30, color: ink)),
-                ),
+                AvatarDe(userId: widget.sellerId, nombre: widget.username, radius: 34),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -129,6 +125,9 @@ class _SellerProfilePageState extends State<SellerProfilePage> {
                                 ? 'Aún sin valoraciones'
                                 : '${avg.toStringAsFixed(1)} · $count valoraciones ›'),
                           ])),
+                      DistintivosChips(
+                          userId: widget.sellerId,
+                          padding: const EdgeInsets.only(top: 8)),
                       if (isMe) ...[
                         const SizedBox(height: 8),
                         FilledButton.icon(
