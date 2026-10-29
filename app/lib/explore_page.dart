@@ -504,6 +504,7 @@ class CategoryResults extends StatefulWidget {
 
 class _CategoryResultsState extends State<CategoryResults> {
   List<Listing>? _remoto;
+  String? _sub;
 
   @override
   void initState() {
@@ -516,16 +517,44 @@ class _CategoryResultsState extends State<CategoryResults> {
 
   @override
   Widget build(BuildContext context) {
+    final tipos = subcategorias[widget.category];
     return Scaffold(
       appBar: AppBar(title: Text(widget.category)),
-      body: ListenableBuilder(
-        listenable: listingsStore,
-        builder: (context, _) => ListingGrid(
-          items: _remoto ??
-              listingsStore.all.where((l) => l.category == widget.category).toList(),
-          emptyText: 'Todavía no hay prendas en esta categoría.',
+      body: Column(children: [
+        if (tipos != null)
+          SizedBox(
+            height: 52,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(label: const Text('Todo'), selected: _sub == null, onSelected: (_) => setState(() => _sub = null)),
+                ),
+                for (final x in tipos)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(label: Text(x), selected: _sub == x, onSelected: (_) => setState(() => _sub = x)),
+                  ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: ListenableBuilder(
+            listenable: listingsStore,
+            builder: (context, _) {
+              final base = _remoto ?? listingsStore.all.where((l) => l.category == widget.category).toList();
+              return ListingGrid(
+                items: _sub == null ? base : base.where((l) => l.subcategoria == _sub).toList(),
+                emptyText: _sub == null
+                    ? 'Todavía no hay prendas en esta categoría.'
+                    : 'Todavía no hay prendas de este tipo.',
+              );
+            },
+          ),
         ),
-      ),
+      ]),
     );
   }
 }
