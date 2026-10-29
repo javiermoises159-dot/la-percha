@@ -233,6 +233,13 @@ class ListingDetail extends StatelessWidget {
                                             fontWeight: FontWeight.w700,
                                             fontSize: 15)),
                                     Wrap(children: [
+                                      if (item.envioGratis)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 6),
+                                          child: Chip(
+                                              visualDensity: VisualDensity.compact,
+                                              label: Text('Envío gratis', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
+                                        ),
                                       FundadorChip(sellerId: item.sellerId),
                                       VerificadoChip(userId: item.sellerId),
                                     ]),

@@ -168,7 +168,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _busy = false;
   String? _error;
   double? _price; // precio acordado (oferta aceptada) o el del anuncio
-  String _metodo = metodosEntrega.first;
+  late String _metodo = _paraItem(metodosEntrega.first);
+  String _paraItem(String m) => widget.item.envioGratis
+      ? m.replaceFirst('(cobro a destino)', '(envío pagado por el vendedor)')
+      : m;
 
   @override
   void initState() {
@@ -246,7 +249,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _Line(price < item.price ? 'Precio acordado' : 'Artículo',
               _money(price)),
           _Line('Protección al comprador', _money(fee)),
-          _Line('Total (sin envío)', _money(price + fee), bold: true),
+          _Line(item.envioGratis ? 'Total (envío gratis)' : 'Total (sin envío)', _money(price + fee), bold: true),
           if (bsText(price + fee).isNotEmpty) _Line('', bsText(price + fee)),
         ]),
         const SizedBox(height: 20),
@@ -258,10 +261,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
           decoration: const InputDecoration(labelText: 'Cómo lo recibes'),
           items: [
             for (final m in metodosDisponibles())
-              DropdownMenuItem(value: m, child: Text(m)),
+              DropdownMenuItem(value: _paraItem(m), child: Text(_paraItem(m))),
           ],
           onChanged: (v) => setState(() => _metodo = v ?? _metodo),
         ),
+        if (widget.item.envioGratis && _metodo.contains('envío pagado por el vendedor')) ...[
+          const SizedBox(height: 8),
+          Text('Este vendedor ofrece envío gratis: él paga el envío, tú no pagas nada al recibir.',
+              style: TextStyle(color: context.muted, fontSize: 13)),
+        ],
         if (notaEntrega(_metodo) != null) ...[
           const SizedBox(height: 8),
           Text(notaEntrega(_metodo)!,

@@ -126,6 +126,7 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
   late String _categoria = widget.item.category;
   late String _talla = widget.item.size;
   late String _estado = widget.item.condition;
+  late bool _envioGratis = widget.item.envioGratis;
   bool _busy = false;
   String? _err;
 
@@ -156,6 +157,7 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
       'size': _talla,
       'condition': _estado,
       'brand': _marca.text.trim().isEmpty ? null : _marca.text.trim(),
+      'envio_gratis': _envioGratis,
     });
     if (!mounted) return;
     if (e != null) {
@@ -210,6 +212,13 @@ class _EditarAnuncioPageState extends State<EditarAnuncioPage> {
             controller: _precio,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Precio en dólares', prefixText: '\$ ')),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ofrecer envío gratis'),
+          subtitle: const Text('Tú pagas el envío.'),
+          value: _envioGratis,
+          onChanged: (v) => setState(() => _envioGratis = v),
+        ),
         if (_err != null) ...[
           const SizedBox(height: 10),
           Text(_err!, style: const TextStyle(color: Color(0xFFB3261E))),

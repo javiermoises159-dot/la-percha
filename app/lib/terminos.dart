@@ -54,7 +54,7 @@ Estos términos regulan el uso de Pavito, la app y la web donde personas en Vene
 ## 4. Comprar en Pavito
 
 1. Toda compra hecha con el botón **Comprar** tiene **Compra protegida**: tu dinero queda guardado y no llega al vendedor hasta que confirmas que recibiste el artículo como se describía.
-2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El envío lo pagas aparte a la empresa de envíos (cobro a destino) salvo que acuerdes entrega en persona.
+2. Pagas el precio del artículo más la **tarifa de protección: 0,25 USD + 5 % del precio** por pedido. En un lote, la parte fija de 0,25 USD se cobra una sola vez. El envío lo pagas aparte a la empresa de envíos (cobro a destino) salvo que acuerdes entrega en persona o que el anuncio diga **Envío gratis**: en ese caso lo paga el vendedor.
 3. Antes de pagar ves el total en USD y su referencia en bolívares.
 4. **Ofertas:** puedes ofrecer desde el 50 % del precio. Si el vendedor acepta, ese precio vale 48 horas solo para ti. El vendedor puede contraofertar.
 5. **Lotes:** puedes comprar de 2 a 10 artículos del mismo vendedor en un solo pedido, con un solo pago y un solo envío, y con el descuento que el vendedor tenga activo.

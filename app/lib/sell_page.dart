@@ -46,6 +46,7 @@ class _SellPageState extends State<SellPage> {
   final _desc = TextEditingController();
   final _brand = TextEditingController();
   final List<Uint8List> _photos = [];
+  bool _envioGratis = false;
   bool _fotoIa = false; // la primera foto es una portada creada por la IA
   bool _scanning = false;
   bool _autoScan = false;
@@ -197,6 +198,7 @@ class _SellPageState extends State<SellPage> {
       photos: _photos,
       fotoIa: _fotoIa,
       brand: _brand.text,
+      envioGratis: _envioGratis,
     );
     if (!mounted) return;
     if (err != null) {
@@ -210,6 +212,7 @@ class _SellPageState extends State<SellPage> {
     _desc.clear();
     _brand.clear();
     setState(() {
+      _envioGratis = false;
       _busy = false;
       _photos.clear();
       _fotoIa = false;
@@ -355,6 +358,13 @@ class _SellPageState extends State<SellPage> {
               labelText: 'Marca (opcional)', hintText: 'Zara, Nike, Bershka…'),
         ),
         const SizedBox(height: 4),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ofrecer envío gratis'),
+          subtitle: const Text('Tú pagas el envío; el comprador no paga nada extra. Súmalo al precio si quieres.'),
+          value: _envioGratis,
+          onChanged: (v) => setState(() => _envioGratis = v),
+        ),
         TextField(
           controller: _desc,
           maxLines: 3,
