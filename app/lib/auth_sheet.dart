@@ -281,7 +281,7 @@ class _AuthFlowState extends State<AuthFlow> {
           ],
           const SizedBox(height: 8),
           FilledButton(
-              onPressed: _busy ? null : _submit,
+              onPressed: (_busy || (!_login && !_terms)) ? null : _submit,
               child: Text(_busy
                   ? 'Un momento…'
                   : (_login ? 'Entrar' : 'Crear cuenta'))),
@@ -425,7 +425,7 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
             Text(_error!, style: const TextStyle(color: Color(0xFFB3261E))),
           ],
           const SizedBox(height: 12),
-          FilledButton(onPressed: _busy ? null : _guardar, child: Text(_busy ? 'Un momento…' : 'Entrar a Pavito')),
+          FilledButton(onPressed: (_busy || !_terms) ? null : _guardar, child: Text(_busy ? 'Un momento…' : 'Entrar a Pavito')),
         ]),
       );
 }

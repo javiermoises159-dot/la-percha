@@ -158,7 +158,7 @@ class AppState extends ChangeNotifier {
       }
       await _db
           .from('profiles')
-          .insert({'id': res.user!.id, 'username': username, 'city': city});
+          .insert({'id': res.user!.id, 'username': username, 'city': city, 'terminos_at': DateTime.now().toUtc().toIso8601String()});
       await aplicarInvitacion();
       await refresh();
       return null;
@@ -216,7 +216,7 @@ class AppState extends ChangeNotifier {
     try {
       final taken = await _db.from('profiles').select('id').eq('username', username).maybeSingle();
       if (taken != null) return 'Ese nombre de usuario ya está en uso.';
-      await _db.from('profiles').insert({'id': user.id, 'username': username, 'city': city});
+      await _db.from('profiles').insert({'id': user.id, 'username': username, 'city': city, 'terminos_at': DateTime.now().toUtc().toIso8601String()});
       await aplicarInvitacion();
       await refresh();
       return null;
