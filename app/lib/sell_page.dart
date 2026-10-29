@@ -46,6 +46,7 @@ class _SellPageState extends State<SellPage> {
   final _desc = TextEditingController();
   final _brand = TextEditingController();
   final List<Uint8List> _photos = [];
+  Map<String, double> _tarCiudad = {};
   bool _envioGratis = false;
   String? _tamElegido;
   String get _tam => _tamElegido ?? tamanoSugerido(_category);
@@ -118,6 +119,22 @@ class _SellPageState extends State<SellPage> {
   String _condition = 'Muy buen estado';
   String? _city;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarTarifas();
+  }
+
+  Future<void> _cargarTarifas() async {
+    try {
+      final r = await Supabase.instance.client.from('ajustes').select('clave, valor').like('clave', 'envio_%_ciudad');
+      if (!mounted) return;
+      setState(() => _tarCiudad = {
+            for (final x in r) (x['clave'] as String).split('_')[1]: (x['valor'] as num).toDouble()
+          });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -436,6 +453,14 @@ class _SellPageState extends State<SellPage> {
           decoration: const InputDecoration(
               labelText: 'Precio en dólares', prefixText: '\$ '),
         ),
+        if (price != null && price > 0 && !_envioGratis && (_tarCiudad[_tam] ?? 0) > price)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+                'Ojo: tu prenda cuesta menos que su envío (desde \$${_tarCiudad[_tam]!.toStringAsFixed(2)}). '
+                'Será más fácil venderla en lote o con entrega en persona.',
+                style: const TextStyle(color: Color(0xFFB26A00), fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
         if (price != null && price > 0)
           Padding(
             padding: const EdgeInsets.only(top: 8),

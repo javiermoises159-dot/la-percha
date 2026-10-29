@@ -5,7 +5,7 @@ import 'app_state.dart';
 import 'features.dart';
 import 'auth_sheet.dart';
 import 'config.dart';
-import 'extras.dart' show ciudades;
+import 'extras.dart' show ciudades, openBundle;
 import 'pruebas.dart';
 import 'listing.dart';
 import 'listing_detail.dart';
@@ -54,6 +54,7 @@ class EnvioInfo extends StatefulWidget {
 
 class _EnvioInfoState extends State<EnvioInfo> {
   double? _e;
+  int get _otras => listingsStore.all.where((l) => l.sellerId == widget.item.sellerId && l.id != widget.item.id).length;
   @override
   void initState() {
     super.initState();
@@ -80,6 +81,17 @@ class _EnvioInfoState extends State<EnvioInfo> {
       ]),
       const SizedBox(height: 6),
       Text(nota, style: TextStyle(color: context.muted, fontSize: 13)),
+      if (!gratis && appState.account?.id != widget.item.sellerId && _otras > 0) ...[
+        const SizedBox(height: 8),
+        Text('Este vendedor tiene $_otras ${_otras == 1 ? 'prenda más' : 'prendas más'}. Agrégalas en un lote y pagas un solo envío.',
+            style: TextStyle(color: context.leaf, fontSize: 13, fontWeight: FontWeight.w600)),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+              onPressed: () => openBundle(context, widget.item.sellerId, widget.item.seller),
+              child: Text('Armar un lote con @${widget.item.seller}')),
+        ),
+      ],
       if (!gratis && logueado && ciudadInicial() == widget.item.city) ...[
         const SizedBox(height: 6),
         Text('Está en tu ciudad (${widget.item.city}): puedes elegir entrega en persona y no pagas envío.',
