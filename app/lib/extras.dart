@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
 import 'auth_sheet.dart';
+import 'config.dart';
 import 'listing.dart';
 import 'orders_page.dart';
 import 'theme.dart';
