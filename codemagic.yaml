@@ -36,6 +36,13 @@ workflows:
           python3 ../tools/android_manifest.py android/app/src/main/AndroidManifest.xml
       - name: Instalar dependencias
         script: cd app && flutter pub get
+      - name: Escaneo de seguridad de dependencias (OSV)
+        ignore_failure: true
+        script: |
+          curl -sSfL -o osv-scanner https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_darwin_arm64
+          chmod +x osv-scanner
+          echo "=========== VULNERABILIDADES EN DEPENDENCIAS ==========="
+          ./osv-scanner --recursive . 2>&1 | tee informe-osv.txt
       - name: Revisar el código
         ignore_failure: true
         script: cd app && flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings 2>&1 | grep -E "error|Error" | head -60
@@ -55,6 +62,7 @@ workflows:
           fi
     artifacts:
       - app/build/app/outputs/flutter-apk/*.apk
+      - informe-osv.txt
 
   base-de-datos:
     name: Pavito - Actualizar base de datos
@@ -120,3 +128,23 @@ workflows:
           rm -f "$F.dump"
     artifacts:
       - pavito-*.dump.gpg
+
+  seguridad:
+    name: Pavito - Escaneo de seguridad
+    instance_type: mac_mini_m2
+    max_build_duration: 15
+    scripts:
+      - name: Vulnerabilidades en dependencias (app, workflows, funciones)
+        script: |
+          curl -sSfL -o osv-scanner https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_darwin_arm64
+          chmod +x osv-scanner
+          ./osv-scanner --recursive . 2>&1 | tee informe-osv.txt
+          ./osv-scanner --recursive --format json --output informe-osv.json . || true
+          # falla si encuentra algo
+          ./osv-scanner --recursive . >/dev/null
+      - name: Claves o contraseñas subidas por error (Gitleaks)
+        script: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_darwin_arm64.tar.gz | tar xz gitleaks
+          ./gitleaks detect --source . --redact --no-banner
+    artifacts:
+      - informe-osv.*

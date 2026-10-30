@@ -3,9 +3,6 @@ name: Escaneo de seguridad
 # Revisa las dependencias de TODA la app (Flutter/pub, funciones del servidor, GitHub Actions)
 # contra la base de vulnerabilidades OSV, y busca claves o contraseñas subidas por error.
 on:
-  push:
-    branches: [main]
-  pull_request:
   schedule:
     - cron: '17 6 * * 1'      # cada lunes
   workflow_dispatch:
