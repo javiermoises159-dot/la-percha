@@ -1,0 +1,53 @@
+name: Escaneo de seguridad
+
+# Revisa las dependencias de TODA la app (Flutter/pub, funciones del servidor, GitHub Actions)
+# contra la base de vulnerabilidades OSV, y busca claves o contraseñas subidas por error.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 6 * * 1'      # cada lunes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencias:
+    name: Vulnerabilidades en dependencias (OSV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar OSV-Scanner
+        run: |
+          curl -sSfL -o osv-scanner https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64
+          chmod +x osv-scanner
+      - name: Escanear (app/pubspec.lock, workflows y funciones)
+        run: |
+          # Informe completo en texto y en JSON (se guarda como descarga)
+          ./osv-scanner --recursive --format table --output informe-osv.txt . || true
+          ./osv-scanner --recursive --format json  --output informe-osv.json . || true
+          echo "=========== RESUMEN ==========="
+          cat informe-osv.txt
+          { echo "## Escaneo de dependencias"; echo '```'; cat informe-osv.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fallar si hay vulnerabilidades
+        run: ./osv-scanner --recursive . 
+      - name: Guardar informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-osv
+          path: informe-osv.*
+
+  secretos:
+    name: Claves o contraseñas subidas por error
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks detect --source . --redact --no-banner --report-format json --report-path informe-secretos.json || { echo "=== POSIBLES SECRETOS ==="; python3 -c "import json;[print(x['File'],x['StartLine'],x['RuleID']) for x in json.load(open('informe-secretos.json'))]"; exit 1; }
