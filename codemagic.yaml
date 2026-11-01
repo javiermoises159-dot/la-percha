@@ -157,3 +157,31 @@ workflows:
           ./gitleaks detect --source . --redact --no-banner
     artifacts:
       - informe-osv.*
+
+  google-play:
+    name: Pavito - Android para Google Play (.aab firmado)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      android_signing:
+        - pavito_keystore      # se crea en Codemagic: Team settings > Code signing identities > Android keystores
+      flutter: stable
+      java: 17
+    scripts:
+      - name: Generar la parte Android del proyecto
+        script: |
+          cd app
+          flutter create --platforms=android --org com.pavito --project-name pavito .
+          perl -pi -e 's/android:label="[^"]*"/android:label="Pavito"/' android/app/src/main/AndroidManifest.xml
+          for d in android_icons/mipmap-*; do cp "$d/ic_launcher.png" "android/app/src/main/res/$(basename $d)/ic_launcher.png"; done
+          cp -r android_overrides/res/. android/app/src/main/res/
+          python3 ../tools/android_manifest.py android/app/src/main/AndroidManifest.xml
+          python3 ../tools/android_firma.py android/app
+      - name: Instalar dependencias
+        script: cd app && flutter pub get
+      - name: Compilar el paquete para Google Play
+        script: |
+          cd app
+          flutter build appbundle --release --build-number=$(( $(date +%s) / 60 ))
+    artifacts:
+      - app/build/app/outputs/bundle/release/*.aab
