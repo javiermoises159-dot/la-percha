@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'cookies.dart';
 import 'visitas.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,8 +16,24 @@ import 'nav.dart';
 import 'theme.dart';
 import 'welcome_screen.dart';
 
+/// En la app de Android se esconden los botones del sistema (atrás, inicio, recientes):
+/// se usan los de Pavito. Si la persona desliza desde abajo aparecen un momento y se vuelven a esconder.
+void ocultarBotonesAndroid() {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+  void esconder() =>
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+  esconder();
+  SystemChrome.setSystemUIChangeCallback((visibles) async {
+    if (visibles) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      esconder();
+    }
+  });
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ocultarBotonesAndroid();
   await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseKey,

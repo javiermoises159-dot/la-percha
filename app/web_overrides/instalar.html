@@ -29,7 +29,7 @@
     // Sale cada vez que alguien entra desde el navegador, hasta que instala la app.
     // La × solo lo esconde durante esa visita.
     var k = 'pv_instalada';
-    var yaInstalada = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    var yaInstalada = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
     try { if (yaInstalada) localStorage.setItem(k, '1'); if (localStorage.getItem(k) === '1') yaInstalada = true; } catch (e) {}
     try { if (sessionStorage.getItem('pv_instalar_no') === '1') return; } catch (e) {}
     if (yaInstalada) return;

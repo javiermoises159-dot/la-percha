@@ -38,8 +38,11 @@ class _ActivarUsuariosPageState extends State<ActivarUsuariosPage> {
     try {
       final r = await _db.rpc('admin_usuarios_activacion', params: {'p_solo_sin_prendas': _soloSin});
       if (mounted) setState(() => _rows = List<Map<String, dynamic>>.from(r as List));
-    } catch (_) {
-      if (mounted) setState(() => _rows = []);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _rows = []);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo cargar la lista: ${_error(e)}')));
+      }
     }
   }
 

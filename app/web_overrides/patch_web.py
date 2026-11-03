@@ -57,6 +57,9 @@ m.update({
     "background_color": "#E0452C",
     "theme_color": "#FFFFFF",
     "lang": "es",
+    # Instalada en Android: pantalla completa, sin la barra de botones del sistema.
+    "display": "fullscreen",
+    "display_override": ["fullscreen", "standalone"],
 })
 m["icons"] = [
     {"src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png"},
