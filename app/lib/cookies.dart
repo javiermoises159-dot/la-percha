@@ -34,7 +34,7 @@ const cookiesTabla = <(String, String, String, String)>[
   ('Sesión de Pavito', 'Necesaria', 'Mantener tu sesión iniciada de forma segura', 'Hasta que cierres sesión'),
   ('Tu elección de cookies', 'Necesaria', 'Recordar lo que elegiste en este aviso', 'Hasta que la cambies'),
   ('Código de invitación', 'Necesaria', 'Si llegaste con el link de un amigo, darle su premio al registrarte', 'Hasta que te registres'),
-  ('Aviso "Instalar Pavito"', 'Necesaria', 'No mostrarte el aviso de instalar la app más de una vez por semana', '7 días'),
+  ('Aviso "Instalar Pavito"', 'Necesaria', 'Recordar si ya instalaste la app para no mostrarte más el aviso', 'Hasta que borres los datos del navegador'),
   ('Verificación anti-bots (Cloudflare Turnstile)', 'Necesaria', 'Comprobar que eres una persona al entrar o registrarte', 'La gestiona Cloudflare durante la verificación'),
   ('Inicio de sesión con Google', 'Necesaria (si lo usas)', 'Entrar con tu cuenta de Google; las cookies son de Google', 'Según Google'),
   ('Identificador anónimo del dispositivo', 'Estadística (opcional)', 'Contar las visitas a cada anuncio para que el vendedor vea cuántas tuvo, sin tu nombre', 'Hasta que borres los datos del navegador o lo rechaces'),

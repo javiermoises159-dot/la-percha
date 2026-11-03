@@ -20,32 +20,65 @@
   <button class="no" id="instalar-no" aria-label="Ahora no">×</button>
 </div>
 <div id="ios-pasos"><div>
-  <h3>Añade Pavito a tu inicio</h3>
-  <ol><li>Toca el botón <b>Compartir</b> de Safari (el cuadro con la flecha hacia arriba).</li>
-      <li>Elige <b>Añadir a pantalla de inicio</b>.</li>
-      <li>Toca <b>Añadir</b>. ¡Listo, ya tienes la guacamaya en tu inicio!</li></ol>
+  <h3 id="pasos-titulo">Añade Pavito a tu inicio</h3>
+  <ol id="pasos-lista"></ol>
   <button id="ios-ok">Entendido</button>
 </div></div>
 <script>
   (function () {
+    // Sale cada vez que alguien entra desde el navegador, hasta que instala la app.
+    // La × solo lo esconde durante esa visita.
+    var k = 'pv_instalada';
     var yaInstalada = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-    var hoy = Date.now(), k = 'pv_instalar_no';
-    var descartado = false;
-    try { descartado = hoy - (+localStorage.getItem(k) || 0) < 7 * 864e5; } catch (e) {}
-    if (yaInstalada || descartado) return;
-    var ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua) && !/crios|fxios/i.test(ua);
-    var aviso = document.getElementById('instalar'), pasos = document.getElementById('ios-pasos'), pedido = null;
-    function mostrar() { if (!document.getElementById('splash')) aviso.style.display = 'flex'; else setTimeout(mostrar, 1500); }
-    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; setTimeout(mostrar, 6000); });
-    if (ios) setTimeout(mostrar, 8000);
+    try { if (yaInstalada) localStorage.setItem(k, '1'); if (localStorage.getItem(k) === '1') yaInstalada = true; } catch (e) {}
+    try { if (sessionStorage.getItem('pv_instalar_no') === '1') return; } catch (e) {}
+    if (yaInstalada) return;
+    var ua = navigator.userAgent;
+    var ios = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && 'ontouchend' in document);
+    var dentroDeApp = /instagram|fban|fbav|fb_iab|tiktok|musical_ly|bytedance|line\/|snapchat|twitter/i.test(ua);
+    var android = /android/i.test(ua);
+    var aviso = document.getElementById('instalar'), pasos = document.getElementById('ios-pasos'), pedido = null, mostrado = false;
+    var titulo = document.getElementById('pasos-titulo'), lista = document.getElementById('pasos-lista');
+    function mostrar() {
+      if (mostrado) return;
+      var cookies = null; try { cookies = localStorage.getItem('flutter.pv_cookies_v1'); } catch (e) { cookies = '1'; }
+      // Espera a que se cierre el aviso de cookies para no taparlo.
+      if (document.getElementById('splash') || !cookies) { setTimeout(mostrar, 1500); return; }
+      mostrado = true; aviso.style.display = 'flex';
+    }
+    function verPasos(t, items) {
+      titulo.textContent = t; lista.innerHTML = '';
+      items.forEach(function (x) { var li = document.createElement('li'); li.innerHTML = x; lista.appendChild(li); });
+      pasos.style.display = 'flex';
+    }
+    if (dentroDeApp) {
+      aviso.querySelector('span').textContent = 'Ábrela en tu navegador para instalarla';
+      aviso.querySelector('.si').textContent = 'Cómo';
+    }
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; setTimeout(mostrar, 4000); });
+    // Si el navegador no ofrece instalar solo (iPhone, Instagram, TikTok…), igual se muestra con instrucciones.
+    setTimeout(mostrar, ios || dentroDeApp ? 5000 : 9000);
     document.getElementById('instalar-no').onclick = function () {
-      aviso.style.display = 'none'; try { localStorage.setItem(k, String(hoy)); } catch (e) {}
+      aviso.style.display = 'none'; try { sessionStorage.setItem('pv_instalar_no', '1'); } catch (e) {}
     };
     document.getElementById('instalar-si').onclick = function () {
-      if (pedido) { pedido.prompt(); pedido.userChoice.then(function () { aviso.style.display = 'none'; }); pedido = null; }
-      else if (ios) { pasos.style.display = 'flex'; }
+      if (dentroDeApp) {
+        verPasos('Abre Pavito en tu navegador', ios
+          ? ['Toca los <b>tres puntos (···)</b> arriba a la derecha.', 'Elige <b>Abrir en el navegador</b> (Safari).', 'Ahí toca <b>Instalar</b> en el aviso de abajo.']
+          : ['Toca los <b>tres puntos (⋮)</b> arriba a la derecha.', 'Elige <b>Abrir en Chrome</b> (o en el navegador).', 'Ahí toca <b>Instalar</b> en el aviso de abajo.']);
+      } else if (pedido) {
+        pedido.prompt(); pedido.userChoice.then(function (r) { if (r && r.outcome === 'accepted') aviso.style.display = 'none'; }); pedido = null;
+      } else if (ios) {
+        verPasos('Añade Pavito a tu inicio', ['Toca el botón <b>Compartir</b> de Safari (el cuadro con la flecha hacia arriba).',
+          'Elige <b>Añadir a pantalla de inicio</b>.', 'Toca <b>Añadir</b>. ¡Listo, ya tienes la guacamaya en tu inicio!']);
+      } else {
+        verPasos('Instala Pavito', [android ? 'Toca los <b>tres puntos (⋮)</b> del navegador, arriba a la derecha.' : 'Abre el menú del navegador.',
+          'Elige <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b>.', 'Confirma. ¡Listo!']);
+      }
     };
-    document.getElementById('ios-ok').onclick = function () { pasos.style.display = 'none'; aviso.style.display = 'none'; };
-    window.addEventListener('appinstalled', function () { aviso.style.display = 'none'; });
+    document.getElementById('ios-ok').onclick = function () { pasos.style.display = 'none'; };
+    window.addEventListener('appinstalled', function () {
+      aviso.style.display = 'none'; try { localStorage.setItem(k, '1'); } catch (e) {}
+    });
   })();
 </script>
