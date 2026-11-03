@@ -26,6 +26,7 @@ Future<void> main() async {
           authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce));
   vigilarErrores();
   await Cookies.cargar();
+  await ConfigApp.cargar();
   vigilarVisitas();
   runApp(const LaPerchaApp());
 }

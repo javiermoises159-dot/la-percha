@@ -991,6 +991,7 @@ class _AvisosPageState extends State<AvisosPage> {
         'chat' => Icons.chat_bubble_outline,
         'anuncio' => Icons.local_offer_outlined,
         'registro' => Icons.person_add_alt_1_outlined,
+        'pavito' => Icons.campaign_outlined,
         _ => Icons.star_outline_rounded,
       };
 

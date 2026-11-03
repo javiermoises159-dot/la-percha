@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 -- Datos de cobro cifrados, 2FA del admin y auditoría. a=vendedor, b=comprador, c=otro, d=admin.
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),
  ('00000000-0000-0000-0000-00000000000c'),('00000000-0000-0000-0000-00000000000d');

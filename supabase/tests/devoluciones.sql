@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000d');
 insert into public.profiles (id, username, city, is_admin) values ('00000000-0000-0000-0000-00000000000a','vende','Caracas',false),
  ('00000000-0000-0000-0000-00000000000b','compra','Caracas',false),('00000000-0000-0000-0000-00000000000d','jefe','Caracas',true);

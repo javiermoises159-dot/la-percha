@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 -- Foto de perfil y distintivos. a=vendedor, b=comprador.
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b');
 insert into public.profiles (id, username, city) values

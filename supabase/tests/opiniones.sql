@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 -- Opiniones. a=vendedor, b=comprador con pedido liberado, c=sin pedidos. Tras supabase_stub.sql y todas las migraciones.
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
 insert into public.profiles (id, username, city) values

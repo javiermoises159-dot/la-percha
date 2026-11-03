@@ -1,4 +1,5 @@
 \set ON_ERROR_STOP 0
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 \set VERBOSITY terse
 -- usuarios: a=vendedor, b=comprador, c=otro, d=admin
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),

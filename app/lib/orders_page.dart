@@ -178,7 +178,8 @@ List<String> metodosPago() {
     if (binancePayId.isNotEmpty) pagoBinance,
     if (zinliCorreo.isNotEmpty) pagoZinli,
   ];
-  if (tasaVieja && dolares.isNotEmpty) return dolares;
+  final bs = pagoMovilTelefono.isNotEmpty && !tasaVieja;
+  if (!bs && dolares.isNotEmpty) return dolares;
   return [pagoPagoMovil, ...dolares];
 }
 String instruccionPago(String m) {

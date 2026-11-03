@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+update public.config_app set valor = 'true' where clave = 'pagos_abiertos'; -- las pruebas compran
 -- Saldo Pavito: v=vendedora, c=comprador, o=otro, d=admin
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),
  ('00000000-0000-0000-0000-00000000000c'),('00000000-0000-0000-0000-00000000000d');
