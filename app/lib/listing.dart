@@ -459,3 +459,30 @@ String? urlMiniatura(String url) {
   final m = RegExp(r'^(.*/m_\d+)\.(jpg|png)$').firstMatch(url);
   return m == null ? null : '${m.group(1)}-mini.jpg';
 }
+
+
+/// Aclara una foto oscura (típica de fotos hechas en casa). Si ya está bien iluminada, no la toca.
+Uint8List mejorarFoto(Uint8List foto) {
+  try {
+    final d = img.decodeImage(foto);
+    if (d == null) return foto;
+    final paso = (d.width ~/ 40) < 1 ? 1 : d.width ~/ 40;
+    double suma = 0;
+    int cuenta = 0;
+    for (var y = 0; y < d.height; y += paso) {
+      for (var x = 0; x < d.width; x += paso) {
+        final p = d.getPixel(x, y);
+        suma += 0.299 * p.r + 0.587 * p.g + 0.114 * p.b;
+        cuenta++;
+      }
+    }
+    if (cuenta == 0) return foto;
+    final media = suma / cuenta; // 0 (negro) a 255 (blanco)
+    if (media >= 105) return foto;
+    final factor = media < 70 ? 1.35 : 1.2;
+    final r = img.adjustColor(d, brightness: factor, contrast: 1.08);
+    return Uint8List.fromList(img.encodeJpg(r, quality: 85));
+  } catch (_) {
+    return foto;
+  }
+}

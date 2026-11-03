@@ -56,6 +56,7 @@ class _SellPageState extends State<SellPage> {
   String get _tam => _tamElegido ?? tamanoSugerido(_category);
   bool _fotoIa = false; // la primera foto es una portada creada por la IA
   bool _scanning = false;
+  Map<String, dynamic>? _similares; // rango de precios de prendas parecidas
   bool _autoScan = false;
 
   /// "Vende con una foto": la IA del servidor rellena el anuncio.
@@ -130,9 +131,19 @@ class _SellPageState extends State<SellPage> {
   void initState() {
     super.initState();
     _cargarTarifas();
+    _cargarSimilares();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) mostrarSeguridadSiPrimeraVez(context);
     });
+  }
+
+  Future<void> _cargarSimilares() async {
+    try {
+      final r = await Supabase.instance.client
+          .rpc('precios_parecidos', params: {'p_category': _category, 'p_brand': _brand.text.trim()});
+      if (!mounted) return;
+      setState(() => _similares = r is Map ? Map<String, dynamic>.from(r) : null);
+    } catch (_) {}
   }
 
   Future<void> _cargarTarifas() async {
@@ -158,7 +169,7 @@ class _SellPageState extends State<SellPage> {
     final x = await ImagePicker()
         .pickImage(source: src, maxWidth: 1000, imageQuality: 80);
     if (x == null) return;
-    final bytes = await x.readAsBytes();
+    final bytes = mejorarFoto(await x.readAsBytes());
     if (_photos.length < 5) setState(() => _photos.add(bytes));
     if (_autoScan) {
       _autoScan = false;
@@ -386,6 +397,10 @@ class _SellPageState extends State<SellPage> {
           controller: _brand,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
+          onTapOutside: (_) {
+            FocusManager.instance.primaryFocus?.unfocus();
+            _cargarSimilares();
+          },
           decoration: const InputDecoration(
               labelText: 'Marca (opcional)', hintText: 'Zara, Nike, Bershka…'),
         ),
@@ -424,12 +439,15 @@ class _SellPageState extends State<SellPage> {
             label: 'Categoría',
             value: _category,
             items: categories.where((c) => c != 'Todo').toList(),
-            onChanged: (v) => setState(() {
-                  _category = v;
-                  _sub = null;
-                  final s = sizesFor(v);
-                  if (!s.contains(_size)) _size = s.first;
-                })),
+            onChanged: (v) {
+                  setState(() {
+                    _category = v;
+                    _sub = null;
+                    final s = sizesFor(v);
+                    if (!s.contains(_size)) _size = s.first;
+                  });
+                  _cargarSimilares();
+                }),
         if (subcategorias[_category] != null) ...[
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -476,6 +494,14 @@ class _SellPageState extends State<SellPage> {
           decoration: const InputDecoration(
               labelText: 'Precio en dólares', prefixText: '\$ '),
         ),
+        if (_similares != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+                'En Pavito, prendas parecidas se publican entre \$${(_similares!['bajo'] as num).toStringAsFixed(0)} y '
+                '\$${(_similares!['alto'] as num).toStringAsFixed(0)} (lo más común: \$${(_similares!['medio'] as num).toStringAsFixed(0)}).',
+                style: TextStyle(color: context.leaf, fontSize: 13)),
+          ),
         const SizedBox(height: 12),
         RebajaPicker(valor: _rebaja, onChanged: (v) => setState(() => _rebaja = v)),
         if (price != null && price > 0 && !_envioGratis && (_tarCiudad[_tam] ?? 0) > price)
