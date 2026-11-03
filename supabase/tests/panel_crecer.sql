@@ -38,3 +38,9 @@ select pg_temp.yo('b'); select public.admin_enviar_aviso('Hola a todos', 'todos'
 select pg_temp.yo('d','aal2'); select grupo, enviados from public.admin_comunicados();
 \echo '--- anónimo puede leer si los pagos están abiertos pero no cambiarlo (error)'
 reset role; set role anon; select public.pagos_abiertos(); select public.admin_set_config('pagos_abiertos','false');
+reset role; set role authenticated; select pg_temp.yo('d','aal2');
+\echo '--- mismo aviso a la misma persona 3 veces: solo queda 1'
+select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a');
+select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a');
+select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a');
+reset role; select count(*) as quedan from public.avisos where texto = 'Mensaje repetido de prueba';

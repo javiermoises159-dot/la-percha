@@ -6,7 +6,7 @@
     return Uint8Array.from(s, (c) => c.charCodeAt(0));
   }
   function ios() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
-  function instalada() { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+  function instalada() { return window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true; }
   async function registro() {
     const reg = await navigator.serviceWorker.register('/push/sw.js', { scope: '/push/' });
     if (!reg.active) {

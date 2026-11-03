@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
+import 'errores.dart';
 
 @JS('pavitoPush.estado')
 external JSPromise<JSString> _estado();
@@ -26,9 +27,14 @@ Future<String?> activarPush() async {
   try {
     final j = jsonDecode((await _activar(vapidPublica.toJS).toDart).toDart) as Map<String, dynamic>;
     if (j['error'] != null) {
-      return j['error'] == 'denied'
-          ? 'Bloqueaste las notificaciones. Actívalas en los ajustes del navegador para Pavito.'
-          : 'No se pudieron activar las notificaciones en este dispositivo.';
+      final err = '${j['error']}';
+      if (err == 'denied') return 'Bloqueaste las notificaciones. Actívalas en los ajustes del navegador para Pavito.';
+      if (err == 'default') return 'No diste permiso. Toca "Activar" otra vez y elige "Permitir".';
+      reportarError('Push no se pudo activar: $err', null);
+      if (RegExp(r'push service|AbortError|not supported|NotSupported|registration', caseSensitive: false).hasMatch(err)) {
+        return 'Este navegador no permite notificaciones. Abre Pavito en Google Chrome e inténtalo de nuevo.';
+      }
+      return 'No se pudieron activar las notificaciones en este dispositivo. Prueba abriendo Pavito en Google Chrome.';
     }
     final keys = (j['keys'] as Map?) ?? const {};
     await Supabase.instance.client.rpc('guardar_push',
