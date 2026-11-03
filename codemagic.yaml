@@ -26,6 +26,8 @@ workflows:
         script: |
           npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
           npx -y supabase@2 functions deploy push --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
+          npx -y supabase@2 functions deploy correo --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
+          [ -z "$RESEND_API_KEY" ] || npx -y supabase@2 secrets set RESEND_API_KEY="$RESEND_API_KEY" --project-ref udhyuyokrxggdnnepbmr
       - name: Generar la parte Android del proyecto
         script: |
           cd app
@@ -81,6 +83,8 @@ workflows:
         script: |
           npx -y supabase@2 functions deploy escanear --project-ref udhyuyokrxggdnnepbmr --use-api
           npx -y supabase@2 functions deploy push --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
+          npx -y supabase@2 functions deploy correo --project-ref udhyuyokrxggdnnepbmr --use-api --no-verify-jwt
+          [ -z "$RESEND_API_KEY" ] || npx -y supabase@2 secrets set RESEND_API_KEY="$RESEND_API_KEY" --project-ref udhyuyokrxggdnnepbmr
 
   publicar-web:
     name: Pavito - Publicar la web (pavito.app)
