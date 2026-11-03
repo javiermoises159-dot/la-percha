@@ -23,7 +23,6 @@ Deno.serve(async (req) => {
   const servicio = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resend = Deno.env.get("RESEND_API_KEY");
   if (!url || !servicio) return respuesta(503, { error: "Falta configuración" });
-  if (!resend) return respuesta(200, { enviado: 0, motivo: "sin RESEND_API_KEY" });
 
   const hs = { apikey: servicio, Authorization: `Bearer ${servicio}` };
   const dada = req.headers.get("x-push-secret") ?? "";
@@ -31,6 +30,7 @@ Deno.serve(async (req) => {
     .then((r) => r.json()).catch(() => []);
   const real = Array.isArray(fila) && fila[0] ? String(fila[0].valor) : "";
   if (!dada || !real || !iguales(dada, real)) return respuesta(401, { error: "No autorizado" });
+  if (!resend) return respuesta(200, { enviado: 0 });
 
   let id = 0;
   try { id = Number((await req.json())?.aviso); } catch { /* cuerpo no válido */ }
