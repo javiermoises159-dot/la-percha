@@ -217,7 +217,7 @@ bool pagosCerrados(BuildContext context) {
           Text('Estamos en fase de prueba', style: display(22, color: ctx.ink)),
           const SizedBox(height: 8),
           Text(
-              'Ve subiendo tus prendas: te llegará un correo cuando habilitemos todos los pagos. '
+              'Ve subiendo tus prendas: te avisaremos en la app cuando habilitemos todos los pagos. '
               'Mientras tanto puedes guardar favoritos, escribirle a los vendedores y explorar la app.',
               style: TextStyle(color: ctx.muted, height: 1.4)),
           const SizedBox(height: 16),
@@ -608,7 +608,7 @@ class _OrderPageState extends State<OrderPage> {
         const SizedBox(height: 10),
         if (!pagosAbiertos)
           _Box(children: [
-            Text('Estamos en fase de prueba. No pagues todavía: te llegará un correo cuando habilitemos todos los pagos.',
+            Text('Estamos en fase de prueba. No pagues todavía: te avisaremos en la app cuando habilitemos todos los pagos.',
                 style: TextStyle(color: context.muted, height: 1.4)),
           ])
         else

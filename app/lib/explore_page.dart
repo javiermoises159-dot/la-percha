@@ -625,7 +625,7 @@ class _PrimerosCard extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
             'Estamos en fase de prueba y abrimos antes de diciembre. Sube tus prendas ahora: vender no cuesta '
-            'comisión y te llegará un correo cuando habilitemos todos los pagos.',
+            'comisión y te avisaremos en la app cuando habilitemos todos los pagos.',
             textAlign: TextAlign.center,
             style: TextStyle(color: context.muted, height: 1.4)),
         const SizedBox(height: 20),

@@ -10,7 +10,6 @@ import 'app_state.dart';
 import 'fundador.dart';
 import 'listing.dart';
 import 'rebaja.dart';
-import 'seguridad.dart';
 import 'theme.dart';
 
 const _conditions = [
@@ -132,12 +131,19 @@ class _SellPageState extends State<SellPage> {
     super.initState();
     _cargarTarifas();
     _cargarSimilares();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) mostrarSeguridadSiPrimeraVez(context);
-    });
+    widget.state.addListener(_alCambiarCuenta);
+  }
+
+  // Las pestañas se crean al abrir la app (a veces sin sesión): al iniciar sesión se cargan los precios.
+  String? _cuentaSimilares;
+  void _alCambiarCuenta() {
+    final id = widget.state.account?.id;
+    if (id != null && id != _cuentaSimilares) _cargarSimilares();
   }
 
   Future<void> _cargarSimilares() async {
+    if (widget.state.account == null) return;
+    _cuentaSimilares = widget.state.account!.id;
     try {
       final r = await Supabase.instance.client
           .rpc('precios_parecidos', params: {'p_category': _category, 'p_brand': _brand.text.trim()});
@@ -158,6 +164,7 @@ class _SellPageState extends State<SellPage> {
 
   @override
   void dispose() {
+    widget.state.removeListener(_alCambiarCuenta);
     _title.dispose();
     _price.dispose();
     _desc.dispose();

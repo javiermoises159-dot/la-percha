@@ -1,4 +1,5 @@
 import 'opinion.dart';
+import 'seguridad.dart';
 import 'package:flutter/material.dart';
 import 'nav.dart';
 import 'seller_profile.dart';
@@ -35,8 +36,20 @@ class _HomeShellState extends State<HomeShell> {
     prefsStore.load().then((_) => listingsStore.resort());
     irAVender.addListener(_irAVender);
     WidgetsBinding.instance.addPostFrameCallback((_) => _abrirCompartido());
-    Future<void>.delayed(const Duration(seconds: 4), () {
-      if (mounted) pedirOpinionSiToca(context, widget.state);
+    _programarOpinion();
+  }
+
+  /// Pide la opinión solo cuando hay sesión y no hay nada encima (inicio de sesión, diálogos…).
+  int _intentosOpinion = 0;
+  void _programarOpinion() {
+    Future<void>.delayed(const Duration(seconds: 6), () {
+      if (!mounted || _intentosOpinion++ > 20) return;
+      final libre = ModalRoute.of(context)?.isCurrent ?? false;
+      if (widget.state.account == null || !libre) {
+        _programarOpinion();
+        return;
+      }
+      pedirOpinionSiToca(context, widget.state);
     });
   }
 
@@ -90,6 +103,9 @@ class _HomeShellState extends State<HomeShell> {
           message: 'Crea tu cuenta para vender tus prendas.');
       return;
     }
+    // La guía de seguridad se muestra la primera vez que alguien entra a Vender
+    // (antes salía nada más abrir la app, porque las pestañas se crean todas al inicio).
+    if (i == 2 && _index != 2) mostrarSeguridadSiPrimeraVez(context);
     setState(() => _index = i);
   }
 

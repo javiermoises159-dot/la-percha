@@ -44,3 +44,6 @@ select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, 
 select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a');
 select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a');
 reset role; select count(*) as quedan from public.avisos where texto = 'Mensaje repetido de prueba';
+set role authenticated; select pg_temp.yo('d','aal2');
+\echo '--- repetir el mismo envío devuelve 0 (nadie lo recibe dos veces)'
+select public.admin_enviar_aviso('Mensaje repetido de prueba', 'usuario', null, '00000000-0000-0000-0000-00000000000a') as otra_vez;
